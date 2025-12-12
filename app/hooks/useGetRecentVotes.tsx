@@ -3,8 +3,8 @@ import { useQuery } from "@apollo/client/react";
 import { client } from "../api/apollo";
 
 const GET_RECENT_VOTES = gql`
-  query GetBill($after: String, $first: Int) {
-    getRecentVotes(after: $after, first: $first) {
+  query GetBill($after: String, $first: Int, $subject_list: [Int!]) {
+    getRecentVotes(after: $after, first: $first, subjectList: $subject_list) {
     edges {
       node {
         dateTime
@@ -25,9 +25,9 @@ const GET_RECENT_VOTES = gql`
   }
 `;
 
-export function useGetRecentVotes(after?: string, first?: number) {
+export function useGetRecentVotes(after?: string, first?: number, subject_list?: number[]) {
   const { data, loading, error, refetch } = useQuery(GET_RECENT_VOTES, {
-    variables: { after, first },
+    variables: { after, first, subject_list },
     client,
   });
 

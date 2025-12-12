@@ -4,7 +4,7 @@ import { client } from "../api/apollo";
 
 const GET_BILL = gql`
   query GetBill($bill_id: Int!) {
-    getBills(billId: $bill_id) {
+    getBill(billId: $bill_id) {
         isAiGenerated
         latestAction
         summary
@@ -14,6 +14,9 @@ const GET_BILL = gql`
         actions {
             text
             actionDate
+            type
+            voteId
+            actionCode
         }
         status
         subjects {
@@ -32,10 +35,9 @@ export function useGetBill(bill_id: number) {
   if (error) {
     console.error("useGetBill error:", error);
   }
-  console.log(data);
   return {
     // idk how to get rid of red underline, we expect this to be possibly undefined
-    bills: data?.getBill ?? { edges: [], pageInfo: [] },
+    bill: data?.getBill ?? { edges: [], pageInfo: [] },
     loading,
     error,
     refetch,

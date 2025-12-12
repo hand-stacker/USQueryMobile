@@ -1,5 +1,11 @@
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, StyleSheet, Text } from "react-native";
+
+type RootStackParamList = {
+  Bill_info: { bill_id: string };
+};
 type BillInfographicProps={
   billId:string;
   billTitle:string;
@@ -9,7 +15,8 @@ type BillInfographicProps={
 }
 
 export default function BillInfographic({ billId, billTitle, billType, billNum, billSummary }:BillInfographicProps) {
-  
+  // Provide a typed navigation prop so `navigate` accepts the route name and params.
+  const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Bill_info'>>();
   const [isExpanded, setIsExpanded] = useState(false);
   const [prevInteraction, setPrevInteraction] = useState(false);
   const animatedHeight = useRef(new Animated.Value(60)).current;
@@ -40,11 +47,11 @@ export default function BillInfographic({ billId, billTitle, billType, billNum, 
     console.log("long pres")
   };
   const handlePress = () => {
-
+    navigator.navigate('Bill_info', { bill_id: billId });
   };
   return (
     <Pressable 
-      onPress={()=> console.log("pressed info")}
+      onPress={handlePress}
       onLongPress={handleLongPress}
       >
     <Animated.View style={styles.box}
@@ -53,10 +60,17 @@ export default function BillInfographic({ billId, billTitle, billType, billNum, 
       }`}
     >
       <Text style = {styles.title}>
-        ({billType}-{billNum}) {billTitle}
+        ({billType}-{billNum})
       </Text>
+      <Text
+        style={styles.title}
+        numberOfLines={2}
+        ellipsizeMode="tail"
+      >
+        {billTitle}
+    </Text>
       {isExpanded && (
-        <ScrollView
+        <ScrollView style ={{ maxHeight: 200 }}
         className="max-h-128">
           <Text style = {styles.summary}
           className="text-base">
