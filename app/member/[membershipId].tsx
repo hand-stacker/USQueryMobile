@@ -1,17 +1,17 @@
 import { ActivityIndicator, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ActionList from "../components/action_list";
 import NavReturn from "../components/nav_return";
-import useGetBill from "../hooks/useGetBill";
-interface BillInfoProps {
-  navigation: any;
-    route: any;
+import VoteList from "../components/vote_list";
+import useGetMembership from "../hooks/useGetMembership";
+
+interface MemberInfoProps {
+    navigation?: any;
+    route?: any;
 }
 
-export default function BillInfo({ navigation, route }: BillInfoProps) {
-  const { bill_id } = route.params;
-  const { bill, loading, error, refetch } = useGetBill(bill_id);
-
+export default function MemberInfo({navigation, route}: MemberInfoProps) {
+  const { membershipId } = route.params;
+  const { member, loading, error, refetch } = useGetMembership(membershipId);
   if (loading) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]}>
       <ActivityIndicator />
@@ -23,15 +23,16 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
       <Text>Error loading bills: {error.message}</Text>
     </SafeAreaView>
   );
+
   return (
     <SafeAreaView
       style={styles.container}
       className="bg-primary"
     >
       <NavReturn onPress={() => navigation.goBack()}></NavReturn>
-      <Text style={styles.large_text}>Bill Info Regular : {bill_id}</Text>
-      <Text style={styles.large_text}>Title : {bill.title}</Text>
-      <ActionList data={bill.actions} summary_text={bill.summary} />
+      <Text style={styles.large_text}>{member.full_name} {member.state}-[{member.party[0]}]</Text>
+      <Text style={styles.large_text}>Role: {member.house ? "House" : "Senate"}</Text>
+      <VoteList data={member.vote_list} personal={true}></VoteList>
     </SafeAreaView>
   );
 }

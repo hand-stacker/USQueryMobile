@@ -17,9 +17,7 @@ const GET_VOTE = gql`
             }
             party
             state
-            geoid
             house
-            districtNum
         }
         novt {
             id
@@ -29,9 +27,7 @@ const GET_VOTE = gql`
             }
             party
             state
-            geoid
             house
-            districtNum
         }
         pres {
             id
@@ -41,9 +37,7 @@ const GET_VOTE = gql`
             }
             party
             state
-            geoid
             house
-            districtNum
         }
         yeas {
             id
@@ -53,9 +47,7 @@ const GET_VOTE = gql`
             }
             party
             state
-            geoid
             house
-            districtNum
         }
         question
         title
@@ -73,10 +65,9 @@ export function useGetVote(vote_id: number) {
   if (error) {
     console.error("useGetVote error:", error);
   }
-  console.log(data);
   return {
     // idk how to get rid of red underline, we expect this to be possibly undefined
-    bills: data?.getVote ?? { edges: [], pageInfo: [] },
+    vote: data?.getVote ?? { edges: [], pageInfo: [] },
     loading,
     error,
     refetch,

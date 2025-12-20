@@ -36,7 +36,7 @@ export function useGetRecentVotes(after?: string, first?: number, subject_list?:
   }
   return {
     // idk how to get rid of red underline, we expect this to be possibly undefined
-    bills: data?.getRecentVotes ?? { edges: [], pageInfo: [] },
+    votes: data?.getRecentVotes ?? { edges: [], pageInfo: [] },
     loading,
     error,
     refetch,
