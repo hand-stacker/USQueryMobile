@@ -11,6 +11,7 @@ interface MemberInfoProps {
 
 export default function MemberInfo({navigation, route}: MemberInfoProps) {
   const { membershipId } = route.params;
+  console.log(membershipId);
   const { member, loading, error, refetch } = useGetMembership(membershipId);
   if (loading) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]}>

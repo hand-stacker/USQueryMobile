@@ -48,7 +48,6 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
       congress_num: selectedCongress ?? undefined,
       subject_list: selectedSubjects.length ? selectedSubjects : undefined,
     };
-    console.log('Modal searching with variables:', variables);
     onSearch(variables);
     onClose();
   };
