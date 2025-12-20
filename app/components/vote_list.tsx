@@ -1,41 +1,19 @@
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 interface Props {
     data: any;
-    personal?: boolean;
+    personal: boolean;
+    navigation: any;
 }
 
-export type BillStackParamList = {
-    Bill_FYP: undefined;
-    Bill_search: undefined;
-    Bill_info: { bill_id: string };
-    Vote_info: { vote_id: string };
-};
 
-export type TabParamList = {
-  'Bill Stack': {
-    screen: keyof BillStackParamList;
-    params?: BillStackParamList[keyof BillStackParamList];
-  };
-  'Member Stack': undefined
-};
+function navToBill(navigation: any, vote: any) {
+  navigation.navigate("Bill_info", {bill_id: vote.bill});
+}
 
-const VoteList = ({data, personal}:Props)=> {
-    const navigator = useNavigation<NativeStackNavigationProp<TabParamList>>();
-
-    const navToVote = (vote: any) => {
-        navigator.navigate('Bill Stack', {
-            screen: 'Vote_info',
-            params: {vote_id: vote.id},
-        });
-    };
-    const navToBill = (vote: any) => {
-        navigator.navigate('Bill Stack', {
-            screen: 'Bill_info',
-            params: {bill_id: vote.bill},
-        });
-    };
+function navToVote(navigation: any, vote: any) {
+  navigation.navigate("Vote_info", {vote_id: vote.id});
+}
+const VoteList = ({data, personal, navigation}:Props)=> {
     return (
         <FlatList
             data={data}
@@ -46,12 +24,12 @@ const VoteList = ({data, personal}:Props)=> {
                 <View style={styles.text}>
                     <Text>{node.dateTime}</Text>
                     {node.bill && (
-                        <Pressable onPress={() => navToBill(item)}>
+                        <Pressable onPress={() => navToBill(navigation, node)}>
                             <Text>Bill : {node.bill}</Text>
                         </Pressable>
                     )}
                     {node.id && (
-                        <Pressable onPress={() => navToVote(item)}>
+                        <Pressable onPress={() => navToVote(navigation, node)}>
                             <Text>Vote : {node.id}</Text>
                         </Pressable>
                     )}

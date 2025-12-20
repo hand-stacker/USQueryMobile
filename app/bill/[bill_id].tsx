@@ -31,7 +31,7 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
       <NavReturn onPress={() => navigation.goBack()}></NavReturn>
       <Text style={styles.large_text}>Bill Info Regular : {bill_id}</Text>
       <Text style={styles.large_text}>Title : {bill.title}</Text>
-      <ActionList data={bill.actions} summary_text={bill.summary} />
+      <ActionList data={bill.actions} summary_text={bill.summary} navigator={navigation} />
     </SafeAreaView>
   );
 }

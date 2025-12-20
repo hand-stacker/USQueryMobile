@@ -33,10 +33,10 @@ export default function VoteInfo({ navigation, route }: VoteInfoProps) {
       <Text style={styles.large_text}>Title : {vote.title}</Text>
       <Text style={styles.large_text}>Question : {vote.question}</Text>
       <Text style={styles.large_text}>Result : {vote.result}</Text>
-      <CollapsibleVoteList data={vote.yeas} vote_type="YEAS"></CollapsibleVoteList>
-      <CollapsibleVoteList data={vote.nays} vote_type="NAYS"></CollapsibleVoteList>
-      <CollapsibleVoteList data={vote.pres} vote_type="PRESENT"></CollapsibleVoteList>
-      <CollapsibleVoteList data={vote.novt} vote_type="NO VOTE"></CollapsibleVoteList>
+      <CollapsibleVoteList data={vote.yeas} vote_type="YEAS" navigation={navigation}></CollapsibleVoteList>
+      <CollapsibleVoteList data={vote.nays} vote_type="NAYS" navigation={navigation}></CollapsibleVoteList>
+      <CollapsibleVoteList data={vote.pres} vote_type="PRESENT" navigation={navigation}></CollapsibleVoteList>
+      <CollapsibleVoteList data={vote.novt} vote_type="NO VOTE" navigation={navigation}></CollapsibleVoteList>
     </SafeAreaView>
   );
 }

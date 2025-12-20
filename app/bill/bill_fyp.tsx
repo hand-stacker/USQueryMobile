@@ -1,26 +1,32 @@
+import React, { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillList from "../components/bill_list";
 import SearchButton from "../components/search_button";
 import useGetRecentBills from "../hooks/useGetRecentBills";
+import useGetSubjects from "../hooks/useGetSubjects";
+import BillSearchModal from "./bill_search_modal";
+
 export default function BillFYP( {navigation} : any) {
-  const { bills, loading, error, refetch } = useGetRecentBills(undefined, undefined, 119, undefined, [686,782]);
-  
+  const [modalVisible, setModalVisible] = useState(false);
+  const [searchVars, setSearchVars] = useState<any>({ after: undefined, bill_type: undefined, first: 10, congress_num: 119, subject_list: [686,782,777] });
+  const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list);
+  const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
   // `bills` may be the GraphQL connection object or an array/falsy value.
   // Prefer server data when available; otherwise fall back to local `testBillList`.
   const edges = Array.isArray(bills)
     ? []
     : (bills && (bills.edges ?? []));
 
-  if (loading) return (
+  if ((loading && edges.length === 0) || subjectsLoading) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]}>
       <ActivityIndicator />
     </SafeAreaView>
   );
 
-  if (error) return (
+  if (error || subjectsError) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]}>
-      <Text>Error loading bills: {error.message}</Text>
+      <Text>Error loading bills: {error?.message || subjectsError?.message}</Text>
     </SafeAreaView>
   );
 
@@ -29,8 +35,19 @@ export default function BillFYP( {navigation} : any) {
       style={styles.container}
       className="flex-1 bg-primary"
     >
-      <SearchButton description="Search for Specific Bills" onPress={()=> navigation.navigate('Bill_search')} />
-      <BillList data={edges} />
+      <SearchButton description="Search for Specific Bills" onPress={()=> setModalVisible(true)} />
+      <BillSearchModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        initial={searchVars}
+        onSearch={(vars:any) => {
+          setSearchVars({ ...searchVars, ...vars });
+        }}
+        subjects={subjects}
+      />
+      <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={() => {
+        if (hasNextPage) loadMore();
+      }} />
     </SafeAreaView>
   );
 }

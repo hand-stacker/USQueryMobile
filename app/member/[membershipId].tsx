@@ -32,7 +32,7 @@ export default function MemberInfo({navigation, route}: MemberInfoProps) {
       <NavReturn onPress={() => navigation.goBack()}></NavReturn>
       <Text style={styles.large_text}>{member.full_name} {member.state}-[{member.party[0]}]</Text>
       <Text style={styles.large_text}>Role: {member.house ? "House" : "Senate"}</Text>
-      <VoteList data={member.vote_list} personal={true}></VoteList>
+      <VoteList data={member.vote_list} personal={true} navigation={navigation}></VoteList>
     </SafeAreaView>
   );
 }

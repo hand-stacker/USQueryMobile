@@ -12,8 +12,6 @@ interface Props {
 
 export default function VoteSearch({navigation}: Props) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCongress, setSelectedCongress] = useState<number | undefined>(119);
-  const [selectedBillType, setSelectedBillType] = useState<string | undefined>('!');
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>([]);
 
   const { subjects, loading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useGetSubjects();
@@ -24,8 +22,6 @@ export default function VoteSearch({navigation}: Props) {
     refetch();
   }
 
-  // `votes` may be the GraphQL connection object or an array/falsy value.
-  // Prefer server data when available; otherwise fall back to local `testBillList`.
   const edges = Array.isArray(votes)
     ? []
     : (votes && (votes.edges ?? []));
@@ -79,7 +75,7 @@ export default function VoteSearch({navigation}: Props) {
           refetch(variables);
         }} color="black"/>
       </View>
-      <VoteList data={edges} personal={false}/>
+      <VoteList data={edges} personal={false} navigation={navigation} />
     </SafeAreaView>
   );
 }

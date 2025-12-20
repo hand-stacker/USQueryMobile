@@ -1,5 +1,3 @@
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,34 +5,22 @@ import CloseButton from "./close_button";
 interface Props {
     data: any;
     vote_type: string;
+    navigation: any;
 }
 
-export type MemberStackParamList = {
-  Member_FYP:undefined;
-  Member_info: { membershipId: string };
-};
+function navToMember(navigation: any, node: any) {
+  navigation.navigate("Member_info", {membershipId: node.id});
+}
 
-export type TabParamList = {
-  'Bill Stack': undefined;
-  'Member Stack': {
-    screen: keyof MemberStackParamList;
-    params?: MemberStackParamList[keyof MemberStackParamList];
-  };
-};
-
-const CollapsibleVoteList = ({data, vote_type}:Props)=> {
+const CollapsibleVoteList = ({data, vote_type, navigation}:Props)=> {
   const [visible, setVisible] = useState(false);
-  const navigator = useNavigation<NativeStackNavigationProp<TabParamList>>();
 
   const items = data?.edges ?? data ?? [];
   const count = Array.isArray(items) ? items.length : 0;
 
   const handlePress = (node: any) => {
     setVisible(false);
-    navigator.navigate('Member Stack', {
-        screen: 'Member_info',
-        params: {membershipId: node.id},
-    });
+    navToMember(navigation, node);
   }
 
   return (

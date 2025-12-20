@@ -1,5 +1,6 @@
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
+import { useRef, useState } from "react";
 import { client } from "../api/apollo";
 
 const GET_RECENT_BILLS = gql`
@@ -42,7 +43,7 @@ const GET_RECENT_BILLS = gql`
 `;
 
 export function useGetRecentBills(after?: string, bill_type?: string, first?: number, congress_num?: number, subject_list?: number[]) {
-  const { data, loading, error, refetch } = useQuery(GET_RECENT_BILLS, {
+  const { data, loading, error, refetch, fetchMore } = useQuery(GET_RECENT_BILLS, {
     variables: { after, bill_type, first, congress_num, subject_list },
     client,
   });
@@ -50,12 +51,60 @@ export function useGetRecentBills(after?: string, bill_type?: string, first?: nu
   if (error) {
     console.error("useGetRecentBills error:", error);
   }
+
+  const bills = data?.recommendedBills ?? { edges: [], pageInfo: { endCursor: null, hasNextPage: false } };
+  const pageInfo = bills.pageInfo ?? { endCursor: null, hasNextPage: false };
+
+  const [loadingMore, setLoadingMore] = useState(false);
+  const lastLoadRef = useRef<number | null>(null);
+  const DEBOUNCE_MS = 700;
+
+  const loadMore = async () => {
+    if (loadingMore || !pageInfo?.hasNextPage) return;
+    const now = Date.now();
+    if (lastLoadRef.current && now - lastLoadRef.current < DEBOUNCE_MS) return;
+    lastLoadRef.current = now;
+    setLoadingMore(true);
+    try {
+      await fetchMore({
+        variables: {
+          after: pageInfo.endCursor,
+          bill_type,
+          first,
+          congress_num,
+          subject_list,
+        },
+        updateQuery: (prev: any, { fetchMoreResult }: any) => {
+          if (!fetchMoreResult) return prev;
+          return {
+            ...fetchMoreResult,
+            recommendedBills: {
+              ...fetchMoreResult.recommendedBills,
+              edges: [
+                ...prev.recommendedBills.edges,
+                ...fetchMoreResult.recommendedBills.edges,
+              ],
+            },
+          };
+        },
+      });
+    } catch (err) {
+      console.error('loadMore error', err);
+    } finally {
+      setLoadingMore(false);
+      lastLoadRef.current = Date.now();
+    }
+  };
+
   return {
-    // idk how to get rid of red underline, we expect this to be possibly undefined
-    bills: data?.recommendedBills ?? { edges: [], pageInfo: [] },
+    bills,
+    pageInfo,
+    hasNextPage: !!pageInfo?.hasNextPage,
     loading,
     error,
     refetch,
+    loadMore,
+    loadingMore,
   };
 }
 

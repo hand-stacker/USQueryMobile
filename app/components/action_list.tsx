@@ -1,20 +1,19 @@
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 interface Props {
     data: any;
     summary_text: string;
+    navigator: any;
 }
-type RootStackParamList = {
-  Vote_info: { vote_id: string };
-};
 
 const Summary = (summary_text : string) => {
     return (<Text style={styles.text}>Summary : {summary_text}</Text>)
 }
 
-const ActionList = ({data, summary_text}:Props)=> {
-    const navigator = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Vote_info'>>();
+function navToVote(navigation: any, node: any) {
+  navigation.navigate("Vote_info", {vote_id: node.voteId});
+}
+
+const ActionList = ({data, summary_text, navigator}:Props)=> {
     return (
         <FlatList
             data={data}
@@ -25,7 +24,7 @@ const ActionList = ({data, summary_text}:Props)=> {
                 <View style={styles.text}>
                     <Text>{node.actionDate} : {node.text}</Text>
                     {node.voteId && (
-                        <Pressable onPress={() => {navigator.navigate('Vote_info', {vote_id: node.voteId});}}>
+                        <Pressable onPress={() => navToVote(navigator, node)}>
                             <Text>Vote</Text>
                         </Pressable>
                     )}
