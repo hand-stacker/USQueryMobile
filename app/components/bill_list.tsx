@@ -13,7 +13,6 @@ const BillList = ({data, navigator, onEndReached, loadingMore}:Props)=> {
             data={data}
             keyExtractor={(item: any) => (item.node?.id ?? item.id)}
             renderItem={({ item }) => {
-            // item may be either the `node` wrapper from GraphQL or the local test item
             const node = item.node ?? item;
             return (
                 <BillInfographic key={node.id}

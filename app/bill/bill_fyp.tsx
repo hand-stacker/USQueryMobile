@@ -3,9 +3,9 @@ import { ActivityIndicator, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillList from "../components/bill_list";
 import SearchButton from "../components/search_button";
+import BillSearchModal from "../components/search_modal";
 import useGetRecentBills from "../hooks/useGetRecentBills";
 import useGetSubjects from "../hooks/useGetSubjects";
-import BillSearchModal from "./bill_search_modal";
 
 export default function BillFYP( {navigation} : any) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -29,7 +29,6 @@ export default function BillFYP( {navigation} : any) {
       <Text>Error loading bills: {error?.message || subjectsError?.message}</Text>
     </SafeAreaView>
   );
-
   return (
     <SafeAreaView
       style={styles.container}

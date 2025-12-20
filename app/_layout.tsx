@@ -9,7 +9,7 @@ import './globals.css';
 import MemberInfo from "./member/[membershipId]";
 import MemberFYP from "./member/mem_fyp";
 import VoteInfo from "./vote/[vote_id]";
-import VoteSearch from "./vote/vote_search";
+import VoteFYP from "./vote/vote_fyp";
 
 const Tabs = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -23,7 +23,7 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Bill_info" component={BillInfo} options={{ headerShown: false }}/>
       <Stack.Screen name="Member_FYP" component={MemberFYP} options={{ headerShown: false }}/>
       <Stack.Screen name="Member_info" component={MemberInfo} options={{ headerShown: false }}/>
-      <Stack.Screen name="Vote_FYP" component={VoteSearch} options={{ headerShown: false }}/>
+      <Stack.Screen name="Vote_FYP" component={VoteFYP} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_info" component={VoteInfo} options={{ headerShown: false }}/>
     </Stack.Navigator>
   );

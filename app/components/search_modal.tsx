@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Button, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import NavReturn from "../components/nav_return";
-import SearchBar from "../components/search_bar";
+import NavReturn from "./nav_return";
+import SearchBar from "./search_bar";
 
 interface SearchVars {
   after?: string | null;
