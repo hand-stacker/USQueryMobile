@@ -8,6 +8,7 @@ import BillFYP from "./bill/bill_fyp";
 import './globals.css';
 import MemberInfo from "./member/[membershipId]";
 import MemberFYP from "./member/mem_fyp";
+import SelectTopicsScreen from "./misc/select_favorites";
 import VoteInfo from "./vote/[vote_id]";
 import VoteFYP from "./vote/vote_fyp";
 
@@ -25,6 +26,7 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Member_info" component={MemberInfo} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_FYP" component={VoteFYP} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_info" component={VoteInfo} options={{ headerShown: false }}/>
+      <Stack.Screen name="Select_Favorite_Topics" component={SelectTopicsScreen} options={{ headerShown: false }}/>
     </Stack.Navigator>
   );
 }
@@ -48,6 +50,12 @@ function TabNavigator() {
         name="Vote_TAB"
         component={SharedStack}
         initialParams={{ initialRoute: "Vote_FYP" }}
+        options={{ headerShown: false }}
+      />
+      <Tabs.Screen
+        name="SELECT_TAB"
+        component={SharedStack}
+        initialParams={{ initialRoute: "Select_Favorite_Topics" }}
         options={{ headerShown: false }}
       />
     </Tabs.Navigator>
