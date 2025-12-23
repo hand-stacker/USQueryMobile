@@ -26,7 +26,7 @@ export default function MemberFYP({navigation}: any) {
       style={styles.container}
       className="flex-1 bg-primary"
     >
-      <SearchButton description="Search for your representatives" onPress={()=> setModalVisible(true)} />
+      <SearchButton label="Search Reps" onPress={()=> setModalVisible(true)} />
       <MemberSearchModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -36,6 +36,7 @@ export default function MemberFYP({navigation}: any) {
         }}
       />
       <MemberList data={members.members} navigator={navigation} />
+      
     </SafeAreaView>
   );
 }

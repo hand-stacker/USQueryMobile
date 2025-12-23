@@ -1,8 +1,8 @@
 import { ActivityIndicator, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import NavReturn from "../components/nav_return";
-import VoteList from "../components/vote_list";
 import useGetMembership from "../hooks/useGetMembership";
+import VoteList from "../vote/components/VoteList";
 
 interface MemberInfoProps {
     navigation?: any;
@@ -13,13 +13,13 @@ export default function MemberInfo({navigation, route}: MemberInfoProps) {
   const { membershipId } = route.params;
   const { member, loading, error, refetch } = useGetMembership(membershipId);
   if (loading) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]}>
+    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
       <ActivityIndicator />
     </SafeAreaView>
   );
 
   if (error) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]}>
+    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
       <Text>Error loading bills: {error.message}</Text>
     </SafeAreaView>
   );
@@ -28,6 +28,7 @@ export default function MemberInfo({navigation, route}: MemberInfoProps) {
     <SafeAreaView
       style={styles.container}
       className="bg-primary"
+      edges={["top"]}
     >
       <NavReturn onPress={() => navigation.goBack()}></NavReturn>
       <Text style={styles.large_text}>{member.full_name} {member.state}-[{member.party[0]}]</Text>
