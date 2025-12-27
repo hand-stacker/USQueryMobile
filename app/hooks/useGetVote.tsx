@@ -18,6 +18,7 @@ const GET_VOTE = gql`
             party
             state
             house
+            districtNum
         }
         novt {
             id
@@ -28,6 +29,7 @@ const GET_VOTE = gql`
             party
             state
             house
+            districtNum
         }
         pres {
             id
@@ -38,6 +40,7 @@ const GET_VOTE = gql`
             party
             state
             house
+            districtNum
         }
         yeas {
             id
@@ -48,6 +51,7 @@ const GET_VOTE = gql`
             party
             state
             house
+            districtNum
         }
         question
         title

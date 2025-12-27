@@ -1,13 +1,13 @@
+import BillSearchModal from "@/app/components/BillSearchModal";
+import SearchButton from "@/app/components/SearchButton";
+import useGetRecentBills from "@/app/hooks/useGetRecentBills";
+import useGetSubjects from "@/app/hooks/useGetSubjects";
+import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import SearchButton from "../components/search_button";
-import BillSearchModal from "../components/search_modal";
-import useGetRecentBills from "../hooks/useGetRecentBills";
-import useGetSubjects from "../hooks/useGetSubjects";
-import { useFavoritesStore } from "../store/favoriteSubjectsStore";
-import BillList from './components/BillList';
+import BillList from '../components/BillList';
 
 
 const arraysEqual = (a?: number[], b?: number[]) => {
@@ -44,7 +44,7 @@ export default function BillFYP( {navigation} : any) {
     } catch (err) {
       console.error('Refetch on focus failed', err);
     }
-  }, [isFocused, favorite_subjects, searchVars.subject_list]);
+  }, [isFocused, favorite_subjects, searchVars, refetch]);
   // `bills` may be the GraphQL connection object or an array/falsy value.
   const edges = useMemo(() => Array.isArray(bills) ? [] : (bills?.edges ?? []), [bills]);
 
@@ -59,34 +59,40 @@ export default function BillFYP( {navigation} : any) {
       <Text>Error loading bills: {error?.message || subjectsError?.message}</Text>
     </SafeAreaView>
   );
+  const handleOpenModal = useCallback(() => setModalVisible(true), []);
+  const handleCloseModal = useCallback(() => setModalVisible(false), []);
+  const handleSearch = useCallback((vars: any) => {
+    setSearchVars((prev: any) => {
+      const merged = { ...prev, ...vars };
+      const effective = (merged.subject_list && merged.subject_list.length > 0) ? merged.subject_list : favorite_subjects;
+      const next = { ...merged, subject_list: effective };
+      try {
+        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
+      } catch (err) {
+        console.error('Refetch on search failed', err);
+      }
+      lastUsedSubjectsRef.current = next.subject_list;
+      return next;
+    });
+  }, [favorite_subjects, refetch]);
+
+  const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <SearchButton label="Search Bills" onPress={useCallback(()=> setModalVisible(true), [])} />
+          <SearchButton label="Search Bills" onPress={handleOpenModal} />
         </View>
         <BillSearchModal
           visible={modalVisible}
-        onClose={useCallback(() => setModalVisible(false), [])}
-        initial={searchVars}
-        onSearch={useCallback((vars:any) => {
-          setSearchVars((prev:any) => {
-            const merged = { ...prev, ...vars };
-            const effective = (merged.subject_list && merged.subject_list.length > 0) ? merged.subject_list : favorite_subjects;
-            const next = { ...merged, subject_list: effective };
-            try {
-              refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
-            } catch (err) {
-              console.error('Refetch on search failed', err);
-            }
-            lastUsedSubjectsRef.current = next.subject_list;
-            return next;
-          });
-        }, [favorite_subjects, refetch])}
+          onClose={handleCloseModal}
+          initial={searchVars}
+          onSearch={handleSearch}
         subjects={subjects}
         desc="Search for bills by congress, type, and subject."
       />
-      <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore])} />
+      <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
       </View>
     </SafeAreaView>
   );

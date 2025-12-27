@@ -1,16 +1,19 @@
 import AntDesign from '@expo/vector-icons/AntDesign';
-import React from 'react';
+import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
 
 interface Props {
-  subjects: any[];
+  data: any[];
   value?: string[];
-  onChange?: (vals: string[]) => void;
+  placeholder?: string;
+  onChange: (vals: string[]) => void;
+  maxContainerHeight?: number;
 }
 
-const MultiSelectComponent = ({ subjects, value, onChange }: Props) => {
+const MultiSelectComponent = ({ data, value, placeholder, onChange, maxContainerHeight=150}: Props) => {
   const selected = value ?? [];
+  const maxContHeight = useRef(maxContainerHeight ? maxContainerHeight : 150).current;
 
   const renderItem = (item: any) => {
     return (
@@ -30,17 +33,15 @@ const MultiSelectComponent = ({ subjects, value, onChange }: Props) => {
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
         iconStyle={styles.iconStyle}
-        data={subjects}
+        data={data}
         labelField="name"
         valueField="id"
         searchField="name"
-        placeholder="Search for subjects"
+        placeholder={placeholder}
         value={selected}
         search={true}
         searchPlaceholder="Search..."
-        onChange={item => {
-          if (onChange) onChange(item);
-        }}
+        onChange={item => {onChange(item);}}
         renderItem={renderItem}
         // renderSelectedItem intentionally omitted to avoid duplication/glitches
         alwaysRenderSelectedItem={false}
@@ -50,9 +51,9 @@ const MultiSelectComponent = ({ subjects, value, onChange }: Props) => {
 
       {/* Selected items rendered below in a scrollable list to avoid dropdown modal conflicts */}
       {((selected && selected.length) || (value && value.length)) ? (
-        <ScrollView style={styles.selectedContainer} nestedScrollEnabled>
+        <ScrollView style={[styles.selectedContainer, {maxHeight: maxContHeight}]} nestedScrollEnabled>
           {selected.map((val: string | number) => {
-            const item = (subjects ?? []).find((s: any) => String(s.id) === String(val));
+            const item = (data ?? []).find((s: any) => String(s.id) === String(val));
             return (
               <TouchableOpacity key={String(val)} onPress={() => {
                 const next = selected.filter(p => String(p) !== String(val));

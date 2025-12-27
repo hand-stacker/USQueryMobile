@@ -4,7 +4,7 @@ interface UseGetMembershipSetResult {
   members: any | null;
   loading: boolean;
   error: Error | null;
-  refetch: () => void;
+  refetch: (congress: number, chamber: string, state: string) => void;
 }
 
 export function useGetMembershipSet(congress: number, chamber: string, state: string): UseGetMembershipSetResult {
@@ -40,7 +40,7 @@ export function useGetMembershipSet(congress: number, chamber: string, state: st
     fetchMembers(congress, chamber, state);
   }, [congress, chamber, state]);
 
-  const refetch = useCallback(() => fetchMembers(congress, chamber, state), [congress, chamber, state]);
+  const refetch = useCallback((congress : number, chamber: string, state: string) => fetchMembers(congress, chamber, state), [congress, chamber, state]);
 
   return { members, loading, error, refetch };
 }

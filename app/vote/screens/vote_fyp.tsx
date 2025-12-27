@@ -1,11 +1,11 @@
+import BillSearchModal from "@/app/components/BillSearchModal";
+import SearchButton from "@/app/components/SearchButton";
+import useGetRecentVotes from "@/app/hooks/useGetRecentVotes";
+import useGetSubjects from "@/app/hooks/useGetSubjects";
 import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import SearchButton from "../components/search_button";
-import BillSearchModal from "../components/search_modal";
-import useGetRecentVotes from "../hooks/useGetRecentVotes";
-import useGetSubjects from "../hooks/useGetSubjects";
-import VoteList from "./components/VoteList";
+import VoteList from "../components/VoteList";
 
 export default function VoteFYP( {navigation} : any) {
   const [modalVisible, setModalVisible] = useState(false);

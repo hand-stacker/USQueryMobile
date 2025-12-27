@@ -1,14 +1,14 @@
-import React, { useMemo } from "react";
+import ActionList from "@/app/components/ActionList";
+import NavReturn from "@/app/components/NavReturn";
+import useGetBill from "@/app/hooks/useGetBill";
+import React, { useCallback, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ActionList from "../components/action_list";
-import NavReturn from "../components/nav_return";
-import useGetBill from "../hooks/useGetBill";
-import BillBadgeInactive from "./components/BillBadgeInactive";
-import BillStatus from "./components/BillStatus";
+import BillBadgeInactive from "../components/BillBadgeInactive";
+import BillStatus from "../components/BillStatus";
 interface BillInfoProps {
   navigation: any;
-    route: any;
+  route: any;
 }
 
   function formatDate(value: string | null | undefined) {
@@ -37,9 +37,13 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
     </SafeAreaView>
   );
   const billNum = useMemo(() => Number(bill_id), [bill_id]);
+  const subjects = useMemo(() => bill?.subjects ?? [], [bill?.subjects]);
+  const originDate = useMemo(() => formatDate(bill?.originDate), [bill?.originDate]);
+  const latestActionDate = useMemo(() => formatDate(bill?.latestAction), [bill?.latestAction]);
+  const policyArea = useMemo(() => bill?.policyArea ?? "—", [bill?.policyArea]);
+  const title = useMemo(() => bill?.title ?? "", [bill?.title]);
 
   const headerElement = useMemo(() => {
-    const subjects = bill?.subjects ?? [];
     return (
       <View style={styles.headerCard}>
         <View style={styles.rowBetween}>
@@ -47,18 +51,18 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
           <BillStatus status_type={bill?.status} />
         </View>
 
-        <Text style={styles.title}>{bill?.title}</Text>
+        <Text style={styles.title}>{title}</Text>
 
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Origin:</Text>
-          <Text style={styles.metaValue}>{formatDate(bill?.originDate)}</Text>
+          <Text style={styles.metaValue}>{originDate}</Text>
           <Text style={[styles.metaLabel, { marginLeft: 12 }]}>Latest:</Text>
-          <Text style={styles.metaValue}>{formatDate(bill?.latestAction)}</Text>
+          <Text style={styles.metaValue}>{latestActionDate}</Text>
         </View>
 
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Policy area:</Text>
-          <Text style={styles.metaValue}>{bill?.policyArea ?? "—"}</Text>
+          <Text style={styles.metaValue}>{policyArea}</Text>
         </View>
 
         <View style={styles.subjectsRow}>
@@ -78,13 +82,20 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
         </View>
       </View>
     );
-  }, [bill, billNum]);
+  }, [subjects, originDate, latestActionDate, policyArea, title, billNum, bill?.status]);
+
+  const actions = useMemo(() => bill?.actions ?? [], [bill?.actions]);
+  const summaryText = useMemo(() => bill?.summary ?? "", [bill?.summary]);
+
+  const handleGoBack = useCallback(() => {
+    if (navigation && navigation.goBack) navigation.goBack();
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
-        <NavReturn onPress={navigation.goBack} />
-        <ActionList data={bill.actions} summary_text={bill.summary} navigator={navigation} header={headerElement} />
+        <NavReturn onPress={handleGoBack} />
+        <ActionList data={actions} summary_text={summaryText} navigator={navigation} header={headerElement} />
       </View>
     </SafeAreaView>
   );
@@ -98,7 +109,6 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 40,
   },
   headerCard: {
     backgroundColor: "#ffffff",
@@ -135,6 +145,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   metaValue: {
+    flex: 1,
     fontSize: 13,
     color: "#111827",
   },

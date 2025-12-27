@@ -1,6 +1,7 @@
-import CloseButton from "@/app/components/close_button";
+import CloseButton from "@/app/components/CloseButton";
+import MemberList from "@/app/member/components/MemberList";
 import { useState } from "react";
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 interface Props {
     data: any;
@@ -8,20 +9,10 @@ interface Props {
     navigation: any;
 }
 
-function navToMember(navigation: any, node: any) {
-  navigation.navigate("Member_info", {membershipId: node.id});
-}
-
 const ModalVoteList = ({data, vote_type, navigation}:Props)=> {
   const [visible, setVisible] = useState(false);
-
   const items = data?.edges ?? data ?? [];
   const count = Array.isArray(items) ? items.length : 0;
-
-  const handlePress = (node: any) => {
-    setVisible(false);
-    navToMember(navigation, node);
-  }
 
   return (
     <View style={styles.wrapper}>
@@ -39,27 +30,10 @@ const ModalVoteList = ({data, vote_type, navigation}:Props)=> {
         <SafeAreaView style={styles.modalSafe}>
           <View style={styles.modalInner}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Votes ({count})</Text>
+              <Text style={styles.modalTitle}>{vote_type} ({count})</Text>
               <CloseButton onPress={() => setVisible(false)} />
             </View>
-
-            <FlatList
-              data={items}
-              renderItem={({ item }) => {
-                const node = item.node ?? item;
-                return (
-                  <View style={styles.rowItem}>
-                    <Pressable onPress={() => {handlePress(node);}}>
-                      <Text style={styles.text}>{node.member?.fullName ?? 'Unknown'}</Text>
-                      <Text style={styles.subText}>{node.state} • [{node.party?.[0] ?? ''}]</Text>
-                    </Pressable>
-                  </View>
-                );
-              }}
-              keyExtractor={(item, idx) => (item?.node?.id ?? item?.id ?? idx).toString()}
-              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-              ListFooterComponent={() => <View style={{height:50}} />}
-            />
+            <MemberList data={items.map((item: any) => item.node ?? item)} navigation={navigation} parentHandlePress={() => setVisible(false)} />
           </View>
         </SafeAreaView>
       </Modal>

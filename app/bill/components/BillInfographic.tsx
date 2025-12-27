@@ -1,5 +1,7 @@
+
+import MicroSummary from "@/app/components/MicroSummary";
 import { useRef, useState } from "react";
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import BillBadgeInactive from "./BillBadgeInactive";
 
 type BillInfographicProps={
@@ -57,10 +59,14 @@ export default function BillInfographic({navigator, billId, billTitle, billNum, 
         <BillBadgeInactive billNum={Number(billNum)} />
         <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{billTitle}</Text>
       </View>
+      {!isExpanded && (
+        <Text style={styles.infoHint}>Long press to see more</Text>
+      )}
       {isExpanded ? (
-        <ScrollView style={styles.summaryContainer} nestedScrollEnabled>
-          <Text style={styles.summary}>{billSummary}</Text>
-        </ScrollView>
+        <View style={styles.summaryContainer} >
+          <MicroSummary text={billSummary} />
+          <Text style={styles.infoHint}>Press to see more</Text>
+        </View>
       ) : null}
     </Animated.View>
     </Pressable>
@@ -73,7 +79,8 @@ const styles = StyleSheet.create(
       width: '100%',
       backgroundColor: 'white',
       borderRadius: 12,
-      padding: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.08,
@@ -95,12 +102,13 @@ const styles = StyleSheet.create(
     },
     summaryContainer: {
       marginTop: 8,
-      maxHeight: 120,
+      maxHeight: 240,
     },
-    summary: {
-      fontSize: 14,
-      color: '#334155',
-      lineHeight: 20,
-    },
+    infoHint: {
+    marginVertical: 8,
+    fontSize: 12,
+    color: '#6B7280',
+    fontStyle: 'italic',
+  }
   }
 )

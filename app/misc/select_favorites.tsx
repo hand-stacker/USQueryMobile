@@ -1,60 +1,35 @@
-import React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text
-} from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGetSubjects } from '../hooks/useGetSubjects';
-import { useFavoritesStore } from '../store/favoriteSubjectsStore';
+import SelectFavoritesModal from './SelectFavoritesModal';
 
 export default function SelectTopicsScreen() {
-  const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
-  const favorites = useFavoritesStore(s => s.favorites);
-  const addFavorite = useFavoritesStore(s => s.addFavorite);
-  const removeFavorite = useFavoritesStore(s => s.removeFavorite);
+  const [open, setOpen] = useState(false);
+  const { loading: subjectsLoading, error: subjectsError } = useGetSubjects();
 
-  const renderItem = ({ item }: { item: any }) => {
-    const topicId = Number(item.id);
-    var isFavorite = favorites.includes(topicId);
-    return (
-      <Pressable
-        onPress={() => isFavorite ? removeFavorite(topicId) : addFavorite(topicId)}
-        style={[
-          styles.row,
-          isFavorite && styles.rowSelected,
-        ]}
-      >
-        <Text style={styles.title}>{item.name}</Text>
-        <Text style={styles.icon}>
-          {isFavorite ? '★' : '☆'}
-        </Text>
-      </Pressable>
-    );
-  };
   if (subjectsLoading) return (
-      <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
-  
-    if (subjectsError) return (
-      <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-        <Text>Error loading topics: {subjectsError.message}</Text>
-      </SafeAreaView>
-    );
+    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
+      <ActivityIndicator />
+    </SafeAreaView>
+  );
+
+  if (subjectsError) return (
+    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
+      <Text>Error loading topics: {subjectsError.message}</Text>
+    </SafeAreaView>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <Text style={styles.header}>Select your favorite topics</Text>
+      <Text style={styles.header}>Options</Text>
+      <View style={{marginTop:12}}>
+        <Pressable style={styles.button} onPress={() => setOpen(true)}>
+          <Text style={styles.buttonText}>Select Favorite Subjects</Text>
+        </Pressable>
+      </View>
 
-      <FlatList
-        data={subjects}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-      />
+      <SelectFavoritesModal visible={open} onClose={() => setOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -92,5 +67,28 @@ const styles = StyleSheet.create({
   icon: {
     fontSize: 18,
     color: '#ffd700',
+  },
+  button: {
+    width: "100%",
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+    backgroundColor: "black",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+  },
+  pressed: {
+      opacity: 0.8,
+  },
+  inner: {
+      flexDirection: "row",
+      alignItems: "center",
+  },
+  buttonText: {
+      fontSize: 16,
+      color: "#ffffff",
+      fontWeight: "600",
+      marginLeft: 8,
   },
 });

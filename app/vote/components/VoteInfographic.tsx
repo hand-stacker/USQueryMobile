@@ -1,14 +1,12 @@
 import React, { memo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import BillBadge from "../../bill/components/BillBadge";
+import ResultBadge from "./ResultBadge";
+import VoteBadge from "./VoteBadge";
 interface Props {
     node: any;
     personal: boolean;
     navigation: any;
-}
-
-function navToVote(navigation: any, id: any) {
-  navigation.navigate("Vote_info", {vote_id: id});
 }
 
 function formatDateTime(value: string | null | undefined) {
@@ -25,24 +23,23 @@ function formatDateTime(value: string | null | undefined) {
 const VoteInfographic = memo(function VoteInfographic({ node, personal, navigation }: Props) {
   const billId = personal ? node.bill : (node.bill?.id ?? node.bill);
   const resultText = personal ? node.mem_vote : node.result;
-
-  const resultPassed = typeof resultText === 'string' && /pass|yea|aye/i.test(resultText);
-  const resultFailed = typeof resultText === 'string' && /fail|nay|no|present/i.test(resultText);
-
   return (
     <View style={styles.card}>
-      <View style={styles.cardLeft}>
-        <Text style={styles.date}>{formatDateTime(node.dateTime)}</Text>
+      <View style={[styles.dateContainer, styles.headerRow]}>
+          <Text style={styles.date}>{formatDateTime(node.dateTime)}</Text>
+        </View>
+      <View style={styles.resultRow}>
+        <ResultBadge result={resultText} />
       </View>
-      <View style={styles.cardRight}>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.headerRow}
+      >
         <BillBadge navigation={navigation} billNum={Number(billId)} />
-        <Pressable onPress={() => navToVote(navigation, node.id)} style={styles.voteButton}>
-          <Text style={styles.voteButtonText}>Open Vote</Text>
-        </Pressable>
-      </View>
-      <View style={[styles.resultPill, resultPassed ? styles.passed : resultFailed ? styles.failed : styles.neutral]}>
-        <Text style={styles.resultPillText} numberOfLines={1} ellipsizeMode="tail">{resultText ?? '—'}</Text>
-      </View>
+        <VoteBadge navigation={navigation} voteId={node.id} />
+      </ScrollView>
       
     </View>
   );
@@ -92,20 +89,6 @@ const styles = StyleSheet.create(
       color: '#ffffff',
       fontWeight: '700',
     },
-    resultPill: {
-      marginLeft: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 999,
-    },
-    resultPillText: {
-      color: '#ffffff',
-      fontWeight: '700',
-      fontSize: 13,
-    },
-    passed: { backgroundColor: '#16A34A' },
-    failed: { backgroundColor: '#EF4444' },
-    neutral: { backgroundColor: '#6B7280' },
     card: {
       width: '100%',
       backgroundColor: 'white',
@@ -122,7 +105,15 @@ const styles = StyleSheet.create(
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
+      paddingRight: 8,
+    },
+    dateContainer: {
+      width: 120,
+      paddingRight: 12,
+      justifyContent: 'center',
+    },
+    resultRow: {
+      marginVertical: 8,
     }
 }
 )

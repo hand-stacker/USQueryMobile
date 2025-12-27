@@ -45,7 +45,7 @@ export default function BillBadgeInactive({billNum}: Props) {
 
 const styles = StyleSheet.create({
   billBadge: {
-    backgroundColor: '#0b1226',
+    backgroundColor: '#5e6069ff',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,

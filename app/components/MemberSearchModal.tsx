@@ -1,15 +1,13 @@
 import React, { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MultiSelectComponent from "./multi_select";
-import NavReturn from "./nav_return";
+import DropdownSelect from "./DropdownSelect";
+import NavReturn from "./NavReturn";
 
 interface SearchVars {
-  after?: string | null;
-  bill_type?: string | undefined;
-  first?: number | undefined;
-  congress_num?: number | undefined;
-  subject_list?: number[] | undefined;
+  congress: number |  undefined;
+  chamber: string | undefined;
+  state: string | undefined;
 }
 
 interface Props {
@@ -17,36 +15,22 @@ interface Props {
   onClose: () => void;
   onSearch: (vars: SearchVars) => void;
   initial?: SearchVars;
-  subjects: any[];
-  desc: string;
 }
 
-export default function BillSearchModal({ visible, onClose, onSearch, initial, subjects, desc}: Props) {
-  const [selectedCongress, setSelectedCongress] = useState<number | undefined>(initial?.congress_num ?? 119);
-  const [selectedBillType, setSelectedBillType] = useState<string | undefined>(initial?.bill_type ?? '!');
-  const [selectedSubjects, setSelectedSubjects] = useState<number[]>(initial?.subject_list ?? []);
+export default function MemberSearchModal({ visible, onClose, onSearch, initial}: Props) {
+  const [selectedCongress, setSelectedCongress] = useState<number | undefined>(initial?.congress ?? 119);
+  const [selectedChamber, setSelectedChamber] = useState<string | undefined>(initial?.chamber ?? 'All');
+  const [selectedState, setSelectedState] = useState<string | undefined>(initial?.state ?? 'All');
 
-  const typeToText = (type: string | undefined) => {
-    switch(type) {
-        case '!': return 'All';
-        case '!H': return 'House';
-        case '!S': return 'Senate';
-        case 's': return 'S';
-        case 'sres': return 'S.Res';
-        case 'sconres': return 'S.Con.Res';
-        case 'sjres': return 'S.J.Res';
-        case 'hr': return 'HR';
-        case 'hres': return 'H.Res.';
-        case 'hconres': return 'H.Con.Res';
-        case 'hjres': return 'H.J.Res';}}   
-
+  const state_list = ['All','AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'
+  ];
+  const congress_list = [119,118,117,116,115,114,113,112];
+  const chamber_list = ['House','Senate'];
   const onPressSearch = () => {
     const variables: any = {
-      after: null,
-      bill_type: selectedBillType ?? undefined,
-      first: 10,
-      congress_num: selectedCongress ?? undefined,
-      subject_list: selectedSubjects.length ? selectedSubjects.map(Number) : undefined,
+        congress: selectedCongress,
+        chamber: selectedChamber,
+        state: selectedState,
     };
     onSearch(variables);
     onClose();
@@ -54,37 +38,34 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+      <SafeAreaView style={styles.modalOverlay}>
+        <View style={styles.form}>
           <NavReturn onPress={onClose} />
-          <Text style={styles.title}>{desc}</Text>
+          <Text style={styles.title}>Search for Representatives:</Text>
           <Text style={styles.subtitle}>Select Congress</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
-            {[119,118,117,116,115,114,113,112].map((num)=> (
+            {congress_list.map((num)=> (
               <Pressable key={num} onPress={()=> setSelectedCongress(num)} style={[styles.chip, selectedCongress===num && styles.chipSelected]}>
                 <Text style={[styles.chipText, selectedCongress===num && styles.chipTextSelected]}>{num}</Text>
               </Pressable>
             ))}
           </ScrollView>
 
-          <Text style={styles.subtitle}>Select Bill Type</Text>
+          <Text style={styles.subtitle}>Select Chamber</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
-            {['!','!H','!S','s','sres','sconres','sjres','hr','hres','hconres','hjres'].map((bt)=> (
-              <Pressable key={bt} onPress={()=> setSelectedBillType(prev => prev===bt? '!': bt)} style={[styles.chip, selectedBillType===bt && styles.chipSelected]}>
-                <Text style={[styles.chipText, selectedBillType===bt && styles.chipTextSelected]}>{typeToText(bt)}</Text>
+            {chamber_list.map((bt)=> (
+              <Pressable key={bt} onPress={()=> setSelectedChamber(bt)} style={[styles.chip, selectedChamber===bt && styles.chipSelected]}>
+                <Text style={[styles.chipText, selectedChamber===bt && styles.chipTextSelected]}>{bt}</Text>
               </Pressable>
             ))}
           </ScrollView>
-          <MultiSelectComponent
-            subjects={subjects}
-            value={selectedSubjects.map(String)}
-            onChange={(vals: string[]) => setSelectedSubjects(vals.map(Number))}
-          />
 
+          <Text style={styles.subtitle}>Select State</Text>
+          <DropdownSelect value={selectedState} placeholder="Select State" onChange={setSelectedState} />
           <Pressable style={styles.searchButton} onPress={onPressSearch} android_ripple={{color:'#00000010'}}>
             <Text style={styles.searchButtonText}>Search</Text>
           </Pressable>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </Modal>
   );
@@ -92,12 +73,10 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
 
 const styles = StyleSheet.create(
   {
-    container:{
-      flex:1,
-      backgroundColor:'#f5f5f5',
-      paddingHorizontal:'12%',
-      paddingTop:'10%',
-      paddingBottom:'20%',
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      padding: 20 
     },
     form: {
       backgroundColor: 'white',
