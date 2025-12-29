@@ -1,4 +1,4 @@
-import AntDesign from '@expo/vector-icons/AntDesign';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
@@ -61,7 +61,7 @@ const MultiSelectComponent = ({ data, value, placeholder, onChange, maxContainer
               }}>
                 <View style={[styles.general, styles.selectedStyle]}>
                   <Text style={styles.textSelectedStyle}>{item?.name ?? String(val)}</Text>
-                  <AntDesign color="white" name="delete" size={17} />
+                  <Ionicons color="white" name="trash" size={17} />
                 </View>
               </TouchableOpacity>
             );

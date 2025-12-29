@@ -14,13 +14,13 @@ interface Props {
 export default function SelectFavoritesModal({ visible, onClose }: Props) {
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
   const favorites = useFavoritesStore(s => s.favorites);
-  const addFavorite = useFavoritesStore(s => s.addFavorite);
-  const clearFavorites = useFavoritesStore(s => s.clearFavorites);
+  const hydrated = useFavoritesStore(s => s._hasHydrated);
+  const setFavorites = useFavoritesStore(s => s.setFavorites);
 
   const handleChange = (vals: string[]) => {
     const ids = (vals ?? []).map(v => Number(v));
-    clearFavorites();
-    ids.forEach(id => addFavorite(id));
+    // Replace favorites atomically to avoid transient empty-state writes
+    setFavorites(ids);
   };
 
   return (
@@ -35,6 +35,8 @@ export default function SelectFavoritesModal({ visible, onClose }: Props) {
           <ActivityIndicator />
         ) : subjectsError ? (
           <Text>Error loading subjects</Text>
+        ) : !hydrated ? (
+          <ActivityIndicator />
         ) : (
           <MultiSelect
             data={subjects}
