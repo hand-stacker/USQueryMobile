@@ -10,6 +10,7 @@ import './globals.css';
 import MemberInfo from "./member/screens/[membershipId]";
 import MemberFYP from "./member/screens/mem_fyp";
 import SelectTopicsScreen from "./misc/select_favorites";
+import WelcomeFavoritesModal from './misc/WelcomeFavoritesModal';
 import VoteInfo from "./vote/screens/[vote_id]";
 import VoteFYP from "./vote/screens/vote_fyp";
 
@@ -84,6 +85,7 @@ export default function RootLayout() {
       <NavigationIndependentTree>
         <NavigationContainer>
           <TabNavigator />
+          <WelcomeFavoritesModal />
         </NavigationContainer>
       </NavigationIndependentTree>
     </ApolloProvider>

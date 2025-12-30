@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGetSubjects } from '../hooks/useGetSubjects';
 import SelectFavoritesModal from './SelectFavoritesModal';
 
-export default function SelectTopicsScreen() {
+export default function SelectTopicsScreen({ route }: any) {
   const [open, setOpen] = useState(false);
   const { loading: subjectsLoading, error: subjectsError } = useGetSubjects();
+
+  useEffect(() => {
+    // allow navigation to open the select modal immediately
+    if (route?.params?.openFavorites) {
+      setOpen(true);
+    }
+  }, [route?.params?.openFavorites]);
 
   if (subjectsLoading) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
