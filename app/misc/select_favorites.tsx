@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGetSubjects } from '../hooks/useGetSubjects';
+import { registerForPushNotifications } from '../hooks/usePushNotif';
 import SelectFavoritesModal from './SelectFavoritesModal';
 
 export default function SelectTopicsScreen({ route }: any) {
   const [open, setOpen] = useState(false);
+  const [regLoading, setRegLoading] = useState(false);
+  const [regStatus, setRegStatus] = useState<string | null>(null);
   const { loading: subjectsLoading, error: subjectsError } = useGetSubjects();
 
   useEffect(() => {
@@ -34,6 +37,24 @@ export default function SelectTopicsScreen({ route }: any) {
         <Pressable style={styles.button} onPress={() => setOpen(true)}>
           <Text style={styles.buttonText}>Select Favorite Subjects</Text>
         </Pressable>
+        <Pressable
+          style={[styles.button, {backgroundColor: '#0b84ff'}]}
+          onPress={async () => {
+            setRegLoading(true);
+            setRegStatus(null);
+            try {
+              const token = await registerForPushNotifications();
+              setRegStatus(token ? 'Registered' : 'Permission denied');
+            } catch (e) {
+              setRegStatus('Registration failed');
+            } finally {
+              setRegLoading(false);
+            }
+          }}
+        >
+          <Text style={styles.buttonText}>{regLoading ? 'Registering…' : 'Register for notifications'}</Text>
+        </Pressable>
+        {regStatus ? <Text style={{marginTop:8}}>{regStatus}</Text> : null}
       </View>
 
       <SelectFavoritesModal visible={open} onClose={() => setOpen(false)} />

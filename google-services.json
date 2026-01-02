@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "440682963132",
+    "project_id": "usquery-8362e",
+    "storage_bucket": "usquery-8362e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:440682963132:android:6de9bb8257793a181830b9",
+        "android_client_info": {
+          "package_name": "com.jerem13.USQ_Mobile_App"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBz4Xk4FAmfNKxhw55gTvBCjRkJvsbLoWU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

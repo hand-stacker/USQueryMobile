@@ -1,11 +1,14 @@
 import ActionList from "@/app/components/ActionList";
 import NavReturn from "@/app/components/NavReturn";
+import StarButton from "@/app/components/StarButton";
 import useGetBill from "@/app/hooks/useGetBill";
+import { useStarredBillsStore } from "@/app/store/starredBillsStore";
 import React, { useCallback, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillBadgeInactive from "../components/BillBadgeInactive";
 import BillStatus from "../components/BillStatus";
+
 interface BillInfoProps {
   navigation: any;
   route: any;
@@ -25,17 +28,8 @@ interface BillInfoProps {
 export default function BillInfo({ navigation, route }: BillInfoProps) {
   const { bill_id } = route.params;
   const { bill, loading, error, refetch } = useGetBill(bill_id);
-  if (loading) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <ActivityIndicator />
-    </SafeAreaView>
-  );
-
-  if (error) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <Text>Error loading bills: {error.message}</Text>
-    </SafeAreaView>
-  );
+  const storeStars = useStarredBillsStore((s) => s.stars);
+  const starred = useMemo(() => storeStars.includes(String(bill_id)), [storeStars, bill_id]);
   const billNum = useMemo(() => Number(bill_id), [bill_id]);
   const subjects = useMemo(() => bill?.subjects ?? [], [bill?.subjects]);
   const originDate = useMemo(() => formatDate(bill?.originDate), [bill?.originDate]);
@@ -49,6 +43,8 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
         <View style={styles.rowBetween}>
           <BillBadgeInactive billNum={billNum} />
           <BillStatus status_type={bill?.status} />
+          
+          {String(bill_id).startsWith('119') && <StarButton billId={bill_id} />}
         </View>
 
         <Text style={styles.title}>{title}</Text>
@@ -82,7 +78,7 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
         </View>
       </View>
     );
-  }, [subjects, originDate, latestActionDate, policyArea, title, billNum, bill?.status]);
+  }, [subjects, originDate, latestActionDate, policyArea, title, billNum, bill?.status, starred, bill?.id]);
 
   const actions = useMemo(() => bill?.actions ?? [], [bill?.actions]);
   const summaryText = useMemo(() => bill?.summary ?? "", [bill?.summary]);
@@ -90,6 +86,18 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
   const handleGoBack = useCallback(() => {
     if (navigation && navigation.goBack) navigation.goBack();
   }, [navigation]);
+
+  if (loading) return (
+    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
+      <ActivityIndicator />
+    </SafeAreaView>
+  );
+
+  if (error) return (
+    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
+      <Text>Error loading bills: {error.message}</Text>
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
