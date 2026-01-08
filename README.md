@@ -1,6 +1,6 @@
 # USQ Mobile App
 
-A React Native app built with Expo, using the Expo Router for file-based routing and Apollo Client for GraphQL data fetching. This README gives quick setup instructions, explains the repo layout, and points to common developer patterns used across the codebase.
+A React Native app built with Expo. The purpose of this app is to provide a mobile frontend for USQuery. This README gives quick setup instructions, explains the repo layout, and points to common developer patterns used across the codebase.
 
 ## Requirements
 
@@ -117,10 +117,3 @@ There are no automated tests by default; add unit or integration tests as needed
 - Preserve query shapes when changing GraphQL responses or update all consumers.
 - Add new screens under `app/` following the existing naming conventions.
 
-If you'd like, I can:
-
-- run the app locally and verify startup
-- add a short developer checklist or PR template
-
----
-Updated to reflect project patterns and helpful links for contributors.

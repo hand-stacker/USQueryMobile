@@ -1,13 +1,11 @@
-import BillSearchModal from "@/app/components/BillSearchModal";
-import SearchButton from "@/app/components/SearchButton";
 import useGetRecentBills from "@/app/hooks/useGetRecentBills";
-import useGetSubjects from "@/app/hooks/useGetSubjects";
 import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillList from '../components/BillList';
+import BillTopNav from "../components/BillTopNav";
 
 
 const arraysEqual = (a?: number[], b?: number[]) => {
@@ -27,17 +25,15 @@ export default function BillFYP( {navigation} : any) {
   const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: favorite_subjects }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
   const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list);
-  const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
 
   const isFocused = useIsFocused();
 
   useEffect(() => {
     if (!isFocused) return;
     // Determine which subjects should drive the query: prefer explicit searchVars, otherwise favorites
-    const effectiveList = (searchVars.subject_list && searchVars.subject_list.length > 0) ? searchVars.subject_list : favorite_subjects;
-    if (arraysEqual(lastUsedSubjectsRef.current, effectiveList)) return;
-    lastUsedSubjectsRef.current = effectiveList;
-    const next = { ...searchVars, subject_list: effectiveList, after: undefined };
+    if (arraysEqual(lastUsedSubjectsRef.current, favorite_subjects)) return;
+    lastUsedSubjectsRef.current = favorite_subjects;
+    const next = { ...searchVars, subject_list: favorite_subjects, after: undefined };
     setSearchVars(next);
     try {
       refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
@@ -48,50 +44,23 @@ export default function BillFYP( {navigation} : any) {
   // `bills` may be the GraphQL connection object or an array/falsy value.
   const edges = useMemo(() => Array.isArray(bills) ? [] : (bills?.edges ?? []), [bills]);
 
-  if ((loading && edges.length === 0) || subjectsLoading) return (
+  if ((loading && edges.length === 0)) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
       <ActivityIndicator />
     </SafeAreaView>
   );
 
-  if (error || subjectsError) return (
+  if (error) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <Text>Error loading bills: {error?.message || subjectsError?.message}</Text>
+      <Text>Error loading bills: {error?.message}</Text>
     </SafeAreaView>
   );
-  const handleOpenModal = useCallback(() => setModalVisible(true), []);
-  const handleCloseModal = useCallback(() => setModalVisible(false), []);
-  const handleSearch = useCallback((vars: any) => {
-    setSearchVars((prev: any) => {
-      const merged = { ...prev, ...vars };
-      const effective = (merged.subject_list && merged.subject_list.length > 0) ? merged.subject_list : favorite_subjects;
-      const next = { ...merged, subject_list: effective };
-      try {
-        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
-      } catch (err) {
-        console.error('Refetch on search failed', err);
-      }
-      lastUsedSubjectsRef.current = next.subject_list;
-      return next;
-    });
-  }, [favorite_subjects, refetch]);
-
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <SearchButton label="Search Bills" onPress={handleOpenModal} />
-        </View>
-        <BillSearchModal
-          visible={modalVisible}
-          onClose={handleCloseModal}
-          initial={searchVars}
-          onSearch={handleSearch}
-        subjects={subjects}
-        desc="Search for bills by congress, type, and subject."
-      />
+        <BillTopNav navigation={navigation} mode="FYP"/>
       <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
       </View>
     </SafeAreaView>
@@ -105,20 +74,4 @@ const styles = StyleSheet.create({
     paddingHorizontal:'6%',
     paddingTop:'5%',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  pageTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    color: '#475569',
-    marginTop: 4,
-  }
 })

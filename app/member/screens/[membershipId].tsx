@@ -5,6 +5,7 @@ import NavReturn from "../../components/NavReturn";
 import useGetMembership from "../../hooks/useGetMembership";
 import VoteList from "../../vote/components/VoteList";
 import ContactsModal from "../components/ContactsModal";
+import MemStarButton from "../components/MemStarButton";
 
 interface MemberInfoProps {
     navigation?: any;
@@ -90,8 +91,11 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
           )}
         </View>
 
-        <View style={styles.rightColumn}>
-          <Text style={styles.title}>{fullName}</Text>
+        <View style={styles.middleColumn}>
+          <View style={styles.nameRow}>
+            <Text style={styles.title}>{fullName}</Text>
+            <MemStarButton membershipId={membershipId} />
+          </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Role:</Text>
@@ -111,6 +115,11 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
               <Text style={styles.infoValue}>{state}</Text>
               </>
             )}
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Party:</Text>
+            <Text style={styles.infoValue}>{party}</Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -201,13 +210,15 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
   leftColumn: { width: 120, marginRight: 12 },
-  rightColumn: { flex: 1 },
+  rightColumn: { width: 20 },
+  middleColumn: { flex: 1 },
   avatarLarge: { width: '100%', height: 140, borderRadius: 12, backgroundColor: '#F3F4F6' },
   avatarPlaceholderLarge: { width: '100%', height: 140, borderRadius: 12, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
   avatarInitialsLarge: { color: '#374151', fontWeight: '700', fontSize: 28 },
   title: { fontSize: 18, fontWeight: '700', color: '#0f172a', marginBottom: 8 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: 10 },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  infoLabel: { fontSize: 13, color: '#6B7280', width: 80, fontWeight: '600' },
+  infoLabel: { fontSize: 13, color: '#6B7280', width: 40, fontWeight: '600' },
   infoValue: { fontSize: 13, color: '#111827', flex: 1 },
   contactButton: { marginTop: 10, backgroundColor: '#111827', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, alignSelf: 'flex-start' },
   contactButtonText: { color: '#fff', fontWeight: '700' },

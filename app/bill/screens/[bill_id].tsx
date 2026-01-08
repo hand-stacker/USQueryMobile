@@ -1,6 +1,6 @@
+import StarButton from "@/app/bill/components/BillStarButton";
 import ActionList from "@/app/components/ActionList";
 import NavReturn from "@/app/components/NavReturn";
-import StarButton from "@/app/components/StarButton";
 import useGetBill from "@/app/hooks/useGetBill";
 import { useStarredBillsStore } from "@/app/store/starredBillsStore";
 import React, { useCallback, useMemo } from "react";

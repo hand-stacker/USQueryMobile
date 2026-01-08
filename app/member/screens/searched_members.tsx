@@ -1,17 +1,17 @@
 import MemberSearchModal from "@/app/components/MemberSearchModal";
-import SearchButton from "@/app/components/SearchButton";
 import useGetMembershipSet from "@/app/hooks/useGetMembershipSet";
 import { useIsFocused } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MemberList from "../components/MemberList";
+import MemTopNav from "../components/MemTopNav";
 
-export default function MemberFYP({navigation}: any) {
+export default function SearchedMembers({navigation}: any) {
   // use MMKV later to store favorite subjects persistently
   // const favorite_subjects_store = useFavoritesStore(s => s.favorites);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [searchVars, setSearchVars] = useState<any>({ congress: 119, chamber: 'Senate', state: 'CA' });
+  const [modalVisible, setModalVisible] = useState(true);
+  const [searchVars, setSearchVars] = useState<any>({ congress: 119, chamber: 'Senate', state: 'AL' });
   const {members, loading, error, refetch} = useGetMembershipSet(searchVars.congress,searchVars.chamber,searchVars.state);
 
   const isFocused = useIsFocused();
@@ -39,9 +39,7 @@ export default function MemberFYP({navigation}: any) {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <SearchButton label="Search Reps" onPress={useCallback(() => setModalVisible(true), [])} />
-        </View>
+        <MemTopNav navigation={navigation} mode="Search" handleOpenModal={useCallback(() => setModalVisible(true), [])} />
         <MemberSearchModal
           visible={modalVisible}
           onClose={useCallback(() => setModalVisible(false), [])}

@@ -14,14 +14,17 @@ import { navigate, navigationRef } from "./navigation/navigationRef";
 
 import BillInfo from "./bill/screens/[bill_id]";
 import BillFYP from "./bill/screens/bill_fyp";
+import StarredBills from "./bill/screens/starred_bills";
 import MemberInfo from "./member/screens/[membershipId]";
-import MemberFYP from "./member/screens/mem_fyp";
 import SelectTopicsScreen from "./misc/select_favorites";
 import WelcomeFavoritesModal from './misc/WelcomeFavoritesModal';
 import VoteInfo from "./vote/screens/[vote_id]";
 import VoteFYP from "./vote/screens/vote_fyp";
 
+import BillSearchResults from "./bill/screens/searched_bills";
 import './globals.css';
+import SearchedMembers from "./member/screens/searched_members";
+import StarredMembers from "./member/screens/starred_members";
 
 const Tabs = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -44,12 +47,16 @@ function SharedStack({ route } : {route:any}) {
   return (
     <Stack.Navigator initialRouteName={initialRoute}>
       <Stack.Screen name="Bill_FYP" component={BillFYP} options={{ headerShown: false }}/>
+      <Stack.Screen name="Starred_Bills" component={StarredBills} options={{ headerShown: false }} />
+      <Stack.Screen name="Searched_Bills" component={BillSearchResults} options={{ headerShown: false }}/>
       <Stack.Screen name="Bill_info" component={BillInfo} options={{ headerShown: false }}/>
-      <Stack.Screen name="Member_FYP" component={MemberFYP} options={{ headerShown: false }}/>
+      <Stack.Screen name="Starred_Members" component={StarredMembers} options={{ headerShown: false }}/>
+      <Stack.Screen name="Searched_Members" component={SearchedMembers} options={{ headerShown: false }}/>
       <Stack.Screen name="Member_info" component={MemberInfo} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_FYP" component={VoteFYP} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_info" component={VoteInfo} options={{ headerShown: false }}/>
       <Stack.Screen name="Options_screen" component={SelectTopicsScreen} options={{ headerShown: false }}/>
+      
     </Stack.Navigator>
   );
 }
@@ -59,7 +66,7 @@ function TabNavigator() {
     <Tabs.Navigator 
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#8ACE00',
+        tabBarActiveTintColor: '#0073ffff',
         tabBarInactiveTintColor: '#6b7280',
         tabBarIcon: ({ color, size }) => {
           const name =
@@ -81,7 +88,7 @@ function TabNavigator() {
       <Tabs.Screen
         name="Members"
         component={SharedStack}
-        initialParams={{ initialRoute: "Member_FYP" }}
+        initialParams={{ initialRoute: "Starred_Members" }}
         options={{ headerShown: false }}
       />
       <Tabs.Screen
