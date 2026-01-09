@@ -21,12 +21,11 @@ export default function BillFYP( {navigation} : any) {
   // use MMKV later to store favorite subjects persistently
   const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const favorite_subjects = useMemo(() => (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [], [favorite_subjects_store]);
-  const [modalVisible, setModalVisible] = useState(false);
   const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: favorite_subjects }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
   const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list);
-
   const isFocused = useIsFocused();
+  const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
 
   useEffect(() => {
     if (!isFocused) return;
@@ -55,7 +54,7 @@ export default function BillFYP( {navigation} : any) {
       <Text>Error loading bills: {error?.message}</Text>
     </SafeAreaView>
   );
-  const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
+  
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>

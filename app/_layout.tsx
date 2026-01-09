@@ -25,6 +25,7 @@ import BillSearchResults from "./bill/screens/searched_bills";
 import './globals.css';
 import SearchedMembers from "./member/screens/searched_members";
 import StarredMembers from "./member/screens/starred_members";
+import VoteSearchResults from "./vote/screens/searched_votes";
 
 const Tabs = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -54,6 +55,7 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Searched_Members" component={SearchedMembers} options={{ headerShown: false }}/>
       <Stack.Screen name="Member_info" component={MemberInfo} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_FYP" component={VoteFYP} options={{ headerShown: false }}/>
+      <Stack.Screen name="Searched_Votes" component={VoteSearchResults} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_info" component={VoteInfo} options={{ headerShown: false }}/>
       <Stack.Screen name="Options_screen" component={SelectTopicsScreen} options={{ headerShown: false }}/>
       

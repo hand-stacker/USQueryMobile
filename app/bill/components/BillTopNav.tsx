@@ -18,6 +18,9 @@ const BillTopNav = ({ navigation, mode, handleOpenModal }: Props) => {
         <Pressable onPress={() => navigation?.navigate('Starred_Bills') } style={styles.navItem}>
           <Text style={[styles.pageTitle, mode === 'Starred' && styles.activePageTitle]}>Starred</Text>
         </Pressable>
+        <Pressable onPress={() => navigation?.navigate('Searched_Bills') } style={styles.navItem}>
+          <Text style={[styles.pageTitle, mode === 'Search' && styles.activePageTitle]}>Search</Text>
+        </Pressable>
       </View>
       <View style={styles.rightGroup}>
         <SearchButton highlighted={mode === 'Search'} onPress={mode === 'Search' ? handleOpenModal : () => navigation?.navigate('Searched_Bills')} />

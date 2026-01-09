@@ -1,13 +1,11 @@
-import BillSearchModal from "@/app/components/BillSearchModal";
-import SearchButton from "@/app/components/SearchButton";
 import useGetRecentVotes from "@/app/hooks/useGetRecentVotes";
-import useGetSubjects from "@/app/hooks/useGetSubjects";
 import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import VoteList from "../components/VoteList";
+import VoteTopNav from "../components/VoteTopNav";
 
 const arraysEqual = (a?: number[], b?: number[]) => {
   if (!a && !b) return true;
@@ -18,35 +16,26 @@ const arraysEqual = (a?: number[], b?: number[]) => {
 };
 
 export default function VoteFYP( {navigation} : any) {
-  const [modalVisible, setModalVisible] = useState(false);
   const favorite_subjects_store = useFavoritesStore(s => s.favorites);
-  const hydrated = useFavoritesStore(s => s._hasHydrated);
-  const favorite_subjects = useMemo(() => {
-    if (!hydrated) return undefined as unknown as number[];
-    return (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [686,782,777];
-  }, [favorite_subjects_store, hydrated]);
-
-  // Start without a subject_list until hydration completes to avoid transient fallback
+  const favorite_subjects = useMemo(() => (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [], [favorite_subjects_store]);
   const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: undefined }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
   const { votes, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentVotes(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list);
-  const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
   const isFocused = useIsFocused();
+  const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
   
   useEffect(() => {
     if (!isFocused) return;
-    if (!hydrated) return;
-    const effectiveList = (searchVars.subject_list && searchVars.subject_list.length > 0) ? searchVars.subject_list : (favorite_subjects ?? []);
-    if (arraysEqual(lastUsedSubjectsRef.current, effectiveList)) return;
-    lastUsedSubjectsRef.current = effectiveList;
-    const next = { ...searchVars, subject_list: effectiveList, after: undefined };
+    if (arraysEqual(lastUsedSubjectsRef.current, favorite_subjects)) return;
+    lastUsedSubjectsRef.current = favorite_subjects;
+    const next = { ...searchVars, subject_list: favorite_subjects, after: undefined };
     setSearchVars(next);
     try {
       refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
     } catch (err) {
       console.error('Refetch on focus failed', err);
     }
-  }, [isFocused, favorite_subjects, searchVars, refetch, hydrated]);
+  }, [isFocused, favorite_subjects, searchVars, refetch]);
 
   // `votes` may be the GraphQL connection object or an array/falsy value.
   const edges = useMemo(() => {
@@ -54,52 +43,23 @@ export default function VoteFYP( {navigation} : any) {
     return votes?.edges ?? [];
   }, [votes]);
 
-  const openModal = useCallback(() => setModalVisible(true), []);
-  const closeModal = useCallback(() => setModalVisible(false), []);
-  const onSearch = useCallback((vars: any) => {
-    setSearchVars((prev: any) => {
-      const merged = { ...prev, ...vars };
-      const effective = (merged.subject_list && merged.subject_list.length > 0) ? merged.subject_list : favorite_subjects;
-      const next = { ...merged, subject_list: effective };
-      try {
-        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
-      } catch (err) {
-        console.error('Refetch on search failed', err);
-      }
-      lastUsedSubjectsRef.current = next.subject_list;
-      return next;
-    });
-  }, [favorite_subjects, refetch]);
-  const onEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
-
-  if ((loading && edges.length === 0) || subjectsLoading) return (
+  if ((loading && edges.length === 0)) return (
     <SafeAreaView style={[styles.safe, styles.centerOverlay]} edges={["top"]}>
       <ActivityIndicator />
     </SafeAreaView>
   );
 
-  if (error || subjectsError) return (
+  if (error) return (
     <SafeAreaView style={[styles.safe, styles.centerOverlay]} edges={["top"]}>
-      <Text>Error loading bills: {error?.message || subjectsError?.message}</Text>
+      <Text>Error loading bills: {error?.message}</Text>
     </SafeAreaView>
   );
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <SearchButton label="Search Votes" onPress={openModal} />
-        </View>
+        <VoteTopNav navigation={navigation} mode="FYP"/>
 
-        <BillSearchModal
-          visible={modalVisible}
-          onClose={closeModal}
-          initial={searchVars}
-          onSearch={onSearch}
-          subjects={subjects}
-          desc="Search for votes by congress, type, and subjects."
-        />
-
-        <VoteList data={edges} navigation={navigation} loadingMore={loadingMore} onEndReached={onEndReached} personal={false} />
+        <VoteList data={edges} navigation={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} personal={false} />
       </View>
     </SafeAreaView>
   );

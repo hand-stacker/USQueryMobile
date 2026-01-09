@@ -3,30 +3,30 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface Props {
   navigation: any;
-  mode: 'Starred' | 'Search';
+  mode: 'FYP' | 'Search';
   handleOpenModal?: () => void;
 }
 
-const MemTopNav = ({ navigation, mode, handleOpenModal }: Props) => {
+const VoteTopNav = ({ navigation, mode, handleOpenModal }: Props) => {
   return (
     <View style={styles.header}>
       <View style={styles.leftSpacer} />
       <View style={styles.centerGroup}>
-        <Pressable onPress={() => navigation?.navigate('Starred_Members') } style={styles.navItem}>
-          <Text style={[styles.pageTitle, mode === 'Starred' && styles.activePageTitle]}>Starred</Text>
+        <Pressable onPress={() => navigation?.navigate('Vote_FYP') } style={styles.navItem}>
+          <Text style={[styles.pageTitle, mode === 'FYP' && styles.activePageTitle]}>For You</Text>
         </Pressable>
-        <Pressable onPress={() => navigation?.navigate('Searched_Members') } style={styles.navItem}>
+        <Pressable onPress={() => navigation?.navigate('Searched_Votes') } style={styles.navItem}>
           <Text style={[styles.pageTitle, mode === 'Search' && styles.activePageTitle]}>Search</Text>
         </Pressable>
       </View>
       <View style={styles.rightGroup}>
-        <SearchButton highlighted={mode === 'Search'} onPress={mode === 'Search' ? handleOpenModal : () => navigation?.navigate('Searched_Members')} />
+        <SearchButton highlighted={mode === 'Search'} onPress={mode === 'Search' ? handleOpenModal : () => navigation?.navigate('Searched_Votes')} />
       </View>
     </View>
   );
 }
 
-export default MemTopNav;
+export default VoteTopNav;
 
 const styles = StyleSheet.create({
   pageTitle: {
