@@ -34,7 +34,7 @@ const ActionList = ({data, summary_text, navigator, header}:Props)=> {
                 <Text style={styles.itemDate}>{node.actionDate}</Text>
                 <Text style={styles.itemText}>{node.text}</Text>
                 {node.voteId && (
-                    <VoteBadge voteId={node.voteId} navigation={navigator}/>
+                    <VoteBadge voteId={node.voteId} navigation={navigator} allowBillNav={false} />
                 )}
             </View>
         );

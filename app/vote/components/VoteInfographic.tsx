@@ -38,7 +38,7 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
         contentContainerStyle={styles.headerRow}
       >
         <BillBadge navigation={navigation} billNum={Number(billId)} />
-        <VoteBadge navigation={navigation} voteId={node.id} />
+        <VoteBadge navigation={navigation} voteId={node.id} allowBillNav={true} />
       </ScrollView>
       
     </View>

@@ -6,7 +6,8 @@ import React, { useCallback, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModalVoteList from "../components/ModalVoteList";
-import VotePieChart from "../components/PieChart";
+import ResultBadge from "../components/ResultBadge";
+import VotePieChart from "../components/VotePieChart";
 
 interface VoteInfoProps {
     navigation?: any;
@@ -14,15 +15,9 @@ interface VoteInfoProps {
 }
 export default function VoteInfo({ navigation, route}: VoteInfoProps) {
   const { vote_id } = route.params;
-  const {allowBillNav} = route.params;
+  const {allowBillNav} = route.params? route.params : {allowBillNav: false};
   const { vote, loading, error, refetch } = useGetVote(vote_id);
   const formattedDate = useMemo(() => formatDate(vote?.dateTime), [vote?.dateTime]);
-  const isPassed = useMemo(() => {
-    const r = vote?.result ?? '';
-    const lr = typeof r === 'string' ? r.toLowerCase() : '';
-    return lr.includes('pass') || lr.includes('agreed');
-  }, [vote?.result]);
-  const resultStyle = useMemo(() => [styles.resultPill, isPassed ? styles.passed : styles.failed], [isPassed]);
   const yeas = useMemo(() => vote?.yeas ?? [], [vote?.yeas]);
   const nays = useMemo(() => vote?.nays ?? [], [vote?.nays]);
   const pres = useMemo(() => vote?.pres ?? [], [vote?.pres]);
@@ -40,6 +35,16 @@ export default function VoteInfo({ navigation, route}: VoteInfoProps) {
   const presElem = useMemo(() => pres.length > 0 ? <ModalVoteList data={pres} vote_type="PRESENT" navigation={navigation} /> : null, [pres, navigation]);
   const novtElem = useMemo(() => novt.length > 0 ? <ModalVoteList data={novt} vote_type="NO VOTE" navigation={navigation} /> : null, [novt, navigation]);
 
+  const rowCount = useMemo(() => {
+    let count = 0;
+    if (yeas.length > 0) count++;
+    if (nays.length > 0) count++;
+    if (pres.length > 0) count++;
+    if (novt.length > 0) count++;
+    return count;
+  }
+  , [yeas, nays, pres, novt]);
+
   if (loading) return (
     <SafeAreaView style={[styles.container, styles.centerOverlay]} edges={["top"]}>
       <ActivityIndicator />
@@ -56,12 +61,9 @@ export default function VoteInfo({ navigation, route}: VoteInfoProps) {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
         <NavReturn onPress={handleGoBack} />
-
-          
-
         <ScrollView contentContainerStyle={styles.listWrap}>
           <View style={styles.headerCard}>
-            <Text style={styles.dateText}>{formattedDate}</Text>
+            <Text style={styles.dateText}>{formattedDate} EST</Text>
             {/* only allow navigation to Bill if we got vote from a vote_list, 
                 this is to prevent the user from recursively trapping themselves in nested bills/votes */}
             {allowBillNav && <BillBadge navigation={navigation} billNum={billNumber} />}
@@ -70,10 +72,18 @@ export default function VoteInfo({ navigation, route}: VoteInfoProps) {
             {vote.question ? <Text style={styles.question}>{vote.question}</Text> : null}
             <View style={styles.rowBetween}>
               <Text style={styles.resultLabel}>Result</Text>
-              <Text style={resultStyle}>{vote.result ?? '—'}</Text>
+              <ResultBadge result={vote.result ?? '—'} />
             </View>
           </View>
-          <VotePieChart data={{ YEAS: yeas.length, NAYS: nays.length, PRES: pres.length, NOVT: novt.length }} />
+          <View style={[styles.pieChartContainer, 
+            rowCount > 4 ? styles.pieChartFiveRow :
+            rowCount > 3 ? styles.pieChartFourRow :
+            rowCount > 2 ? styles.pieChartThreeRow :
+            rowCount > 1 ? styles.pieChartTwoRow :
+            styles.pieChartOneRow
+          ]}>
+            <VotePieChart data={{ YEAS: yeas.length, NAYS: nays.length, PRES: pres.length, NOVT: novt.length }} />
+          </View>
           {yeasElem}
           {naysElem}
           {presElem}
@@ -117,10 +127,13 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 13, color: '#6B7280', marginBottom: 6 },
   title: { fontSize: 18, fontWeight: '700', color: '#0f172a', marginBottom: 8 },
   question: { fontSize: 15, color: '#374151', marginBottom: 12 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  resultLabel: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
-  resultPill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, color: '#fff', fontWeight: '700' },
-  passed: { backgroundColor: '#16A34A' },
-  failed: { backgroundColor: '#EF4444' },
+  rowBetween: { flexDirection: 'row', alignItems: 'center' },
+  resultLabel: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginRight: 8 },
   listWrap: { paddingTop: 6, paddingBottom: 50 },
+  pieChartContainer: { alignItems: 'center', marginBottom: 12 },
+  pieChartOneRow : { height: 240 },
+  pieChartTwoRow : { height: 260 },
+  pieChartThreeRow : { height: 280 },
+  pieChartFourRow : { height: 300 },
+  pieChartFiveRow : { height: 320 },
 });

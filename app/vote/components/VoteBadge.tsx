@@ -4,15 +4,16 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 interface Props {
   navigation?: any;
   voteId: number;
+  allowBillNav?: boolean;
 }
 
-function navToBill(navigation: any, VoteId: any) {
-  navigation.navigate("Vote_info", {vote_id: VoteId});
+function navToBill(navigation: any, voteId: any, allowBillNav: boolean) {
+  navigation.navigate("Vote_info", {vote_id: voteId, allowBillNav: allowBillNav});
 }
 
-export default function VoteBadge({navigation, voteId}: Props) {
+export default function VoteBadge({navigation, voteId, allowBillNav = false}: Props) {
   return (
-    <Pressable onPress={() => navToBill(navigation, voteId)} style={styles.billBadge} accessibilityRole="button">
+    <Pressable onPress={() => navToBill(navigation, voteId, allowBillNav)} style={styles.billBadge} accessibilityRole="button">
       <Text style={styles.billBadgeText}>Open Vote</Text>
     </Pressable>
   );

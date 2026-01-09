@@ -7,8 +7,8 @@ interface Props {
 
 export default function ResultBadge({result}: Props) {
 
-    const resultPassed = typeof result === 'string' && /pass|yea|aye/i.test(result);
-    const resultFailed = typeof result === 'string' && /fail|nay|no|present/i.test(result);
+    const resultPassed = typeof result === 'string' && /pass|yea|aye|agreed|accepted/i.test(result);
+    const resultFailed = typeof result === 'string' && /fail|nay|no|rejected|defeated/i.test(result);
     return (
         <View style={[styles.resultBadge, resultPassed ? styles.passed : resultFailed ? styles.failed : styles.neutral]}>
         <Text style={styles.resultText} numberOfLines={1} ellipsizeMode="tail">{result ?? '—'}</Text>
@@ -18,10 +18,11 @@ export default function ResultBadge({result}: Props) {
 
 const styles = StyleSheet.create({
     resultBadge: {
-        backgroundColor: '#6ebbeeff',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        color: '#fff',
+        fontWeight: '700',
         alignSelf: 'flex-start',
     },
     resultText: {
