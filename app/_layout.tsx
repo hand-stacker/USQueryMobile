@@ -16,15 +16,18 @@ import BillInfo from "./bill/screens/[bill_id]";
 import BillFYP from "./bill/screens/bill_fyp";
 import StarredBills from "./bill/screens/starred_bills";
 import MemberInfo from "./member/screens/[membershipId]";
-import SelectTopicsScreen from "./misc/select_favorites";
 import WelcomeFavoritesModal from './misc/WelcomeFavoritesModal';
 import VoteInfo from "./vote/screens/[vote_id]";
 import VoteFYP from "./vote/screens/vote_fyp";
 
+import Login from "./auth/login";
+import RegisterAccount from "./auth/register";
+import VerifyEmail from "./auth/verify";
 import BillSearchResults from "./bill/screens/searched_bills";
 import './globals.css';
 import SearchedMembers from "./member/screens/searched_members";
 import StarredMembers from "./member/screens/starred_members";
+import OptionsPage from "./misc/options";
 import VoteSearchResults from "./vote/screens/searched_votes";
 
 const Tabs = createBottomTabNavigator();
@@ -57,7 +60,11 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Vote_FYP" component={VoteFYP} options={{ headerShown: false }}/>
       <Stack.Screen name="Searched_Votes" component={VoteSearchResults} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_info" component={VoteInfo} options={{ headerShown: false }}/>
-      <Stack.Screen name="Options_screen" component={SelectTopicsScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="Options_screen" component={OptionsPage} options={{ headerShown: false }}/>
+      
+      <Stack.Screen name="Register" component={RegisterAccount} options={{ headerShown: false }}/>
+      <Stack.Screen name="Login" component={Login} options={{ headerShown: false }}/>
+      <Stack.Screen name="Verify" component={VerifyEmail} options={{ headerShown: false }}/>
       
     </Stack.Navigator>
   );

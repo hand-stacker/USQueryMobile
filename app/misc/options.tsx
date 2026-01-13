@@ -5,7 +5,12 @@ import { useGetSubjects } from '../hooks/useGetSubjects';
 import { registerForPushNotifications } from '../hooks/usePushNotif';
 import SelectFavoritesModal from './SelectFavoritesModal';
 
-export default function SelectTopicsScreen({ route }: any) {
+interface OptionsProps {
+  navigation: any;
+  route: any;
+}
+
+export default function OptionsPage({navigation, route }: OptionsProps) {
   const [open, setOpen] = useState(false);
   const [regLoading, setRegLoading] = useState(false);
   const [regStatus, setRegStatus] = useState<string | null>(null);
@@ -55,6 +60,12 @@ export default function SelectTopicsScreen({ route }: any) {
           <Text style={styles.buttonText}>{regLoading ? 'Registering…' : 'Register for notifications'}</Text>
         </Pressable>
         {regStatus ? <Text style={{marginTop:8}}>{regStatus}</Text> : null}
+        <Pressable
+          style={[styles.button, {backgroundColor: '#ff3b30'}]}
+          onPress={async () => navigation.navigate('Login') }
+        >
+          <Text style={styles.buttonText}>Log In</Text>
+        </Pressable>
       </View>
 
       <SelectFavoritesModal visible={open} onClose={() => setOpen(false)} />
