@@ -62,8 +62,8 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Vote_info" component={VoteInfo} options={{ headerShown: false }}/>
       <Stack.Screen name="Options_screen" component={OptionsPage} options={{ headerShown: false }}/>
       
-      <Stack.Screen name="Register" component={RegisterAccount} options={{ headerShown: false }}/>
       <Stack.Screen name="Login" component={Login} options={{ headerShown: false }}/>
+      <Stack.Screen name="Register" component={RegisterAccount} options={{ headerShown: false }}/>
       <Stack.Screen name="Verify" component={VerifyEmail} options={{ headerShown: false }}/>
       
     </Stack.Navigator>

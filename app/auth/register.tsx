@@ -25,7 +25,6 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
       /[^A-Za-z0-9]/.test(p)
     );
   };
-  const inTestMode = true;
   const validate = () => {
     const errs: string[] = [];
     if (!isValidEmail(email)) errs.push("Enter a valid email address.");
@@ -40,12 +39,12 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
   };
 
   const onSubmit = async () => {
-    if (!validate() && !inTestMode) return;
+    if (!validate()) return;
     try {
       await register(email, password);
       console.log("Registration result:", { ok, data, registerErrors });
 
-      if (ok || inTestMode) {
+      if (ok) {
         Alert.alert("Registration", "Verification code sent to your email.", [
           {
             text: "Continue",

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { updateVerificationStatus } from "../encrypted-storage/functions";
 import useResendVerificationCode from "../hooks/useResendVerificationCode";
 import { useVerifyEmail } from "../hooks/useVerifyEmail";
 
@@ -10,7 +11,8 @@ interface VerifyProps {
 }
 
 export default function VerifyEmail({ navigation, route }: VerifyProps) {
-  const email = route?.params?.email.empty ?? "test@email.com";
+  const email = route?.params?.email;
+  const fromLogin = route?.params?.fromLogin || false;
   const [code, setCode] = useState("");
   const { verifyEmail, ok, loading, data, errors: verifyErrors } = useVerifyEmail(email,code);
   const { resend, ok: resendOk, loading: resendLoading, data: resendData , errors: resendErrors} = useResendVerificationCode(email);
@@ -23,6 +25,13 @@ export default function VerifyEmail({ navigation, route }: VerifyProps) {
     try {
       await verifyEmail(email, code);
       if (ok) {
+        if (fromLogin) {
+          await updateVerificationStatus(true);
+          Alert.alert("Verified and Logged in", "Your account is now activated.", [
+            { text: "OK", onPress: () => navigation.navigate("Bill_FYP") },
+          ]); 
+          return;
+        }
         Alert.alert("Verified", "Your account is now activated.", [
           { text: "OK", onPress: () => navigation.navigate("Login") },
         ]);
