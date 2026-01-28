@@ -1,21 +1,21 @@
 import { authRequest } from "../hooks/authRequest";
 
-export async function starBill(billId: string) {
-  return authRequest(`notif/star-bill/`, {
+export async function starMember(memberId: string) {
+  return authRequest(`notif/star-membership/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      bill_id: billId,
+      membership_id: memberId,
     }),
   });
 }
 
-export async function unstarBill(billId: string) {
-  return authRequest(`notif/unstar-bill/`, {
+export async function unstarMember(memberId: string) {
+  return authRequest(`notif/unstar-membership/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      bill_id: billId,
+      membership_id: memberId,
     }),
   });
 }

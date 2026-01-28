@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   },
   alertBox: {
     marginTop: 12,
-    backgroundColor: "#f5f1ff",
+    backgroundColor: "#c2c7ee",
     borderRadius: 6,
     padding: 10,
   },

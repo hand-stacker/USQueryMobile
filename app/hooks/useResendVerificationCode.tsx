@@ -19,7 +19,7 @@ export function useResendVerificationCode(email: string) {
     setOk(false);
     const fallback = { error: ["Verification failed"] };
     try {
-      const res = await fetch("https://usquery.com/api/auth/resend-verification/", {
+      const res = await fetch("https://www.usquery.com/api/auth/resend-verification/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

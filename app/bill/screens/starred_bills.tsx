@@ -1,6 +1,6 @@
 import useGetStarredBills from '@/app/hooks/useGetStarredBills';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BillList from '../components/BillList';
@@ -10,10 +10,15 @@ export default function StarredBills({ navigation }: any) {
   const stars = useStarredBillsStore(s => s.stars) ?? [];
   const starredIds = useMemo(() => stars.map(s => Number(s)).filter(n => !Number.isNaN(n)), [stars]);
 
-  const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetStarredBills(undefined, 30, starredIds);
+  const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetStarredBills(undefined, 30);
   const edges = useMemo(() => Array.isArray(bills) ? [] : (bills?.edges ?? []), [bills]);
-
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
+  // When the starred IDs change elsewhere in the app, refetch the starred bills list
+  useEffect(() => {
+    if (refetch) refetch();
+  }, [refetch, starredIds.join(',')]);
+
+  
 
   if (loading && edges.length === 0) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>

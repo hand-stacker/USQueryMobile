@@ -19,7 +19,7 @@ export function useVerifyEmail(email: string, code: string) {
     setOk(false);
     const fallback = { error: ["Verification failed"] };
     try {
-      const res = await fetch("https://usquery.com/api/auth/verify-email/", {
+      const res = await fetch("https://www.usquery.com/api/auth/verify-email/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

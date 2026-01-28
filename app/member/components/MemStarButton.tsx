@@ -1,3 +1,4 @@
+import { starMember, unstarMember } from '@/app/api/members';
 import { useStarredMembersStore } from '@/app/store/starredMembersStore';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
@@ -19,9 +20,11 @@ export default function MemStarButton({ membershipId, size = 20, style, onChange
 	const handlePress = async () => {
 		try {
 			if (isStarred) {
+				await unstarMember(id);
 				removeStar(id);
 				onChange?.(false);
 			} else {
+				await starMember(id);
 				addStar(id);
 				onChange?.(true);
 			}

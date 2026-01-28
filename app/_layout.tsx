@@ -73,6 +73,7 @@ function SharedStack({ route } : {route:any}) {
 function TabNavigator() {
   return (
     <Tabs.Navigator 
+      initialRouteName="Bills"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: '#0073ffff',

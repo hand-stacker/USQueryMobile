@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
+import { authRequest } from "../hooks/authRequest";
 import { useLogin } from "../hooks/useLogin";
 
 interface LoginProps {
@@ -12,8 +13,8 @@ export default function Login({ navigation }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
-  const {login, ok, loading, data, errors : loginErrors} = useLogin( email, password);
-  const [userSession, setUserSession] = useState<null | { accessToken?: string; email?: string; isVerified?: boolean }>(null);
+  const {login, ok, loading, data, errors : loginErrors} = useLogin();
+  const [userSession, setUserSession] = useState<null | { refreshToken?: string; accessToken?: string; email?: string; isVerified?: boolean }>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -30,12 +31,10 @@ export default function Login({ navigation }: LoginProps) {
   const onSubmit = async() => {
     // TODO: Call registration API. For now navigate to verification screen.
     try {
-      await login(email, password);
-      if (ok) {
-        // TODO: store access token in zustand and refresh token in secure storage
-        console.log("Login result:", { ok, data, loginErrors });
-        await storeUserSession(data!.email, data!.access, data!.refresh, data!.is_verified);
-        if (!data!.is_verified) {
+      const result = await login(email, password);
+      if (result.ok && result.data) {
+        await storeUserSession(result.data.email, result.data.access, result.data.refresh, result.data.is_verified);
+        if (!result.data.is_verified) {
           navigation.navigate("Verify", { email: email, fromLogin: true });
           return;
         }
@@ -46,12 +45,16 @@ export default function Login({ navigation }: LoginProps) {
           },
         ]);
       } else {
-        const errs = [];
-        for (const key in loginErrors) {
-          if (Array.isArray(loginErrors[key])) {
-            loginErrors[key].forEach((msg: string) => errs.push(`${key}: ${msg}`));
+        const errs: string[] = [];
+        const source = result.errors ?? loginErrors ?? {};
+        for (const key in source) {
+          // @ts-ignore -- source may be null or different shapes
+          if (Array.isArray(source[key])) {
+            // @ts-ignore
+            source[key].forEach((msg: string) => errs.push(`${key}: ${msg}`));
           } else {
-            errs.push(`${key}: ${loginErrors[key]}`);
+            // @ts-ignore
+            errs.push(`${key}: ${source[key]}`);
           }
         }
         setErrors(errs);
@@ -72,9 +75,13 @@ export default function Login({ navigation }: LoginProps) {
             {
               text: "Continue",
               onPress: async () => {
-                await removeUserSession();
-                navigation.navigate("Login");
-              },
+                  if (userSession?.refreshToken) {
+                    await authRequest("auth/token/blacklist/", { method: "POST", body: JSON.stringify({ refresh: userSession.refreshToken }) });
+                  }
+                  await removeUserSession();
+                  setUserSession(null);
+                  navigation.navigate("Login");
+                },
             },
             { text: "Cancel",
               onPress: () => {
@@ -99,7 +106,7 @@ export default function Login({ navigation }: LoginProps) {
         keyboardType="email-address"
         autoCapitalize="none"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(t) => setEmail(t.trim().toLowerCase())}
         placeholder="you@example.com"
       />
 
@@ -123,8 +130,19 @@ export default function Login({ navigation }: LoginProps) {
         </View>
       )}
 
-      <Pressable style={styles.button} onPress={onSubmit}>
-        <Text style={styles.buttonText}>Log In</Text>
+      <Pressable
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={onSubmit}
+        disabled={loading}
+      >
+        {loading ? (
+          <View style={styles.buttonContent}>
+            <ActivityIndicator color="#fff" />
+            <Text style={[styles.buttonText, { marginLeft: 8 }]}>Logging in...</Text>
+          </View>
+        ) : (
+          <Text style={styles.buttonText}>Log In</Text>
+        )}
       </Pressable>
       <Pressable style={styles.button} onPress={() => navigation.navigate("Register")}>
         <Text style={styles.buttonText}>Register a new account</Text>
@@ -160,6 +178,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#2563eb",
     padding: 14,
     borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonContent: {
+    flexDirection: "row",
     alignItems: "center",
   },
   buttonText: {

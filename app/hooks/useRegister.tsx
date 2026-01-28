@@ -21,7 +21,7 @@ export function useRegister(email: string, password: string) {
     const fallback = { error: ["Registration failed"] };
 
     try {
-      const res = await fetch("https://usquery.com/api/auth/register/", {
+      const res = await fetch("https://www.usquery.com/api/auth/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
