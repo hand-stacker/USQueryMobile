@@ -1,7 +1,7 @@
 import { starBill, unstarBill } from '@/app/api/bills';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
 
 type Props = {
   billId: string | number;
@@ -22,13 +22,19 @@ export default function StarButton({ billId, size = 22, style, onChange }: Props
     setLoading(true);
     try {
       if (isStarred) {
-        await unstarBill(id);
+        const ret = await unstarBill(id);
+        if (ret?.status !== "unstarred") return;
         removeStar(id);
         onChange?.(false);
       } else {
-        await starBill(id);
-        addStar(id);
-        onChange?.(true);
+        const ret = await starBill(id);
+        if (ret?.status == "starred" || ret?.error?.__all__?.[0]?.includes('already exists')) {
+          addStar(id);
+          onChange?.(true);
+          return;
+        }
+        Alert.alert('Star limit reached', 'You have reached the maximum number of starred bills.');
+        return;
       }
     } catch (e) {
       // ignore network errors; optimistic update already applied

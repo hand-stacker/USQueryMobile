@@ -47,7 +47,7 @@ export default function WelcomeFavoritesModal() {
   const handleSelect = () => {
     setVisible(false);
     // navigate to the Options tab and open the select modal there
-    navigation.navigate('Options', { screen: 'Options_screen', params: { openFavorites: true } });
+    navigation.navigate('Options');
   };
 
   const handleClose = () => {
@@ -66,13 +66,13 @@ export default function WelcomeFavoritesModal() {
           </View>
 
           <Text style={styles.body}>
-            Thank you for trying USQuery. To help you get the most relevant results, please select a few topics you're
+            Thank you for trying USQuery. To help you get the most relevant results, please make an account or login and select a few topics you're
             most interested in. We'll use these to personalise your feed and recommendations.
           </Text>
 
           <View style={styles.actionsRow}>
             <Pressable style={[styles.button, styles.primary]} onPress={handleSelect}>
-              <Text style={styles.primaryText}>Select favorite topics</Text>
+              <Text style={styles.primaryText}>Log in</Text>
             </Pressable>
 
             <Pressable style={[styles.button, styles.ghost]} onPress={handleClose}>

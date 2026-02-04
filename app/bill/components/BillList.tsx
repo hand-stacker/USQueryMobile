@@ -1,3 +1,4 @@
+import EmptyPage from "@/app/components/EmptyPage";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import BillInfographic from "./BillInfographic";
 interface Props {
@@ -29,6 +30,7 @@ const BillList = ({data, navigator, onEndReached, loadingMore}:Props)=> {
             ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
             ListFooterComponent={() => loadingMore ? <View style={{padding:12, alignItems:'center'}}><ActivityIndicator /></View> : <View style={{height:50}} />}
             onEndReached={onEndReached}
+            ListEmptyComponent={EmptyPage}
             onEndReachedThreshold={0.5}
             initialNumToRender={8}
             maxToRenderPerBatch={12}

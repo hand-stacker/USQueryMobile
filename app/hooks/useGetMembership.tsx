@@ -26,7 +26,6 @@ export function useGetMembership(membershipId?: string): UseGetMembershipResult 
 
     try {
       const res = await fetch(url);
-      console.log(res);
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
       const json = await res.json();
       setMember(json);

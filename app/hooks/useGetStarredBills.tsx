@@ -35,6 +35,7 @@ const GET_STARRED_BILLS = gql`
       hasPreviousPage
       startCursor
     }
+    error
   }
   }
 `;
@@ -65,7 +66,6 @@ export function useGetStarredBills(after?: string, first?: number) {
     client,
     skip: !session,
   });
-
   // Helper to ensure only one refresh runs at a time and return the new token
   const ensureRefreshed = async () => {
     if (tokenRefreshing && refreshPromise) return refreshPromise;
@@ -82,7 +82,6 @@ export function useGetStarredBills(after?: string, first?: number) {
     })();
     return refreshPromise;
   };
-
   // Attempt to refresh+retry once if the query returned an auth-related error
   const retriedRef = useRef(false);
   if (error) {

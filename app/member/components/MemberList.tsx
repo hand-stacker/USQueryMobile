@@ -1,3 +1,4 @@
+import EmptyPage from "@/app/components/EmptyPage";
 import { FlatList, StyleSheet, View } from "react-native";
 import MemberInfographic from "./MemberInfographic";
 interface Props {
@@ -36,6 +37,7 @@ const MemberList = ({data, navigation, parentHandlePress}:Props)=> {
             ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
             ListFooterComponent={() => <View style={{height:50}} />}
             initialNumToRender={8}
+            ListEmptyComponent={EmptyPage}
             maxToRenderPerBatch={12}
             windowSize={7}
             removeClippedSubviews={true}

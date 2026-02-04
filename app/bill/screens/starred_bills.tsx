@@ -1,7 +1,8 @@
 import useGetStarredBills from '@/app/hooks/useGetStarredBills';
+import { useFavoritesStore } from '@/app/store/favoriteSubjectsStore';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BillList from '../components/BillList';
 import BillTopNav from '../components/BillTopNav';
@@ -17,6 +18,16 @@ export default function StarredBills({ navigation }: any) {
   useEffect(() => {
     if (refetch) refetch();
   }, [refetch, starredIds.join(',')]);
+
+  const loggedIn = useFavoritesStore(s => s.loggedIn);
+  useEffect(() => {
+    if (loggedIn === false) {
+      Alert.alert('Login required', 'You must be logged in to view your starred bills.', [
+        { text: 'Log in', onPress: () => navigation.navigate('Login') },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  }, [loggedIn]);
 
   
 

@@ -2,8 +2,12 @@ import React, { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateVerificationStatus } from "../encrypted-storage/functions";
+import { authRequest } from "../hooks/authRequest";
 import useResendVerificationCode from "../hooks/useResendVerificationCode";
 import { useVerifyEmail } from "../hooks/useVerifyEmail";
+import { useFavoritesStore } from "../store/favoriteSubjectsStore";
+import { useStarredBillsStore } from "../store/starredBillsStore";
+import { useStarredMembersStore } from "../store/starredMembersStore";
 
 interface VerifyProps {
   navigation: any;
@@ -16,7 +20,10 @@ export default function VerifyEmail({ navigation, route }: VerifyProps) {
   const [code, setCode] = useState("");
   const { verifyEmail, ok, loading, data, errors: verifyErrors } = useVerifyEmail(email,code);
   const { resend, ok: resendOk, loading: resendLoading, data: resendData , errors: resendErrors} = useResendVerificationCode(email);
-  
+  const setFavorites = useFavoritesStore(s => s.setFavorites);
+  const setStarrMem = useStarredMembersStore(s => s.setStars);
+  const setStarrBills = useStarredBillsStore(s => s.setStars);
+  const setLoggedIn = useFavoritesStore(s => s.setIsLoggedIn);
   const [errors, setErrors] = useState<string[]>([]);
   const [alerts, setAlerts] = useState<string[]>([]);
   const [resendCount, setResendCount] = useState(0);
@@ -27,11 +34,22 @@ export default function VerifyEmail({ navigation, route }: VerifyProps) {
       if (ok) {
         if (fromLogin) {
           await updateVerificationStatus(true);
+          setLoggedIn(true);
+          try {
+            const userPrefs = await authRequest("notif/get-preferences/");
+            setFavorites(userPrefs.subject_ids);
+            setStarrMem(userPrefs.membership_ids.map((id: any) => String(id)));
+            setStarrBills(userPrefs.bill_ids.map((id: any) => String(id)));
+          } catch (prefErr) {
+            console.error("Failed to load user preferences:", prefErr);
+            // Proceed; preferences are optional and shouldn't block login
+          }
           Alert.alert("Verified and Logged in", "Your account is now activated.", [
             { text: "OK", onPress: () => navigation.navigate("Bill_FYP") },
           ]); 
           return;
         }
+        try { setLoggedIn(true); } catch (e) {}
         Alert.alert("Verified", "Your account is now activated.", [
           { text: "OK", onPress: () => navigation.navigate("Login") },
         ]);

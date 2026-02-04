@@ -1,3 +1,4 @@
+import EmptyPage from "@/app/components/EmptyPage";
 import React from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import VoteInfographic from "./VoteInfographic";
@@ -31,6 +32,7 @@ const VoteList = ({data, personal, navigation, onEndReached, loadingMore}:Props)
       onEndReachedThreshold={0.5}
       contentContainerStyle={styles.container}
       initialNumToRender={8}
+      ListEmptyComponent={EmptyPage}
       maxToRenderPerBatch={12}
       windowSize={7}
       removeClippedSubviews={true}

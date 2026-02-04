@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "USQuery Mobile",
+    "name": "My Congress",
     "slug": "USQ_Mobile_App",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/capitol_hill_icon_padded.png",
     "scheme": "usqmobileapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,8 +14,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png"
+        "foregroundImage": "./assets/images/capitol_hill_icon_padded.png"
       },
       "googleServicesFile": "./google-services.json",
       "permissions": [
@@ -29,14 +28,14 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/capitol_hill_icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/capitol_hill_icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -49,7 +48,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icons/android-icon-monochrome.png",
+          "icon": "./assets/images/capitol_hill_icon.png",
           "color": "#ffffff",
           "defaultChannel": "default",
           "enableBackgroundRemoteNotifications": false

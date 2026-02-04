@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { zustandStorage, } from '../services/zustandStorage';
 
@@ -8,6 +8,7 @@ type FavoritesState = {
   _hasHydrated: boolean;
   // welcomeCounter: 0 means show immediately; positive values are countdowns on app open
   welcomeCounter: number;
+  loggedIn : boolean;
   addFavorite: (topicId: number) => void;
   setFavorites: (topicIds: number[]) => void;
   removeFavorite: (topicId: number) => void;
@@ -15,6 +16,7 @@ type FavoritesState = {
   clearFavorites: () => void;
   setWelcomeCounter: (n: number) => void;
   decrementWelcomeCounter: () => void;
+  setIsLoggedIn: (loggedIn: boolean) => void;
 };
 
 export const useFavoritesStore = create<FavoritesState>()(
@@ -24,6 +26,7 @@ export const useFavoritesStore = create<FavoritesState>()(
       _hasHydrated: false,
       // -1 = unset (first open), 0 = open select modal immediately on open, >0 = countdown
       welcomeCounter: -1,
+      loggedIn : false,
 
       addFavorite: (topicId) =>
         set((state) => {
@@ -57,12 +60,13 @@ export const useFavoritesStore = create<FavoritesState>()(
       isFavorite: (topicId) => get().favorites.includes(topicId),
 
       clearFavorites: () => set({ favorites: [] }),
+      setIsLoggedIn: (loggedIn: boolean) => set({ loggedIn : loggedIn }),
     }),
     {
       name: 'favorite-topics',
       storage: zustandStorage as any,
       // Only persist the favorites array; don't persist the hydration flag
-      partialize: (state) => ({ favorites: state.favorites, welcomeCounter: state.welcomeCounter } as any),
+      partialize: (state) => ({ favorites: state.favorites, welcomeCounter: state.welcomeCounter, loggedIn: state.loggedIn } as any),
       // Before the persisted state is merged back into the store, mark it hydrated
       // so the UI doesn't see `_hasHydrated: false` coming from storage.
       onRehydrateStorage: () => (persistedState) => {
@@ -85,17 +89,18 @@ export const useFavoritesStore = create<FavoritesState>()(
     const parsed = JSON.parse(raw);
     const favs = parsed?.state?.favorites ?? parsed?.favorites ?? [];
     const counter = parsed?.state?.welcomeCounter ?? parsed?.welcomeCounter ?? undefined;
+    const loggedIn = parsed?.state?.loggedIn ?? parsed?.loggedIn ?? false;
     if (Array.isArray(favs) && favs.length > 0) {
       // apply to store if not already set
       const current = useFavoritesStore.getState().favorites;
         if (!current || current.length === 0) {
-        useFavoritesStore.setState({ favorites: favs, _hasHydrated: true, welcomeCounter: counter ?? -1 });
+        useFavoritesStore.setState({ favorites: favs, _hasHydrated: true, welcomeCounter: counter ?? -1 , loggedIn : loggedIn});
       } else {
         // still mark hydrated
-        useFavoritesStore.setState({ _hasHydrated: true, welcomeCounter: counter ?? useFavoritesStore.getState().welcomeCounter ?? -1 });
+        useFavoritesStore.setState({ _hasHydrated: true, welcomeCounter: counter ?? useFavoritesStore.getState().welcomeCounter ?? -1 , loggedIn : loggedIn ?? useFavoritesStore.getState().loggedIn ?? false });
       }
     } else {
-      useFavoritesStore.setState({ _hasHydrated: true, welcomeCounter: counter ?? useFavoritesStore.getState().welcomeCounter ?? -1 });
+      useFavoritesStore.setState({ _hasHydrated: true, welcomeCounter: counter ?? useFavoritesStore.getState().welcomeCounter ?? -1, loggedIn : loggedIn ?? useFavoritesStore.getState().loggedIn ?? false });
     }
   } catch (e) {
     // ignore parse errors but mark hydrated so UI won't wait forever

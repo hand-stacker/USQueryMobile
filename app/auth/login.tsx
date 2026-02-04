@@ -4,6 +4,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
 import { useLogin } from "../hooks/useLogin";
+import { useFavoritesStore } from "../store/favoriteSubjectsStore";
+import { useStarredBillsStore } from "../store/starredBillsStore";
+import { useStarredMembersStore } from "../store/starredMembersStore";
 
 interface LoginProps {
   navigation: any;
@@ -15,7 +18,14 @@ export default function Login({ navigation }: LoginProps) {
   const [errors, setErrors] = useState<string[]>([]);
   const {login, ok, loading, data, errors : loginErrors} = useLogin();
   const [userSession, setUserSession] = useState<null | { refreshToken?: string; accessToken?: string; email?: string; isVerified?: boolean }>(null);
-
+  const setFavorites = useFavoritesStore(s => s.setFavorites);
+  const setStarrMem = useStarredMembersStore(s => s.setStars);
+  const setStarrBills = useStarredBillsStore(s => s.setStars);
+  const clearFavorites = useFavoritesStore(s => s.clearFavorites);
+  const clearStarrMem = useStarredMembersStore(s => s.clearStars);
+  const clearStarrBills = useStarredBillsStore(s => s.clearStars);
+  const setLoggedIn = useFavoritesStore(s => s.setIsLoggedIn);
+  
   useEffect(() => {
     let mounted = true;
     retrieveUserSession()
@@ -37,6 +47,16 @@ export default function Login({ navigation }: LoginProps) {
         if (!result.data.is_verified) {
           navigation.navigate("Verify", { email: email, fromLogin: true });
           return;
+        }
+        setLoggedIn(true);
+        try {
+          const userPrefs = await authRequest("notif/get-preferences/");
+          setFavorites(userPrefs.subject_ids);
+          setStarrMem(userPrefs.membership_ids.map((id: any) => String(id)));
+          setStarrBills(userPrefs.bill_ids.map((id: any) => String(id)));
+        } catch (prefErr) {
+          console.error("Failed to load user preferences:", prefErr);
+          // Proceed; preferences are optional and shouldn't block login
         }
         Alert.alert("Logged In", "You are now logged in from this device.", [
           {
@@ -62,8 +82,9 @@ export default function Login({ navigation }: LoginProps) {
       }
 
 
-    } catch (err) {
-      Alert.alert("Registration error", "Network or unexpected error occurred.");
+    } catch (err:any) {
+      console.error("Login flow error:", err);
+      Alert.alert("Login error", err?.message ?? "Network or unexpected error occurred.");
     }
   };
   if (userSession != null) {
@@ -79,7 +100,11 @@ export default function Login({ navigation }: LoginProps) {
                     await authRequest("auth/token/blacklist/", { method: "POST", body: JSON.stringify({ refresh: userSession.refreshToken }) });
                   }
                   await removeUserSession();
+                  clearFavorites();
+                  clearStarrMem();
+                  clearStarrBills();
                   setUserSession(null);
+                  setLoggedIn(false);
                   navigation.navigate("Login");
                 },
             },

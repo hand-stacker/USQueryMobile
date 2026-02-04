@@ -1,7 +1,7 @@
 import { starMember, unstarMember } from '@/app/api/members';
 import { useStarredMembersStore } from '@/app/store/starredMembersStore';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
 
 type Props = {
 	membershipId: string | number;
@@ -10,7 +10,7 @@ type Props = {
 	onChange?: (isStarred: boolean) => void;
 };
 
-export default function MemStarButton({ membershipId, size = 20, style, onChange }: Props) {
+export default function MemStarButton({ membershipId, size = 22, style, onChange }: Props) {
 	const id = String(membershipId);
 	const stars = useStarredMembersStore((s) => s.stars);
 	const addStar = useStarredMembersStore((s) => s.addStar);
@@ -20,13 +20,19 @@ export default function MemStarButton({ membershipId, size = 20, style, onChange
 	const handlePress = async () => {
 		try {
 			if (isStarred) {
-				await unstarMember(id);
+				const ret = await unstarMember(id);
+				if (ret?.status !== "unstarred") return;
 				removeStar(id);
 				onChange?.(false);
 			} else {
-				await starMember(id);
-				addStar(id);
-				onChange?.(true);
+				const ret = await starMember(id);
+				if (ret?.status == "starred" || ret?.error?.__all__?.[0]?.includes('already exists')) {
+					addStar(id);
+					onChange?.(true);
+					return;
+				}
+				Alert.alert('Star limit reached', 'You have reached the maximum number of starred members.');
+				return;
 			}
 		} catch (e) {
 			// ignore

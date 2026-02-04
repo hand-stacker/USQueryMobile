@@ -20,6 +20,7 @@ import WelcomeFavoritesModal from './misc/WelcomeFavoritesModal';
 import VoteInfo from "./vote/screens/[vote_id]";
 import VoteFYP from "./vote/screens/vote_fyp";
 
+import { Tinos_400Regular, Tinos_700Bold, useFonts } from '@expo-google-fonts/tinos';
 import Login from "./auth/login";
 import RegisterAccount from "./auth/register";
 import VerifyEmail from "./auth/verify";
@@ -118,6 +119,10 @@ function TabNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Tinos_400Regular,
+    Tinos_700Bold,
+  });
   useEffect(() => {
     const sub =
       Notifications.addNotificationResponseReceivedListener(response => {
@@ -131,6 +136,8 @@ export default function RootLayout() {
 
     return () => sub.remove();
   }, []);
+
+  if (!fontsLoaded) return null;
 
   return (
     <ApolloProvider client={client}>

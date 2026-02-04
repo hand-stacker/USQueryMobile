@@ -42,7 +42,6 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
     if (!validate()) return;
     try {
       await register(email, password);
-      console.log("Registration result:", { ok, data, registerErrors });
 
       if (ok) {
         Alert.alert("Registration", "Verification code sent to your email.", [

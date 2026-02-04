@@ -13,7 +13,6 @@ export async function registerForPushNotifications() {
   // after a channel exists.
   const storedToken = await AsyncStorage.getItem("deviceToken");
   if (storedToken) {
-    console.log('Using stored push token:', storedToken);
     try {
       await authRequest(`notif/register-device/`, {
         method: "POST",
@@ -28,21 +27,19 @@ export async function registerForPushNotifications() {
     return storedToken;
   }
   if (Platform.OS === 'android') {
-    console.log("Creating notification channel for Android");
     try {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Default',
         importance: Notifications.AndroidImportance.DEFAULT,
       });
     } catch (e) {
-      console.log("Failed to create notification channel:", e);
+      console.warn("Failed to create notification channel:", e);
       // ignore channel creation failures, continue to permission/token steps
     }
   }
 
   const { status } = await Notifications.requestPermissionsAsync();
   if (status !== 'granted') return;
-  console.log("Notification permissions granted");
   // Warn if running in Expo Go - remote push tokens won't be available there
   try {
     if ((Constants as any).appOwnership === 'expo') {
@@ -56,24 +53,23 @@ export async function registerForPushNotifications() {
   try {
     const expoTokenResp = await Notifications.getExpoPushTokenAsync();
     token = expoTokenResp?.data ?? null;
-    console.log('Obtained Expo push token:', token);
   } catch (err) {
     console.warn('getExpoPushTokenAsync failed:', err);
     // Try native device token as a fallback (returns {type, data})
     try {
       const deviceTokenResp: any = await Notifications.getDevicePushTokenAsync();
       token = deviceTokenResp?.data ?? deviceTokenResp?.token ?? null;
-      console.log('Obtained device push token fallback:', token, deviceTokenResp);
     } catch (err2) {
       console.warn('getDevicePushTokenAsync fallback failed:', err2);
     }
   }
+
   if (!token) {
     console.warn('No push token available after attempts.');
     return null;
   }
+
   await AsyncStorage.setItem("deviceToken", token);
-  console.log("Registered for push notifications with token:", token);
   await authRequest(`notif/register-device/`, {
     method: "POST",
     body: JSON.stringify({
@@ -91,7 +87,6 @@ export async function unregisterForPushNotifications() {
   try {
     const storedToken = await AsyncStorage.getItem("deviceToken");
     if (storedToken) {
-      console.log('Using stored push token for unregister:', storedToken);
       try {
         await authRequest(`notif/unregister-device/`, {
           method: "POST",
@@ -117,14 +112,13 @@ export async function unregisterForPushNotifications() {
   // can be obtained and the OS may show the runtime permission prompt only
   // after a channel exists.
   if (Platform.OS === 'android') {
-    console.log("Creating notification channel for Android");
     try {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Default',
         importance: Notifications.AndroidImportance.DEFAULT,
       });
     } catch (e) {
-      console.log("Failed to create notification channel:", e);
+      console.warn("Failed to create notification channel:", e);
       // ignore channel creation failures, continue to permission/token steps
     }
   }
@@ -140,14 +134,12 @@ export async function unregisterForPushNotifications() {
   try {
     const expoTokenResp = await Notifications.getExpoPushTokenAsync();
     token = expoTokenResp?.data ?? null;
-    console.log('Obtained Expo push token:', token);
   } catch (err) {
     console.warn('getExpoPushTokenAsync failed:', err);
     // Try native device token as a fallback (returns {type, data})
     try {
       const deviceTokenResp: any = await Notifications.getDevicePushTokenAsync();
       token = deviceTokenResp?.data ?? deviceTokenResp?.token ?? null;
-      console.log('Obtained device push token fallback:', token, deviceTokenResp);
     } catch (err2) {
       console.warn('getDevicePushTokenAsync fallback failed:', err2);
     }
@@ -157,7 +149,6 @@ export async function unregisterForPushNotifications() {
     return null;
   }
   
-  console.log("Unregistered for push notifications with token:", token);
   await authRequest(`notif/unregister-device/`, {
     method: "POST",
     body: JSON.stringify({
