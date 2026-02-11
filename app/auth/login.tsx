@@ -169,6 +169,9 @@ export default function Login({ navigation }: LoginProps) {
           <Text style={styles.buttonText}>Log In</Text>
         )}
       </Pressable>
+      <Pressable style={styles.button} onPress={() => navigation.navigate("Reset_Password")}>
+        <Text style={styles.buttonText}>Reset your password</Text>
+      </Pressable>
       <Pressable style={styles.button} onPress={() => navigation.navigate("Register")}>
         <Text style={styles.buttonText}>Register a new account</Text>
       </Pressable>

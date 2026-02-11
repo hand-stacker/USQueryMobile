@@ -22,6 +22,7 @@ import VoteFYP from "./vote/screens/vote_fyp";
 
 import { Tinos_400Regular, Tinos_700Bold, useFonts } from '@expo-google-fonts/tinos';
 import Login from "./auth/login";
+import ResetPassword from "./auth/password_reset";
 import RegisterAccount from "./auth/register";
 import VerifyEmail from "./auth/verify";
 import BillSearchResults from "./bill/screens/searched_bills";
@@ -62,10 +63,10 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Searched_Votes" component={VoteSearchResults} options={{ headerShown: false }}/>
       <Stack.Screen name="Vote_info" component={VoteInfo} options={{ headerShown: false }}/>
       <Stack.Screen name="Options_screen" component={OptionsPage} options={{ headerShown: false }}/>
-      
       <Stack.Screen name="Login" component={Login} options={{ headerShown: false }}/>
       <Stack.Screen name="Register" component={RegisterAccount} options={{ headerShown: false }}/>
       <Stack.Screen name="Verify" component={VerifyEmail} options={{ headerShown: false }}/>
+      <Stack.Screen name="Reset_Password" component={ResetPassword} options={{ headerShown: false }}/>
       
     </Stack.Navigator>
   );
