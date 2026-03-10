@@ -3,7 +3,7 @@
     "name": "My Congress",
     "slug": "USQ_Mobile_App",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/capitol_hill_icon_padded.png",
     "scheme": "usqmobileapp",
     "userInterfaceStyle": "automatic",

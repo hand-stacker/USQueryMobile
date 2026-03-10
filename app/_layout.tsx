@@ -29,6 +29,7 @@ import BillSearchResults from "./bill/screens/searched_bills";
 import './globals.css';
 import SearchedMembers from "./member/screens/searched_members";
 import StarredMembers from "./member/screens/starred_members";
+import NotificationSettings from "./misc/notification_settings";
 import OptionsPage from "./misc/options";
 import VoteSearchResults from "./vote/screens/searched_votes";
 
@@ -67,7 +68,7 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Register" component={RegisterAccount} options={{ headerShown: false }}/>
       <Stack.Screen name="Verify" component={VerifyEmail} options={{ headerShown: false }}/>
       <Stack.Screen name="Reset_Password" component={ResetPassword} options={{ headerShown: false }}/>
-      
+      <Stack.Screen name="Notification_Settings" component={NotificationSettings} options={{ headerShown: false }}/>
     </Stack.Navigator>
   );
 }
