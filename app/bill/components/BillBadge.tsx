@@ -1,4 +1,5 @@
-import React from 'react';
+import { ThemeContext } from '@/app/theme/themeContext';
+import React, { useContext } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 interface Props {
@@ -40,6 +41,8 @@ function getBillIdentifier(billNum: number): string {
 }
 
 export default function BillBadge({navigation, billNum}: Props) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const label = getBillIdentifier(billNum);
   return (
     <Pressable onPress={() => navToBill(navigation, billNum)} style={styles.billBadge} accessibilityRole="button">
@@ -48,16 +51,16 @@ export default function BillBadge({navigation, billNum}: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   billBadge: {
-    backgroundColor: '#0b1226',
+    backgroundColor: theme.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
   billBadgeText: {
-    color: 'white',
+    color: theme.innerText,
     fontWeight: '700',
     fontSize: 16,
   }

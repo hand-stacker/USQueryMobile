@@ -120,6 +120,8 @@ function TabNavigator() {
   );
 }
 
+import { ThemeProvider } from "./theme/themeContext";
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Tinos_400Regular,
@@ -145,8 +147,10 @@ export default function RootLayout() {
     <ApolloProvider client={client}>
       <NavigationIndependentTree>
         <NavigationContainer ref={navigationRef}>
-          <TabNavigator />
-          <WelcomeFavoritesModal />
+          <ThemeProvider>
+            <TabNavigator />
+            <WelcomeFavoritesModal />
+          </ThemeProvider>
         </NavigationContainer>
       </NavigationIndependentTree>
     </ApolloProvider>

@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { updateFavorites } from '../api/favoritesUpdate';
 import { useGetSubjects } from '../hooks/useGetSubjects';
 import { useFavoritesStore } from '../store/favoriteSubjectsStore';
+import { ThemeContext } from '../theme/themeContext';
 import SelectFavoritesModal from './SelectFavoritesModal';
 
 interface OptionsProps {
@@ -12,6 +13,8 @@ interface OptionsProps {
 }
 
 export default function OptionsPage({navigation, route }: OptionsProps) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const [open, setOpen] = useState(false);
   const { loading: subjectsLoading, error: subjectsError } = useGetSubjects();
   const favorites = useFavoritesStore(s => s.favorites);
@@ -23,6 +26,7 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
     } catch (e) {
     }
   };
+  const { toggleTheme } = useContext(ThemeContext);
 
   useEffect(() => {
     // allow navigation to open the select modal immediately
@@ -59,6 +63,9 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
         <Pressable style={styles.button} onPress={async () => navigation.navigate('Notification_Settings') }>
           <Text style={styles.buttonText}>Notifications</Text>
         </Pressable>
+        <Pressable style={styles.button} onPress={toggleTheme}>
+          <Text style={styles.buttonText}>Switch to {theme.name === 'light' ? 'dark' : 'light'} theme</Text>
+        </Pressable>
       </View>
 
       <SelectFavoritesModal visible={open} onClose={handleClose} />
@@ -66,40 +73,18 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
+    backgroundColor: theme.background,
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 24,
   },
   header: {
+    color: theme.text,
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 16,
-  },
-  list: {
-    paddingBottom: 24,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 8,
-    backgroundColor: '#222',
-    marginBottom: 10,
-  },
-  rowSelected: {
-    backgroundColor: '#333',
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#fff',
-  },
-  icon: {
-    fontSize: 18,
-    color: '#ffd700',
   },
   button: {
     width: "100%",
@@ -107,20 +92,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
-    backgroundColor: "black",
+    backgroundColor: theme.primary,
     borderRadius: 10,
     paddingHorizontal: 12,
   },
-  pressed: {
-      opacity: 0.8,
-  },
-  inner: {
-      flexDirection: "row",
-      alignItems: "center",
-  },
   buttonText: {
       fontSize: 16,
-      color: "#ffffff",
+      color: theme.innerText,
       fontWeight: "600",
       marginLeft: 8,
   },

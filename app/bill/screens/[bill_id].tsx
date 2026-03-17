@@ -3,7 +3,8 @@ import ActionList from "@/app/components/ActionList";
 import NavReturn from "@/app/components/NavReturn";
 import useGetBill from "@/app/hooks/useGetBill";
 import { useStarredBillsStore } from "@/app/store/starredBillsStore";
-import React, { useCallback, useMemo } from "react";
+import { ThemeContext } from "@/app/theme/themeContext";
+import React, { useCallback, useContext, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillBadgeInactive from "../components/BillBadgeInactive";
@@ -26,6 +27,8 @@ interface BillInfoProps {
   }
 
 export default function BillInfo({ navigation, route }: BillInfoProps) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const { bill_id } = route.params;
   const { bill, loading, error, refetch } = useGetBill(bill_id);
   const storeStars = useStarredBillsStore((s) => s.stars);
@@ -78,7 +81,7 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
         </View>
       </View>
     );
-  }, [subjects, originDate, latestActionDate, policyArea, title, billNum, bill?.status, starred, bill?.id]);
+  }, [subjects, originDate, latestActionDate, policyArea, title, billNum, bill?.status, starred, bill?.id, theme]);
 
   const actions = useMemo(() => bill?.actions ?? [], [bill?.actions]);
   const summaryText = useMemo(() => bill?.summary ?? "", [bill?.summary]);
@@ -109,21 +112,21 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: theme.background,
   },
   container: {
     paddingHorizontal: 20,
     paddingTop: 18,
   },
   headerCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 14,
     marginBottom: 14,
-    shadowColor: "#000",
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -132,7 +135,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#111827",
+    color: theme.titleText,
   },
   rowBetween: {
     flexDirection: "row",
@@ -148,18 +151,17 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     fontSize: 13,
-    color: "#6B7280",
+    color: theme.subtext,
     marginRight: 6,
     fontWeight: "600",
   },
   metaValue: {
     flex: 1,
     fontSize: 13,
-    color: "#111827",
+    color: theme.text,
   },
   subjectsRow: {
     marginTop: 10,
-    
   },
   chipsContainer: {
     flexDirection: "row",
@@ -175,18 +177,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     marginRight: 8,
-    backgroundColor: '#f8fafc',
+    backgroundColor: theme.card,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#e6e9ee',
+    borderColor: theme.border,
     alignSelf: 'center',
     justifyContent: 'center',
     minHeight: 32,
   },
   chipText: {
-    color: '#0f172a',
+    color: theme.text,
     fontWeight: '600',
     fontSize: 14,
     lineHeight: 18,
   },
-})
+});

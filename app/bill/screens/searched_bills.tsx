@@ -2,8 +2,9 @@ import BillSearchModal from "@/app/components/BillSearchModal";
 import useGetRecentBills from "@/app/hooks/useGetRecentBills";
 import useGetSubjects from "@/app/hooks/useGetSubjects";
 import { useSubjectListStore } from "@/app/store/subjectListStore";
+import { ThemeContext } from "@/app/theme/themeContext";
 import { useIsFocused } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillList from '../components/BillList';
@@ -19,6 +20,8 @@ const arraysEqual = (a?: number[], b?: number[]) => {
 };
 
 export default function BillSearchResults( {navigation} : any) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const subject_list_store = useSubjectListStore(s => s.subject_list);
   const subject_list = useMemo(() => (subject_list_store && subject_list_store.length > 0) ? subject_list_store : [], [subject_list_store]);
   const [modalVisible, setModalVisible] = useState(subject_list.length === 0);
@@ -98,11 +101,11 @@ export default function BillSearchResults( {navigation} : any) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
+const createStyles = (theme: any) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   container : {
     flex:1,
     paddingHorizontal:'6%',
     paddingTop:'5%',
   }
-})
+});

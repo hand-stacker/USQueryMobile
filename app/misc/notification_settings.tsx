@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { updatePrefs } from "../api/notifPreferencesUpdate";
 import { registerForPushNotifications, unregisterForPushNotifications } from "../hooks/usePushNotif";
 
 
@@ -73,6 +74,7 @@ export default function NotificationSettings() {
                         onValueChange={async (val) => {
                             setStarredUpdates(val);
                             try { await AsyncStorage.setItem('pref_starred_updates', val ? 'true' : 'false'); } catch (e) {}
+                            try { await updatePrefs(val, undefined);} catch (e) {}
                         }}
                     />
                 </View>
@@ -88,6 +90,7 @@ export default function NotificationSettings() {
                         onValueChange={async (val) => {
                             setFavoriteSubjectUpdates(val);
                             try { await AsyncStorage.setItem('pref_favorite_subject_updates', val ? 'true' : 'false'); } catch (e) {}
+                            try { await updatePrefs(undefined, val);} catch (e) {}
                         }}
                     />
                 </View>

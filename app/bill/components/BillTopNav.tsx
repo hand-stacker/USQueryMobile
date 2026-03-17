@@ -1,4 +1,6 @@
 import SearchButton from "@/app/components/SearchButton";
+import { ThemeContext } from "@/app/theme/themeContext";
+import { useContext } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface Props {
@@ -8,6 +10,8 @@ interface Props {
 }
 
 const BillTopNav = ({ navigation, mode, handleOpenModal }: Props) => {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   return (
     <View style={styles.header}>
       <View style={styles.leftSpacer} />
@@ -31,14 +35,16 @@ const BillTopNav = ({ navigation, mode, handleOpenModal }: Props) => {
 
 export default BillTopNav;
 
-const styles = StyleSheet.create({
-  pageTitle: {
+
+const createStyles = (theme : any) =>
+  StyleSheet.create({
+    pageTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f172a',
+    color: theme.titleText,
   },
   activePageTitle: {
-    color: '#0073ffff',
+    color: theme.primary,
   },
   header: {
     flexDirection: 'row',
@@ -62,4 +68,4 @@ const styles = StyleSheet.create({
   navItem: {
     marginHorizontal: 10,
   },
-});
+  });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateVerificationStatus } from "../encrypted-storage/functions";
@@ -8,6 +8,7 @@ import { useVerifyEmail } from "../hooks/useVerifyEmail";
 import { useFavoritesStore } from "../store/favoriteSubjectsStore";
 import { useStarredBillsStore } from "../store/starredBillsStore";
 import { useStarredMembersStore } from "../store/starredMembersStore";
+import { ThemeContext } from "../theme/themeContext";
 
 interface VerifyProps {
   navigation: any;
@@ -15,6 +16,8 @@ interface VerifyProps {
 }
 
 export default function VerifyEmail({ navigation, route }: VerifyProps) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const email = route?.params?.email;
   const fromLogin = route?.params?.fromLogin || false;
   const [code, setCode] = useState("");
@@ -171,37 +174,39 @@ export default function VerifyEmail({ navigation, route }: VerifyProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     paddingBottom: 36,
-    backgroundColor: "#fff",
+    backgroundColor: theme.background,
   },
   title: {
     fontSize: 22,
     fontWeight: "600",
     marginBottom: 8,
+    color: theme.text,
   },
   instructions: {
-    color: "#444",
+    color: theme.text,
     marginBottom: 16,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: theme.border,
     padding: 12,
     borderRadius: 8,
+    color: theme.text,
   },
   button: {
     marginTop: 16,
-    backgroundColor: "#2563eb",
+    backgroundColor: theme.primary,
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
   },
   buttonText: {
-    color: "#fff",
+    color: theme.innerText,
     fontWeight: "600",
   },
   resendRow: {
@@ -212,18 +217,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   helpText: {
-    color: "#444",
+    color: theme.text,
     fontWeight: "500",
     
   },
   resendButton: {
     paddingVertical: 6,
     paddingHorizontal: 10,
-    backgroundColor: "#b5c9f3",
+    backgroundColor: theme.primary,
     borderRadius: 6,
   },
   resendText: {
-    color: "#2563eb",
+    color: theme.innerText,
     fontWeight: "600",
   },
   disabled: {
@@ -231,22 +236,22 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     marginTop: 12,
-    backgroundColor: "#fff1f2",
+    backgroundColor: theme.secondary,
     borderRadius: 6,
     padding: 10,
   },
   errorText: {
-    color: "#b91c1c",
+    color: theme.text,
     fontSize: 13,
   },
   alertBox: {
     marginTop: 12,
-    backgroundColor: "#c2c7ee",
+    backgroundColor: theme.secondary,
     borderRadius: 6,
     padding: 10,
   },
   alertText: {
-    color: "#1c2eb9",
+    color: theme.text,
     fontSize: 13,
   },
 });

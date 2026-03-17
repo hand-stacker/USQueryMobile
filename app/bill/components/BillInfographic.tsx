@@ -1,6 +1,7 @@
 
 import MicroSummary from "@/app/components/MicroSummary";
-import { useRef, useState } from "react";
+import { ThemeContext } from "@/app/theme/themeContext";
+import { useContext, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import BillBadgeInactive from "./BillBadgeInactive";
 
@@ -17,6 +18,8 @@ function navToBill(navigation: any, billId: any) {
 }
 
 export default function BillInfographic({navigator, billId, billTitle, billNum, billSummary }:BillInfographicProps) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   // Provide a typed navigation prop so `navigate` accepts the route name and params.
   const [isExpanded, setIsExpanded] = useState(false);
   const [prevInteraction, setPrevInteraction] = useState(false);
@@ -72,16 +75,15 @@ export default function BillInfographic({navigator, billId, billTitle, billNum, 
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create(
-  {
+const createStyles = (theme : any) =>
+  StyleSheet.create({
     card: {
       width: '100%',
-      backgroundColor: 'white',
+      backgroundColor: theme.card,
       borderRadius: 12,
       paddingHorizontal: 12,
       paddingVertical: 12,
-      shadowColor: '#000',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.08,
       shadowRadius: 8,
@@ -97,7 +99,7 @@ const styles = StyleSheet.create(
     title: {
       fontSize: 16,
       fontWeight: '700',
-      color: '#0f172a',
+      color: theme.titleText,
       flex: 1,
     },
     summaryContainer: {
@@ -107,8 +109,7 @@ const styles = StyleSheet.create(
     infoHint: {
     marginVertical: 8,
     fontSize: 12,
-    color: '#6B7280',
+    color: theme.subtext,
     fontStyle: 'italic',
-  }
-  }
-)
+    },
+  });

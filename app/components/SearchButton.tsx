@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useContext } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { ThemeContext } from "../theme/themeContext";
 
 interface Props {
   highlighted?: boolean;
@@ -7,6 +9,7 @@ interface Props {
 }
 
 const SearchButton = ({ onPress, highlighted }: Props) => {
+  const { theme } = useContext(ThemeContext);
   return (
     <Pressable
       onPress={onPress}
@@ -17,7 +20,7 @@ const SearchButton = ({ onPress, highlighted }: Props) => {
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
       <View style={styles.inner}>
-        <Ionicons name="search" size={30} color={highlighted ? '#0073ffff' : 'black'} />
+        <Ionicons name="search" size={30} color={highlighted ? '#0073ffff' : theme.titleText} />
       </View>
     </Pressable>
   );

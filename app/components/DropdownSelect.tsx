@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
+import { ThemeContext } from '../theme/themeContext';
 
 interface Props {
     value?: string;
@@ -62,6 +63,8 @@ interface Props {
   ];
 
   const DropdownSelectComponent = ({value, placeholder, onChange }: Props) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = createStyles(theme);
     const selected = value ?? 'All';
     return (
       <Dropdown
@@ -72,6 +75,7 @@ interface Props {
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
         iconStyle={styles.iconStyle}
+        itemTextStyle={styles.itemText}
         data={staticData}
         search={true}
         labelField="name"
@@ -87,37 +91,37 @@ interface Props {
 
   export default DropdownSelectComponent;
 
-const styles = StyleSheet.create({
-    dropdown: {
-      margin: 16,
-      height: 400,
-      borderBottomColor: 'gray',
-      borderBottomWidth: 0.5,
-    },
-    icon: {
-      marginRight: 5,
-    },
-    placeholderStyle: {
-      fontSize: 16,
-    },
-    selectedTextStyle: {
-      fontSize: 14,
-    },
-    iconStyle: {
-      width: 20,
-      height: 20,
-    },
-    inputSearchStyle: {
-      height: 40,
-      fontSize: 16,
-    },
+const createStyles = (theme : any) => StyleSheet.create({
+  dropdown: {
+    margin: 16,
+    height: 400,
+    borderBottomColor: theme.border,
+    borderBottomWidth: 0.5,
+  },
+  icon: {
+    marginRight: 5,
+  },
+  placeholderStyle: {
+    fontSize: 16,
+  },
+  selectedTextStyle: {
+    fontSize: 14,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 16,
+  },
   container: {
     paddingBottom: 16,
   },
   general : {
     borderRadius: 14,
-    backgroundColor: 'white',
-    shadowColor: '#000',
+    backgroundColor: theme.card,
+    shadowColor: theme.shadow,
     marginTop: 8,
     marginRight: 12,
     paddingHorizontal: 20,
@@ -130,6 +134,7 @@ const styles = StyleSheet.create({
     shadowRadius: 1.41,
 
     elevation: 2,
+    color: theme.text,
   },
   item: {
     padding: 17,
@@ -137,7 +142,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 0.5,
-    borderColor: '#c1c1c1ff',
+    borderColor: theme.border,
   },
   itemText: {
     flex: 1,
@@ -145,6 +150,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
     marginRight: 8,
+    color: theme.text,
   },
   selectedStyle: {
     flexDirection: 'row',
@@ -152,7 +158,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: 'black',
+    backgroundColor: theme.primary,
     marginBottom: 8,
   },
   textSelectedStyle: {
@@ -161,7 +167,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
     fontSize: 16,
     lineHeight: 20,
-    color: 'white',
+    color: theme.innerText,
   },
   selectedContainer: {
     maxHeight: 150,

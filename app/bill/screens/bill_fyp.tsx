@@ -1,9 +1,10 @@
 import useGetRecentBills from "@/app/hooks/useGetRecentBills";
 import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useIsFocused } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemeContext } from "../../theme/themeContext";
 import BillList from '../components/BillList';
 import BillTopNav from "../components/BillTopNav";
 
@@ -17,7 +18,8 @@ const arraysEqual = (a?: number[], b?: number[]) => {
 };
 
 export default function BillFYP( {navigation} : any) {
-
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   // use MMKV later to store favorite subjects persistently
   const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const favorite_subjects = useMemo(() => (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [], [favorite_subjects_store]);
@@ -60,17 +62,19 @@ export default function BillFYP( {navigation} : any) {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
         <BillTopNav navigation={navigation} mode="FYP"/>
-      <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
+        <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
-  container : {
-    flex:1,
-    paddingHorizontal:'6%',
-    paddingTop:'5%',
-  },
-})
+
+const createStyles = (theme : any) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.background },
+    container : {
+      flex:1,
+      paddingHorizontal:'6%',
+      paddingTop:'5%',
+    },
+  });

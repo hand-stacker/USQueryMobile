@@ -1,18 +1,19 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemeContext } from "../theme/themeContext";
 interface ResetPasswordProps {
   navigation: any;
 }
 
 export default function ResetPassword({ navigation }: ResetPasswordProps) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
-  const [messages, setMessages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async() => {
-    // TODO: Call registration API. For now navigate to verification screen.
     setLoading(true);
     try {
       const result = await fetch("https://usquery.com/api/auth/password-reset-api/", {
@@ -35,12 +36,9 @@ export default function ResetPassword({ navigation }: ResetPasswordProps) {
         const errs: string[] = [];
         const source = result.errors ?? {};
         for (const key in source) {
-          // @ts-ignore -- source may be null or different shapes
           if (Array.isArray(source[key])) {
-            // @ts-ignore
             source[key].forEach((msg: string) => errs.push(`${key}: ${msg}`));
           } else {
-            // @ts-ignore
             errs.push(`${key}: ${source[key]}`);
           }
         }
@@ -66,6 +64,7 @@ export default function ResetPassword({ navigation }: ResetPasswordProps) {
         value={email}
         onChangeText={(t) => setEmail(t.trim().toLowerCase())}
         placeholder="you@example.com"
+        placeholderTextColor={theme.subtext}
       />
 
       {errors.length > 0 && (
@@ -99,31 +98,32 @@ export default function ResetPassword({ navigation }: ResetPasswordProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: theme.background,
   },
   title: {
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 20,
+    color: theme.titleText,
   },
   label: {
     marginTop: 12,
     marginBottom: 6,
-    color: "#444",
+    color: theme.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: theme.border,
     padding: 12,
     borderRadius: 8,
   },
   button: {
     marginTop: 24,
-    backgroundColor: "#2563eb",
+    backgroundColor: theme.primary,
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
@@ -136,17 +136,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
-    color: "#fff",
+    color: theme.innerText,
     fontWeight: "600",
   },
   errorBox: {
     marginTop: 12,
-    backgroundColor: "#fff1f2",
+    backgroundColor: theme.secondary,
     borderRadius: 6,
     padding: 10,
   },
   errorText: {
-    color: "#b91c1c",
+    color: theme.text,
     fontSize: 13,
   },
 });

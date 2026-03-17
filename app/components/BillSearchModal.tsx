@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemeContext } from "../theme/themeContext";
 import MultiSelectComponent from "./MultiSelect";
 import NavReturn from "./NavReturn";
 
@@ -22,6 +23,8 @@ interface Props {
 }
 
 export default function BillSearchModal({ visible, onClose, onSearch, initial, subjects, desc}: Props) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const [selectedCongress, setSelectedCongress] = useState<number | undefined>(initial?.congress_num ?? 119);
   const [selectedBillType, setSelectedBillType] = useState<string | undefined>(initial?.bill_type ?? '!');
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>(initial?.subject_list ?? []);
@@ -55,7 +58,7 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.modalOverlay}>
-        <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+        <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
           <NavReturn onPress={onClose} />
           <Text style={styles.title}>{desc}</Text>
           <Text style={styles.subtitle}>Select Congress</Text>
@@ -91,74 +94,72 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
   );
 }
 
-const styles = StyleSheet.create(
-  {
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      padding: 20 
-    },
-    form: {
-      backgroundColor: 'white',
-      padding: 18,
-      borderRadius: 14,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 6,
-      marginBottom: 20,
-      gap: 2,
-    },
-    title: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: '#0f172a',
-      marginBottom: 6,
-    },
-    subtitle: {
-      color: '#475569',
-      marginBottom: 10,
-      fontSize: 14,
-      marginTop:8,
-      fontWeight:'600'
-    },
-    chip: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      marginRight: 8,
-      backgroundColor: '#f8fafc',
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: '#e6e9ee',
-    },
-    chipSelected: {
-      backgroundColor: '#0b1226',
-      borderColor: '#0b1226',
-    },
-    chipText: {
-      color: '#0f172a',
-      fontWeight: '600',
-      fontSize: 14,
-    },
-    chipTextSelected: {
-      color: 'white',
-      fontWeight: '600',
-      fontSize: 14,
-    },
-    searchButton: {
-      marginTop: 18,
-      backgroundColor: '#0b1226',
-      paddingVertical: 14,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginHorizontal: 4,
-    },
-    searchButtonText: {
-      color: 'white',
-      fontWeight: '700',
-      fontSize: 16,
-    }
+const createStyles = (theme: any) => StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: theme.background,
+    padding: 20,
+  },
+  form: {
+    backgroundColor: theme.card,
+    padding: 18,
+    borderRadius: 14,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    marginBottom: 20,
+    gap: 2,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.text,
+    marginBottom: 6,
+  },
+  subtitle: {
+    color: theme.subtext,
+    marginBottom: 10,
+    fontSize: 14,
+    marginTop:8,
+    fontWeight:'600'
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginRight: 8,
+    backgroundColor: theme.card,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  chipSelected: {
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
+  },
+  chipText: {
+    color: theme.text,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  chipTextSelected: {
+    color: theme.innerText,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  searchButton: {
+    marginTop: 18,
+    backgroundColor: theme.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  searchButtonText: {
+    color: theme.innerText,
+    fontWeight: '700',
+    fontSize: 16,
   }
-)
+});

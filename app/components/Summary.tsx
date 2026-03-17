@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ThemeContext } from "../theme/themeContext";
 import CloseButton from "./CloseButton";
 
 function markdownToPlaintext(md: string | null | undefined) {
@@ -20,6 +21,8 @@ function markdownToPlaintext(md: string | null | undefined) {
 }
 
 const Summary: React.FC<{ text?: string }> = ({ text }) => {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const [visible, setVisible] = useState(false);
   const plain = markdownToPlaintext(text);
   if (!plain) return null;
@@ -59,13 +62,13 @@ const Summary: React.FC<{ text?: string }> = ({ text }) => {
 
 export default Summary;
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({ 
   summaryCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.card,
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
-    shadowColor: "#000",
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -73,18 +76,18 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     fontSize: 15,
-    color: "#111827",
+    color: theme.text,
     lineHeight: 20,
   },
   summaryHint: {
     marginTop: 8,
     fontSize: 12,
-    color: '#6B7280',
+    color: theme.subtext,
     fontStyle: 'italic',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: theme.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -92,7 +95,7 @@ const styles = StyleSheet.create({
   modalTitle: { 
     fontSize: 20, 
     fontWeight: '700', 
-    color: '#0f172a', 
+    color: theme.titleText, 
     marginBottom: 12
   },
   modalHeader: {
@@ -103,12 +106,12 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxHeight: '80%',
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.card,
     borderRadius: 12,
     paddingTop: 12,
     paddingBottom: 18,
     paddingHorizontal: 14,
-    shadowColor: '#000',
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
@@ -128,17 +131,17 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#111827',
+    color: theme.text,
   },
   modalCloseButton: { 
     marginTop: 12, 
-    backgroundColor: '#f3f4f6', 
+    backgroundColor: theme.card, 
     paddingVertical: 10, 
     borderRadius: 8, 
     alignItems: 'center' 
   },
   modalCloseText: { 
-    color: '#111827', 
+    color: theme.text, 
     fontWeight: '700' 
   },
 });

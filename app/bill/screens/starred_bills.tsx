@@ -1,13 +1,16 @@
 import useGetStarredBills from '@/app/hooks/useGetStarredBills';
 import { useFavoritesStore } from '@/app/store/favoriteSubjectsStore';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
-import React, { useCallback, useEffect, useMemo } from 'react';
+import { ThemeContext } from '@/app/theme/themeContext';
+import React, { useCallback, useContext, useEffect, useMemo } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BillList from '../components/BillList';
 import BillTopNav from '../components/BillTopNav';
 
 export default function StarredBills({ navigation }: any) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const stars = useStarredBillsStore(s => s.stars) ?? [];
   const starredIds = useMemo(() => stars.map(s => Number(s)).filter(n => !Number.isNaN(n)), [stars]);
 
@@ -53,8 +56,8 @@ export default function StarredBills({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
+const createStyles = (theme: any) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   container: {
     flex:1,
     paddingHorizontal:'6%',
@@ -69,6 +72,6 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f172a',
+    color: theme.titleText,
   }
 });

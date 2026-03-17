@@ -1,4 +1,5 @@
-import React from 'react';
+import { ThemeContext } from '@/app/theme/themeContext';
+import React, { useContext } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface Props {
@@ -35,6 +36,8 @@ function getBillIdentifier(billNum: number): string {
 }
 
 export default function BillBadgeInactive({billNum}: Props) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const label = getBillIdentifier(billNum);
   return (
     <View style={styles.billBadge}>
@@ -43,16 +46,16 @@ export default function BillBadgeInactive({billNum}: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   billBadge: {
-    backgroundColor: '#5e6069ff',
+    backgroundColor: theme.inactive,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
   billBadgeText: {
-    color: 'white',
+    color: theme.innerText,
     fontWeight: '700',
     fontSize: 16,
   },

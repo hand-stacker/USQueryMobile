@@ -1,0 +1,31 @@
+export const LightTheme = {
+  name: 'light',
+  background: '#f8fafc',
+  text: '#000000',
+  titleText: '#0f172a',
+  subtext: '#5c6a7d',
+  innerText: '#FFFFFF',
+  primary: '#0073ffff',
+  secondary: '#cfddee',
+  card: '#F5F5F5',
+  inactive: '#5e6069ff',
+  border: '#E0E0E0',
+  shadow: '#000000',
+  overlay: 'rgba(0,0,0,0.4)',
+};
+
+export const DarkTheme = {
+  name: 'dark',
+  background: '#121212',
+  text: '#FFFFFF',
+  titleText: '#E0E0E0',
+  subtext: '#A0A0A0',
+  innerText: '#FFFFFF',
+  primary: '#3892ff',
+  secondary: '#25282b',
+  card: '#1E1E1E',
+  inactive: '#424347',
+  border: '#878686',
+  shadow: '#ffffff',
+  overlay: 'rgba(255,255,255,0.1)',
+};

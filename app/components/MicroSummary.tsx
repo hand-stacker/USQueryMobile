@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { StyleSheet, Text } from "react-native";
+import { ThemeContext } from "../theme/themeContext";
 
 function markdownToPlaintext(md: string | null | undefined) {
   if (!md) return "";
@@ -23,6 +24,8 @@ const LINE_HEIGHT = 20;
 const MAX_LINES = Math.floor(MAX_CONTAINER_HEIGHT / LINE_HEIGHT);
 
 const MicroSummary: React.FC<{ text?: string }> = ({ text }) => {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const plain = markdownToPlaintext(text);
   const [isTruncated, setIsTruncated] = useState(false);
   if (!plain) return null;
@@ -55,16 +58,16 @@ const MicroSummary: React.FC<{ text?: string }> = ({ text }) => {
 
 export default MicroSummary;
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({ 
   summaryHint: {
     marginTop: 8,
     fontSize: 12,
-    color: '#6B7280',
+    color: theme.subtext,
     fontStyle: 'italic',
   },
   summaryText: {
-      fontSize: 14,
-      color: '#334155',
-      lineHeight: 20,
-    }
+    fontSize: 14,
+    color: theme.text,
+    lineHeight: 20,
+  }
 });

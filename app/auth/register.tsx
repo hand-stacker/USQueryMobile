@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegister } from "../hooks/useRegister";
+import { ThemeContext } from "../theme/themeContext";
 
 interface RegisterProps {
   navigation: any;
 }
 
 export default function RegisterAccount({ navigation}: RegisterProps) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const [email, setEmail] = useState("");
   const [emailConfirm, setEmailConfirm] = useState("");
   const [password, setPassword] = useState("");
@@ -126,48 +129,49 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({ 
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: theme.background,
   },
   title: {
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 20,
+    color: theme.text,
   },
   label: {
     marginTop: 12,
     marginBottom: 6,
-    color: "#444",
+    color: theme.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: theme.border,
     padding: 12,
     borderRadius: 8,
-    color: "#000",
+    color: theme.text,
   },
   button: {
     marginTop: 24,
-    backgroundColor: "#2563eb",
+    backgroundColor: theme.primary,
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
   },
   buttonText: {
-    color: "#fff",
+    color: theme.innerText,
     fontWeight: "600",
   },
   errorBox: {
     marginTop: 12,
-    backgroundColor: "#fff1f2",
+    backgroundColor: theme.secondary,
     borderRadius: 6,
     padding: 10,
   },
   errorText: {
-    color: "#b91c1c",
+    color: theme.text,
     fontSize: 13,
   },
 });
