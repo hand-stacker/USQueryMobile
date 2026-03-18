@@ -1,6 +1,7 @@
 import CloseButton from "@/app/components/CloseButton";
 import MemberList from "@/app/member/components/MemberList";
-import { useState } from "react";
+import { ThemeContext } from "@/app/theme/themeContext";
+import { useContext, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PartyPieChart from "./PartyPieChart";
@@ -11,6 +12,8 @@ interface Props {
 }
 
 const ModalVoteList = ({data, vote_type, navigation}:Props)=> {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const [visible, setVisible] = useState(false);
   const items = data?.edges ?? data ?? [];
   const count = Array.isArray(items) ? items.length : 0;
@@ -60,28 +63,28 @@ const ModalVoteList = ({data, vote_type, navigation}:Props)=> {
 
 export default ModalVoteList;
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   wrapper: { marginBottom: 12 },
   box: {
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.card,
     borderRadius: 10,
     padding: 12,
-    shadowColor: '#000',
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 1,
   },
-  countText: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
-  hintText: { fontSize: 13, color: '#6B7280', marginTop: 6 },
-  modalSafe: { flex: 1, backgroundColor: '#f8fafc' },
+  countText: { fontSize: 16, fontWeight: '700', color: theme.text },
+  hintText: { fontSize: 13, color: theme.text, marginTop: 6 },
+  modalSafe: { flex: 1, backgroundColor: theme.background },
   modalInner: { flex: 1, paddingHorizontal: '8%', paddingTop: '5%', paddingBottom: '8%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#0f172a' },
-  rowItem: { backgroundColor: '#ffffff', borderRadius: 10, padding: 12 },
-  text: { fontSize: 16, color: '#0f172a' },
-  subText: { fontSize: 13, color: '#6B7280', marginTop: 4 },
-  pieChartContainer: { alignItems: 'center', marginBottom: 12 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: theme.text },
+  rowItem: { backgroundColor: theme.card, borderRadius: 10, padding: 12 },
+  text: { fontSize: 16, color: theme.text },
+  subText: { fontSize: 13, color: theme.subtext, marginTop: 4 },
+  pieChartContainer: { alignItems: 'center', marginBottom: 12},
   pieChartOneRow : { height: 180 },
   pieChartTwoRow : { height: 200 },
   pieChartThreeRow : { height: 220 },

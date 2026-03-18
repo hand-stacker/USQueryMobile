@@ -1,13 +1,16 @@
 import MemberSearchModal from "@/app/components/MemberSearchModal";
 import useGetMembershipSet from "@/app/hooks/useGetMembershipSet";
+import { ThemeContext } from "@/app/theme/themeContext";
 import { useIsFocused } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MemberList from "../components/MemberList";
 import MemTopNav from "../components/MemTopNav";
 
 export default function SearchedMembers({navigation}: any) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   // use MMKV later to store favorite subjects persistently
   // const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const [modalVisible, setModalVisible] = useState(true);
@@ -63,27 +66,11 @@ export default function SearchedMembers({navigation}: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
+const createStyles = (theme: any) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   container : {
     flex:1,
     paddingHorizontal:'6%',
     paddingTop:'5%',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  pageTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    color: '#475569',
-    marginTop: 4,
-  }
-})
+});

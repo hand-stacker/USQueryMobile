@@ -2,16 +2,18 @@ import EmptyPage from "@/app/components/EmptyPage";
 import { authRequest } from "@/app/hooks/authRequest";
 import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useStarredMembersStore } from "@/app/store/starredMembersStore";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { ThemeContext } from "@/app/theme/themeContext";
+import React, { memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MemberList from "../components/MemberList";
 import MemTopNav from "../components/MemTopNav";
 
 function StarredMembers({navigation}: any) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   // use MMKV later to store favorite subjects persistently
   const starred_members = useStarredMembersStore((s) => s.stars);
-  const starredIds = useMemo(() => starred_members.map(s => Number(s)).filter(n => !Number.isNaN(n)), [starred_members]);
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -82,27 +84,11 @@ function StarredMembers({navigation}: any) {
 
 export default memo(StarredMembers);
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
+const createStyles = (theme: any) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   container : {
     flex:1,
     paddingHorizontal:'6%',
     paddingTop:'5%',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  pageTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    color: '#475569',
-    marginTop: 4,
-  }
-})
+});

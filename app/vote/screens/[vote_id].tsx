@@ -2,7 +2,8 @@ import BillBadge from "@/app/bill/components/BillBadge";
 import BillBadgeInactive from "@/app/bill/components/BillBadgeInactive";
 import NavReturn from "@/app/components/NavReturn";
 import useGetVote from "@/app/hooks/useGetVote";
-import React, { useCallback, useMemo } from "react";
+import { ThemeContext } from "@/app/theme/themeContext";
+import React, { useCallback, useContext, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModalVoteList from "../components/ModalVoteList";
@@ -14,6 +15,8 @@ interface VoteInfoProps {
     route?: any;
 }
 export default function VoteInfo({ navigation, route}: VoteInfoProps) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const { vote_id } = route.params;
   const {allowBillNav} = route.params? route.params : {allowBillNav: false};
   const { vote, loading, error, refetch } = useGetVote(vote_id);
@@ -71,7 +74,7 @@ export default function VoteInfo({ navigation, route}: VoteInfoProps) {
             <Text style={styles.title}>{vote.title}</Text>
             {vote.question ? <Text style={styles.question}>{vote.question}</Text> : null}
             <View style={styles.rowBetween}>
-              <Text style={styles.resultLabel}>Result</Text>
+              <Text style={styles.resultLabel}>Result:</Text>
               <ResultBadge result={vote.result ?? '—'} />
             </View>
           </View>
@@ -105,8 +108,8 @@ function formatDate(value: string | null | undefined) {
   }
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
+const createStyles = (theme: any) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   container: {
     paddingHorizontal: 20,
     paddingTop: 18,
@@ -114,21 +117,21 @@ const styles = StyleSheet.create({
   },
   centerOverlay: { justifyContent: 'center', alignItems: 'center' },
   headerCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
   },
-  dateText: { fontSize: 13, color: '#6B7280', marginBottom: 6 },
-  title: { fontSize: 18, fontWeight: '700', color: '#0f172a', marginBottom: 8 },
-  question: { fontSize: 15, color: '#374151', marginBottom: 12 },
+  dateText: { fontSize: 13, color: theme.subtext, marginBottom: 6 },
+  title: { fontSize: 18, fontWeight: '700', color: theme.titleText, marginBottom: 8 },
+  question: { fontSize: 15, color: theme.subtext, marginBottom: 12 },
   rowBetween: { flexDirection: 'row', alignItems: 'center' },
-  resultLabel: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginRight: 8 },
+  resultLabel: { fontSize: 13, color: theme.subtext, fontWeight: '600', marginRight: 8 },
   listWrap: { paddingTop: 6, paddingBottom: 50 },
   pieChartContainer: { alignItems: 'center', marginBottom: 12 },
   pieChartOneRow : { height: 240 },

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CloseButton from '../components/CloseButton';
 import MultiSelect from '../components/MultiSelect';
 import { useGetSubjects } from '../hooks/useGetSubjects';
 import { useFavoritesStore } from '../store/favoriteSubjectsStore';
+import { ThemeContext } from '../theme/themeContext';
 
 interface Props {
   visible: boolean;
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export default function SelectFavoritesModal({ visible, onClose }: Props) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
   const favorites = useFavoritesStore(s => s.favorites);
   const hydrated = useFavoritesStore(s => s._hasHydrated);
@@ -51,28 +54,22 @@ export default function SelectFavoritesModal({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    backgroundColor: theme.background,
   },
   header: {
     fontSize: 20,
     fontWeight: '600',
+    color: theme.text,
+
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  closeBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: '#222',
-    borderRadius: 8,
-  },
-  closeText: {
-    color: 'white',
   },
 });

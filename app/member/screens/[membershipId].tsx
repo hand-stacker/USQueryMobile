@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
+import { ThemeContext } from "@/app/theme/themeContext";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import { ActivityIndicator, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import NavReturn from "../../components/NavReturn";
@@ -8,25 +9,31 @@ import ContactsModal from "../components/ContactsModal";
 import MemStarButton from "../components/MemStarButton";
 
 interface MemberInfoProps {
-    navigation?: any;
-    route?: any;
+  navigation?: any;
+  route?: any;
 }
 
 function computeInitials(name: string) {
-    if (!name) return '';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (!name) return '';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const SectionLabel: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => (
+const SectionLabel: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
+  return (
     <View style={styles.labelContainer}>
-        <View style={styles.labelBar} />
-        <Text style={styles.label}>{children}</Text>
+      <View style={styles.labelBar} />
+      <Text style={styles.label}>{children}</Text>
     </View>
-));
+  );
+});
 
 export default function MemberInfo({ navigation, route }: MemberInfoProps) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const { membershipId } = route.params;
   const { member, loading, error } = useGetMembership(membershipId);
   const fullName = useMemo(() => member?.full_name ?? 'Unknown', [member?.full_name]);
@@ -160,8 +167,11 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
+const createStyles = (theme: any) => StyleSheet.create({
+  safe: {
+    flex: 1, 
+    backgroundColor: theme.background 
+  },
   container: {
     paddingHorizontal: 20,
     paddingTop: 18,
@@ -173,11 +183,11 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   headerCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -188,85 +198,94 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   label: {
-        fontSize: 13,
-        color: "#0f172a",
-        fontWeight: "700",
-        marginBottom: 6,
-        marginLeft: 8,
-        textTransform: "uppercase",
-        letterSpacing: 0.6,
-    },
-    labelContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 12,
-        marginBottom: 8,
-    },
-    labelBar: {
-        width: 4,
-        height: 18,
-        borderRadius: 2,
-        backgroundColor: "#0EA5A9",
-        marginRight: 8,
-    },
-  leftColumn: { width: 120, marginRight: 12 },
-  rightColumn: { width: 20 },
-  middleColumn: { flex: 1 },
-  avatarLarge: { width: '100%', height: 140, borderRadius: 12, backgroundColor: '#F3F4F6' },
-  avatarPlaceholderLarge: { width: '100%', height: 140, borderRadius: 12, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  avatarInitialsLarge: { color: '#374151', fontWeight: '700', fontSize: 28 },
-  title: { fontSize: 18, fontWeight: '700', color: '#0f172a', marginBottom: 8 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: 10 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  infoLabel: { fontSize: 13, color: '#6B7280', width: 40, fontWeight: '600' },
-  infoValue: { fontSize: 13, color: '#111827', flex: 1 },
-  contactButton: { marginTop: 10, backgroundColor: '#111827', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, alignSelf: 'flex-start' },
-  contactButtonText: { color: '#fff', fontWeight: '700' },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    flexWrap: 'wrap',
-  },
-  metaLabel: {
     fontSize: 13,
-    color: '#6B7280',
-    marginRight: 6,
-    fontWeight: '600',
+    color: theme.text,
+    fontWeight: "700",
+    marginBottom: 6,
+    marginLeft: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
-  metaValue: {
-    fontSize: 13,
-    color: '#111827',
+  labelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 8,
   },
-  avatar: {
-    width: '100%',
-    height: '100%',
+  labelBar: {
+    width: 4,
+    height: 18,
+    borderRadius: 2,
+    backgroundColor: theme.primary,
+    marginRight: 8,
   },
-  avatarWrap: {
-    width: 100,
-    height: 100,
-    marginRight: 12,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-    flexShrink: 0,
+  leftColumn: {
+    width: 120, 
+    marginRight: 12 
   },
-  text: { fontSize: 16, color: '#0f172a', fontWeight: '600' },
-  textWrap: {
-    flex: 1,
-    justifyContent: 'center',
+  rightColumn: {
+    width: 20 
   },
-  avatarPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
+  middleColumn: {
+    flex: 1 
   },
-  avatarInitials: {
-    color: '#374151',
-    fontWeight: '600',
-    fontSize: 16,
+  avatarLarge: {
+    width: '100%', 
+    height: 140, 
+    borderRadius: 12, 
+    backgroundColor: theme.card 
   },
-  listWrap: { paddingTop: 6, paddingBottom: 40, backgroundColor: '#f8fafc' },
+  avatarPlaceholderLarge: { 
+    width: '100%', 
+    height: 140, 
+    borderRadius: 12, 
+    backgroundColor: theme.secondary, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  avatarInitialsLarge: { 
+    color: theme.text, 
+    fontWeight: '700', 
+    fontSize: 28 
+  },
+  title: { 
+    fontSize: 18, 
+    fontWeight: '700', 
+    color: theme.text, 
+    marginBottom: 8 
+  },
+  nameRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    marginRight: 10 
+  },
+  infoRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 4 
+  },
+  infoLabel: { 
+    fontSize: 13, 
+    color: theme.text, 
+    width: 40, 
+    fontWeight: '600' 
+  },
+  infoValue: { 
+    fontSize: 13, 
+    color: theme.text, 
+    flex: 1 
+  },
+  contactButton: { 
+    marginTop: 10, 
+    backgroundColor: theme.primary, 
+    paddingVertical: 8, 
+    paddingHorizontal: 12, 
+    borderRadius: 8, 
+    alignSelf: 'flex-start' 
+  },
+  contactButtonText: { 
+    color: theme.innerText, 
+    fontWeight: '700' 
+  },
 });

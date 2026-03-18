@@ -1,11 +1,14 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CloseButton from '../components/CloseButton';
 import { useFavoritesStore } from '../store/favoriteSubjectsStore';
+import { ThemeContext } from '../theme/themeContext';
 
 export default function WelcomeFavoritesModal() {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const favorites = useFavoritesStore(s => s.favorites);
   const hydrated = useFavoritesStore(s => s._hasHydrated);
   const welcomeCounter = useFavoritesStore(s => s.welcomeCounter);
@@ -85,20 +88,20 @@ export default function WelcomeFavoritesModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: theme.overlay,
   },
   container: {
     width: '90%',
-    backgroundColor: '#fff',
+    backgroundColor: theme.background,
     padding: 18,
     borderRadius: 12,
     elevation: 6,
-    shadowColor: '#000',
+    shadowColor: theme.shadow,
     shadowOpacity: 0.18,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
@@ -112,11 +115,12 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 18,
     fontWeight: '700',
+    color: theme.titleText,
   },
   body: {
     fontSize: 15,
     lineHeight: 20,
-    color: '#333',
+    color: theme.text,
     marginBottom: 18,
   },
   actionsRow: {
@@ -132,17 +136,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   primary: {
-    backgroundColor: 'black',
+    backgroundColor: theme.primary,
   },
   primaryText: {
-    color: '#fff',
+    color: theme.innerText,
     fontWeight: '600',
   },
   ghost: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.secondary,
   },
   ghostText: {
-    color: '#333',
+    color: theme.text,
     fontWeight: '600',
   },
 });

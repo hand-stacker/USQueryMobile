@@ -7,7 +7,7 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Notifications from "expo-notifications";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 
 import { client } from "./api/apollo";
 import { navigate, navigationRef } from "./navigation/navigationRef";
@@ -74,13 +74,14 @@ function SharedStack({ route } : {route:any}) {
 }
 
 function TabNavigator() {
+  const { theme } = useContext(ThemeContext);
   return (
     <Tabs.Navigator 
       initialRouteName="Bills"
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#0073ffff',
-        tabBarInactiveTintColor: '#6b7280',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.titleText,
         tabBarIcon: ({ color, size }) => {
           const name =
             route.name === 'Bills' ? 'newspaper-outline' :
@@ -120,7 +121,7 @@ function TabNavigator() {
   );
 }
 
-import { ThemeProvider } from "./theme/themeContext";
+import { ThemeContext, ThemeProvider } from "./theme/themeContext";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -132,8 +133,8 @@ export default function RootLayout() {
       Notifications.addNotificationResponseReceivedListener(response => {
         const billId =
           response.notification.request.content.data?.bill_id;
-
         if (billId) {
+          console.log('Notification tapped with bill_id:', billId);
           navigate("Bill_info", { bill_id: billId });
         }
       });
@@ -156,4 +157,3 @@ export default function RootLayout() {
     </ApolloProvider>
   );
 }
-

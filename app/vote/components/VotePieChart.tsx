@@ -1,4 +1,5 @@
-import React, { FC } from 'react'
+import { ThemeContext } from '@/app/theme/themeContext'
+import React, { FC, useContext } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import RNPieChart from 'react-native-pie-chart'
 
@@ -20,6 +21,8 @@ const VotePieChart: FC<Props> = ({
   widthAndHeight = 200,
   showLabels = true,
 }) => {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const series = Object.entries(data ?? {}).map(([key, value]) => {
     const color = COLOR_MAP[key.toUpperCase()] ?? '#cccccc'
     return { value, color }
@@ -33,7 +36,6 @@ const VotePieChart: FC<Props> = ({
     const percent = total > 0 ? (v / total) * 100 : 0
     return { key, value: v, color, percent }
   })
-
 
   return (
     <View style={styles.container}>
@@ -57,7 +59,7 @@ const VotePieChart: FC<Props> = ({
 
 export default VotePieChart
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -81,6 +83,6 @@ const styles = StyleSheet.create({
   },
   labelText: {
     fontSize: 14,
-    color: '#0f172a',
-  }
-})
+    color: theme.text,
+  },
+});

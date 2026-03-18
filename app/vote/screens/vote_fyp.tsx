@@ -1,7 +1,8 @@
 import useGetRecentVotes from "@/app/hooks/useGetRecentVotes";
 import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
+import { ThemeContext } from "@/app/theme/themeContext";
 import { useIsFocused } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import VoteList from "../components/VoteList";
@@ -16,6 +17,8 @@ const arraysEqual = (a?: number[], b?: number[]) => {
 };
 
 export default function VoteFYP( {navigation} : any) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const favorite_subjects = useMemo(() => (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [], [favorite_subjects_store]);
   const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: undefined }));
@@ -65,28 +68,12 @@ export default function VoteFYP( {navigation} : any) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
+const createStyles = (theme: any) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   container : {
     flex:1,
     paddingHorizontal:'6%',
     paddingTop:'5%',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  pageTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    color: '#475569',
-    marginTop: 4,
-  },
-  centerOverlay: { justifyContent: 'center', alignItems: 'center' }
-})
+  centerOverlay: { justifyContent: 'center', alignItems: 'center' },
+});

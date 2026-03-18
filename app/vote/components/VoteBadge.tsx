@@ -1,4 +1,5 @@
-import React from 'react';
+import { ThemeContext } from '@/app/theme/themeContext';
+import React, { useContext } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 interface Props {
@@ -12,6 +13,8 @@ function navToBill(navigation: any, voteId: any, allowBillNav: boolean) {
 }
 
 export default function VoteBadge({navigation, voteId, allowBillNav = false}: Props) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   return (
     <Pressable onPress={() => navToBill(navigation, voteId, allowBillNav)} style={styles.billBadge} accessibilityRole="button">
       <Text style={styles.billBadgeText}>Open Vote</Text>
@@ -19,16 +22,16 @@ export default function VoteBadge({navigation, voteId, allowBillNav = false}: Pr
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   billBadge: {
-    backgroundColor: '#6ebbeeff',
+    backgroundColor: theme.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
   billBadgeText: {
-    color: 'white',
+    color: theme.innerText,
     fontWeight: '700',
     fontSize: 16,
   }

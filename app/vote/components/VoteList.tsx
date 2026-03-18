@@ -1,5 +1,6 @@
 import EmptyPage from "@/app/components/EmptyPage";
-import React from "react";
+import { ThemeContext } from "@/app/theme/themeContext";
+import React, { useContext } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import VoteInfographic from "./VoteInfographic";
 interface Props {
@@ -11,7 +12,8 @@ interface Props {
 }
 
 const VoteList = ({data, personal, navigation, onEndReached, loadingMore}:Props)=> {
-
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const renderItem = ({ item }: any) => {
     const node = item.node ?? item;
     return <VoteInfographic node={node} personal={personal} navigation={navigation} />;
@@ -42,13 +44,11 @@ const VoteList = ({data, personal, navigation, onEndReached, loadingMore}:Props)
 
 export default VoteList;
 
-const styles = StyleSheet.create(
-    {
-      container: {
-        paddingHorizontal: 12,
-        paddingBottom: 0,
-        paddingTop: 8,
-        backgroundColor: '#f8fafc',
-      }
-    }
-)
+const createStyles = (theme: any) => StyleSheet.create({
+  container: {
+    paddingHorizontal: 12,
+    paddingBottom: 0,
+    paddingTop: 8,
+    backgroundColor: theme.background,
+  }
+});

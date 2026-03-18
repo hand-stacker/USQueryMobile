@@ -1,12 +1,13 @@
-import React, { memo } from "react";
+import { ThemeContext } from "@/app/theme/themeContext";
+import React, { memo, useContext } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import BillBadge from "../../bill/components/BillBadge";
 import ResultBadge from "./ResultBadge";
 import VoteBadge from "./VoteBadge";
 interface Props {
-    node: any;
-    personal: boolean;
-    navigation: any;
+  node: any;
+  personal: boolean;
+  navigation: any;
 }
 
 function formatDateTime(value: string | null | undefined) {
@@ -21,6 +22,8 @@ function formatDateTime(value: string | null | undefined) {
 }
 
 const VoteInfographic = memo(function VoteInfographic({ node, personal, navigation }: Props) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const billId = personal ? node.bill : (node.bill?.id ?? node.bill);
   const resultText = personal ? node.mem_vote : node.result;
   return (
@@ -48,72 +51,57 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
 });
 
 export default VoteInfographic;
-
-const styles = StyleSheet.create(
-    {
-    listContainer: {
-      paddingTop: 8,
-      paddingBottom: 24,
-    },
-    list: {
-      flex: 1,
-    },
-    cardLeft: {
-      width: 120,
-      paddingRight: 12,
-      justifyContent: 'center',
-    },
-    date: {
-      fontSize: 12,
-      color: '#6B7280',
-    },
-    cardRight: {
-      flex: 1,
-      justifyContent: 'center',
-      minWidth: 0,
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'flex-start',
-    },
-    voteButton: {
-      backgroundColor: '#0EA5A9',
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 8,
-      marginRight: 8,
-      flexShrink: 0,
-    },
-    voteButtonText: {
-      color: '#ffffff',
-      fontWeight: '700',
-    },
-    card: {
-      width: '100%',
-      backgroundColor: 'white',
-      borderRadius: 12,
-      padding: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 4,
-      overflow: 'hidden',
-      marginVertical: 4,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingRight: 8,
-    },
-    dateContainer: {
-      width: 120,
-      paddingRight: 12,
-      justifyContent: 'center',
-    },
-    resultRow: {
-      marginVertical: 8,
-    }
-}
-)
+const createStyles = (theme: any) => StyleSheet.create({
+  listContainer: {
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  list: {
+    flex: 1,
+  },
+  cardLeft: {
+    width: 120,
+    paddingRight: 12,
+    justifyContent: 'center',
+  },
+  date: {
+    fontSize: 12,
+    color: theme.subtext,
+  },
+  cardRight: {
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: 0,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  card: {
+    width: '100%',
+    backgroundColor: theme.card,
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+    marginVertical: 4,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 8,
+  },
+  dateContainer: {
+    width: 120,
+    paddingRight: 12,
+    justifyContent: 'center',
+  },
+  resultRow: {
+    marginVertical: 8,
+  },
+});

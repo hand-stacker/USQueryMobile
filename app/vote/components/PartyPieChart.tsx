@@ -1,4 +1,5 @@
-import React, { FC } from 'react'
+import { ThemeContext } from '@/app/theme/themeContext'
+import React, { FC, useContext } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import RNPieChart from 'react-native-pie-chart'
 
@@ -22,6 +23,8 @@ const PartyPieChart: FC<Props> = ({
   widthAndHeight = 150,
   showLabels = true,
 }) => {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const series = Object.entries(data ?? {}).map(([key, value]) => {
     const color = COLOR_MAP[String(key).toUpperCase()] ?? COLOR_MAP.UNKNOWN
     return { value, color }
@@ -56,7 +59,8 @@ const PartyPieChart: FC<Props> = ({
 
 export default PartyPieChart
 
-const styles = StyleSheet.create({
+
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -84,6 +88,6 @@ const styles = StyleSheet.create({
   },
   labelText: {
     fontSize: 14,
-    color: '#0f172a',
+    color: theme.text,
   }
-})
+});
