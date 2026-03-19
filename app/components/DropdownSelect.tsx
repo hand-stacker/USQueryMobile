@@ -75,6 +75,8 @@ interface Props {
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
         iconStyle={styles.iconStyle}
+        activeColor={theme.primary}
+        itemContainerStyle={styles.item}
         itemTextStyle={styles.itemText}
         data={staticData}
         search={true}
@@ -98,14 +100,13 @@ const createStyles = (theme : any) => StyleSheet.create({
     borderBottomColor: theme.border,
     borderBottomWidth: 0.5,
   },
-  icon: {
-    marginRight: 5,
-  },
   placeholderStyle: {
     fontSize: 16,
+    color: theme.subtext,
   },
   selectedTextStyle: {
     fontSize: 14,
+    color: theme.subtext,
   },
   iconStyle: {
     width: 20,
@@ -114,6 +115,7 @@ const createStyles = (theme : any) => StyleSheet.create({
   inputSearchStyle: {
     height: 40,
     fontSize: 16,
+    color: theme.text,
   },
   container: {
     paddingBottom: 16,
@@ -137,7 +139,6 @@ const createStyles = (theme : any) => StyleSheet.create({
     color: theme.text,
   },
   item: {
-    padding: 17,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -160,18 +161,5 @@ const createStyles = (theme : any) => StyleSheet.create({
     borderRadius: 10,
     backgroundColor: theme.primary,
     marginBottom: 8,
-  },
-  textSelectedStyle: {
-    flex: 1,
-    flexWrap: 'wrap',
-    marginRight: 6,
-    fontSize: 16,
-    lineHeight: 20,
-    color: theme.innerText,
-  },
-  selectedContainer: {
-    maxHeight: 150,
-    marginTop: 8,
-    paddingRight: 8,
   },
 });

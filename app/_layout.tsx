@@ -46,8 +46,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-
-
 function SharedStack({ route } : {route:any}) {
   const initialRoute = route.params?.initialRoute;
 
@@ -79,6 +77,10 @@ function TabNavigator() {
     <Tabs.Navigator 
       initialRouteName="Bills"
       screenOptions={({ route }) => ({
+        tabBarStyle: {
+          backgroundColor: theme.card,
+          borderTopColor: theme.border,
+        },
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.titleText,
@@ -146,14 +148,41 @@ export default function RootLayout() {
 
   return (
     <ApolloProvider client={client}>
-      <NavigationIndependentTree>
-        <NavigationContainer ref={navigationRef}>
-          <ThemeProvider>
-            <TabNavigator />
-            <WelcomeFavoritesModal />
-          </ThemeProvider>
-        </NavigationContainer>
-      </NavigationIndependentTree>
+      <ThemeProvider>
+        <AppNavigation />
+      </ThemeProvider>
     </ApolloProvider>
   );
 }
+
+function AppNavigation() {
+  const { theme } = useContext(ThemeContext);
+  const navTheme = createNavTheme(theme);
+  return (
+    <NavigationIndependentTree>
+      <NavigationContainer ref={navigationRef} theme={navTheme}>
+        <TabNavigator />
+        <WelcomeFavoritesModal />
+      </NavigationContainer>
+    </NavigationIndependentTree>
+  );
+}
+
+import { DefaultTheme, DarkTheme as NavDarkTheme } from "@react-navigation/native";
+
+export const createNavTheme = (theme: any) => {
+  const base = theme.name === "dark" ? NavDarkTheme : DefaultTheme;
+  return {
+    ...base,
+    dark: theme.name === "dark",
+    colors: {
+      ...base.colors,
+      background: theme.background,
+      card: theme.card,
+      text: theme.text,
+      border: theme.border,
+      primary: theme.primary,
+      notification: theme.secondary,
+    },
+  };
+};

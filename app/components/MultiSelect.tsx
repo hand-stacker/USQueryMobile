@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef } from 'react';
+import React, { useContext, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
+import { ThemeContext } from '../theme/themeContext';
 
 interface Props {
   data: any[];
@@ -12,6 +13,8 @@ interface Props {
 }
 
 const MultiSelectComponent = ({ data, value, placeholder, onChange, maxContainerHeight=150}: Props) => {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const selected = value ?? [];
   const maxContHeight = useRef(maxContainerHeight ? maxContainerHeight : 150).current;
 
@@ -30,9 +33,9 @@ const MultiSelectComponent = ({ data, value, placeholder, onChange, maxContainer
         style={styles.general}
         containerStyle={[styles.dropdown, styles.general]}
         placeholderStyle={styles.placeholderStyle}
-        selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
         iconStyle={styles.iconStyle}
+        activeColor={theme.primary}
         data={data}
         labelField="name"
         valueField="id"
@@ -46,9 +49,7 @@ const MultiSelectComponent = ({ data, value, placeholder, onChange, maxContainer
         // renderSelectedItem intentionally omitted to avoid duplication/glitches
         alwaysRenderSelectedItem={false}
         visibleSelectedItem={false}
-        
       />
-
       {/* Selected items rendered below in a scrollable list to avoid dropdown modal conflicts */}
       {((selected && selected.length) || (value && value.length)) ? (
         <ScrollView style={[styles.selectedContainer, {maxHeight: maxContHeight}]} nestedScrollEnabled>
@@ -74,15 +75,17 @@ const MultiSelectComponent = ({ data, value, placeholder, onChange, maxContainer
 
 export default MultiSelectComponent;
 
-const styles = StyleSheet.create({
+const createStyles = (theme : any) => StyleSheet.create({
   container: {
     paddingBottom: 16,
   },
   general : {
     borderRadius: 14,
-    backgroundColor: 'white',
-    shadowColor: '#000',
+    borderColor: theme.border,
+    backgroundColor: theme.card,
+    shadowColor: theme.shadow,
     marginTop: 8,
+    color: theme.text,
     marginRight: 12,
     paddingHorizontal: 20,
     paddingVertical: 8,
@@ -92,18 +95,14 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
-
     elevation: 2,
   },
   dropdown: {
     height: 400,
   },
-
   placeholderStyle: {
     fontSize: 16,
-  },
-  selectedTextStyle: {
-    fontSize: 14,
+    color: theme.subtext,
   },
   iconStyle: {
     width: 20,
@@ -112,9 +111,7 @@ const styles = StyleSheet.create({
   inputSearchStyle: {
     height: 40,
     fontSize: 16,
-  },
-  icon: {
-    marginRight: 5,
+    color: theme.text,
   },
   item: {
     padding: 17,
@@ -122,9 +119,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 0.5,
-    borderColor: '#c1c1c1ff',
+    borderColor: theme.border,
   },
   itemText: {
+    color: theme.text,
     flex: 1,
     flexWrap: 'wrap',
     fontSize: 16,
@@ -137,7 +135,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: 'black',
+    backgroundColor: theme.primary,
     marginBottom: 8,
   },
   textSelectedStyle: {
@@ -146,7 +144,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
     fontSize: 16,
     lineHeight: 20,
-    color: 'white',
+    color: theme.text,
   },
   selectedContainer: {
     maxHeight: 150,
