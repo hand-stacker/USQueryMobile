@@ -1,3 +1,4 @@
+import { UnscalableText } from "@/app/components/UnscalableText";
 import { ThemeContext } from "@/app/theme/themeContext";
 import React, { useCallback, useContext, useMemo, useState } from "react";
 import { ActivityIndicator, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
@@ -5,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import NavReturn from "../../components/NavReturn";
 import useGetMembership from "../../hooks/useGetMembership";
 import VoteList from "../../vote/components/VoteList";
-import ContactsModal from "../components/ContactsModal";
+import ContactModal from "../components/ContactsModal";
 import MemStarButton from "../components/MemStarButton";
 
 interface MemberInfoProps {
@@ -53,6 +54,67 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
 
   const [contactModalVisible, setContactModalVisible] = useState(false);
 
+  const MemberCard = useMemo(() => {
+    return (
+      <View style={styles.headerCard}>
+        <View style={styles.headerRow}>
+          <View style={styles.leftColumn}>
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.avatarLarge} resizeMode="cover" />
+            ) : (
+              <View style={styles.avatarPlaceholderLarge}>
+                <UnscalableText style={styles.avatarInitialsLarge}>{initials?.slice(0,2)}</UnscalableText>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.middleColumn}>
+            <View style={styles.nameRow}>
+              <UnscalableText style={styles.title}>{fullName}</UnscalableText>
+              <MemStarButton membershipId={membershipId} />
+            </View>
+
+            <View style={styles.infoRow}>
+              <UnscalableText style={styles.infoLabel}>Role:</UnscalableText>
+              <UnscalableText style={styles.infoValue}>{role}</UnscalableText>
+            </View>
+
+            <View style={styles.infoRow}>
+              {role === 'House' && district !== null && (
+                <>
+                <UnscalableText style={styles.infoLabel}>District:</UnscalableText>
+                <UnscalableText style={styles.infoValue}>{state}-{district}</UnscalableText>
+                </>
+              )}
+              {role !== 'House' && district === null && (
+                <>
+                <UnscalableText style={styles.infoLabel}>State:</UnscalableText>
+                <UnscalableText style={styles.infoValue}>{state}</UnscalableText  >
+                </>
+              )}
+            </View>
+
+            <View style={styles.infoRow}>
+              <UnscalableText style={styles.infoLabel}>Party:</UnscalableText>
+              <UnscalableText style={styles.infoValue}>{party}</UnscalableText>
+            </View>
+
+            <View style={styles.infoRow}>
+              <UnscalableText style={styles.infoLabel}>Term:</UnscalableText>
+              <UnscalableText style={styles.infoValue}>{startDate} - {endDate}</UnscalableText>
+            </View>
+
+            <Pressable style={styles.contactButton} onPress={() => setContactModalVisible(true)}>
+              <UnscalableText style={styles.contactButtonText}>Contact</UnscalableText>
+            </Pressable>
+
+          </View>
+        </View>
+      </View>
+    );
+  }, [imageUrl, initials, fullName, membershipId, role, district, state, party, startDate, endDate, theme]
+);
+
   const handleOpenLink = useCallback((url?: string) => {
     if (!url) return;
     const normalized = url.startsWith('http') ? url : `https://${url}`;
@@ -60,6 +122,21 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
   }, []);
 
   
+  const HeaderElement = useMemo(() => (
+    <>
+      {MemberCard}
+      <ContactModal
+        contactModalVisible={contactModalVisible}
+        setContactModalVisible={setContactModalVisible}
+        handleOpenLink={handleOpenLink}
+          office={office}
+          phone={phone}
+          official_link={official_link}
+      />
+      <SectionLabel>Recent Votes</SectionLabel>
+    </>),
+    [MemberCard, contactModalVisible, handleOpenLink, office, phone, official_link]
+  );
 
   if (loading) return (
     <SafeAreaView style={[styles.container, styles.centerOverlay]} edges={["top"]}>
@@ -85,98 +162,22 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
     }
   }
 
-  const headerElement = (
-    <View style={styles.headerCard}>
-      <View style={styles.headerRow}>
-        <View style={styles.leftColumn}>
-          {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.avatarLarge} resizeMode="cover" />
-          ) : (
-            <View style={styles.avatarPlaceholderLarge}>
-              <Text style={styles.avatarInitialsLarge}>{initials?.slice(0,2)}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.middleColumn}>
-          <View style={styles.nameRow}>
-            <Text style={styles.title}>{fullName}</Text>
-            <MemStarButton membershipId={membershipId} />
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Role:</Text>
-            <Text style={styles.infoValue}>{role}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            {role === 'House' && district !== null && (
-              <>
-              <Text style={styles.infoLabel}>District:</Text>
-              <Text style={styles.infoValue}>{state}-{district}</Text>
-              </>
-            )}
-            {role !== 'House' && district === null && (
-              <>
-              <Text style={styles.infoLabel}>State:</Text>
-              <Text style={styles.infoValue}>{state}</Text>
-              </>
-            )}
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Party:</Text>
-            <Text style={styles.infoValue}>{party}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Term:</Text>
-            <Text style={styles.infoValue}>{startDate} - {endDate}</Text>
-          </View>
-
-          <Pressable style={styles.contactButton} onPress={() => setContactModalVisible(true)}>
-            <Text style={styles.contactButtonText}>Contact</Text>
-          </Pressable>
-
-        </View>
-      </View>
-    </View>
-  );
-
-
-
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.container}>
-        <NavReturn onPress={goBack} />
-        {headerElement}
-        <ContactsModal
-          contactModalVisible={contactModalVisible}
-          setContactModalVisible={setContactModalVisible}
-          handleOpenLink={handleOpenLink}
-          office={office}
-          phone={phone}
-          official_link={official_link}
-        />
-        <SectionLabel>Recent Votes</SectionLabel>
-        <VoteList data={voteList} personal={true} navigation={navigation} />
-        { /* add party history section */}
-        { /* add external terms */}
-      </View>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <NavReturn onPress={goBack} />
+      <VoteList data={voteList} personal={true} navigation={navigation} header={HeaderElement}/>
+      { /* add party history section */}
+      { /* add external terms */}
     </SafeAreaView>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  safe: {
-    flex: 1, 
-    backgroundColor: theme.background 
-  },
-  container: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 40,
-    marginBottom: 200,
+    container: {
+    flex: 1,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
+    backgroundColor: theme.background,
   },
   centerOverlay: {
     justifyContent: 'center', 
@@ -195,7 +196,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   headerRow: { 
     flexDirection: 'row',
-    alignItems: 'center' 
+    alignItems: 'flex-start', 
   },
   label: {
     fontSize: 13,
@@ -256,7 +257,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   nameRow: { 
     flexDirection: 'row', 
-    alignItems: 'center', 
+    alignItems: 'flex-start', 
     justifyContent: 'space-between', 
     marginRight: 10 
   },

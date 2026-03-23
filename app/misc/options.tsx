@@ -49,7 +49,7 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <Text style={styles.header}>Options</Text>
+      <Text style={styles.title}>Options</Text>
       <View style={{marginTop:12}}>
         <Pressable
           style={[styles.button]}
@@ -75,31 +75,30 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
-    backgroundColor: theme.background,
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
+    backgroundColor: theme.background,
   },
-  header: {
+  title: {
     color: theme.text,
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   button: {
     width: "100%",
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
+    minHeight: 50,
     marginBottom: 12,
     backgroundColor: theme.primary,
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
   },
   buttonText: {
+      textAlign: "center",
       fontSize: 16,
       color: theme.innerText,
       fontWeight: "600",
-      marginLeft: 8,
   },
 });

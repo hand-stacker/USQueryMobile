@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { StyleSheet } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { ThemeContext } from '../theme/themeContext';
+import scaleFont from '../utils/scaleFont';
 
 interface Props {
     value?: string;
@@ -113,9 +114,11 @@ const createStyles = (theme : any) => StyleSheet.create({
     height: 20,
   },
   inputSearchStyle: {
-    height: 40,
+    minHeight: 40,
+    height: scaleFont(40),
     fontSize: 16,
     color: theme.text,
+    flex: 1,
   },
   container: {
     paddingBottom: 16,

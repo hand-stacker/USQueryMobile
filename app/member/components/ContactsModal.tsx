@@ -30,15 +30,15 @@ export default function ContactModal ({ contactModalVisible, setContactModalVisi
           </View>
           <View style={styles.modalRow}>
             <Text style={styles.modalRowLabel}>Office</Text>
-            <Text style={styles.modalRowValue}>{office ?? 'No Address Provided Yet'}</Text>
+            <Text style={[styles.modalRowValue, { flex: 1 }]}>{office ?? 'No Address Provided Yet'}</Text>
           </View>
           <View style={styles.modalRow}>
             <Text style={styles.modalRowLabel}>Phone</Text>
-            <Text style={styles.modalRowValue}>{phone ?? 'No Phone Number Provided Yet'}</Text>
+            <Text style={[styles.modalRowValue, { flex: 1 }]}>{phone ?? 'No Phone Number Provided Yet'}</Text>
           </View>
           <View style={styles.modalRow}>
             <Text style={styles.modalRowLabel}>Website</Text>
-            <Pressable onPress={() => handleOpenLink(official_link)}>
+            <Pressable onPress={() => handleOpenLink(official_link)} style={{ flex: 1 }}>
             <Text style={[styles.modalRowValue, styles.linkText]}>{official_link ?? 'No Website Provided Yet'}</Text>
             </Pressable>
           </View>
@@ -83,7 +83,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 20, 
     fontWeight: '700', 
     color: theme.titleText, 
-    marginBottom: 12 
+    marginBottom: 12,
+    maxWidth: '80%',
   },
   modalRow: { 
     flexDirection: 'row', 
@@ -94,8 +95,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.subtext, 
     fontWeight: '600' },
   modalRowValue: { 
-      flex: 1, 
       color: theme.text, 
+      fontWeight: '600'
   },
   modalCloseButton: { 
       marginTop: 12, 

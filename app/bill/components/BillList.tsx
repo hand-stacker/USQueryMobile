@@ -51,6 +51,5 @@ const createStyles = (theme : any) =>
       paddingHorizontal: 12,
       paddingBottom: 0,
       paddingTop: 8,
-      backgroundColor: theme.background,
     }
   });

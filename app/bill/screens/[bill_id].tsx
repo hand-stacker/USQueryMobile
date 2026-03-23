@@ -4,6 +4,7 @@ import NavReturn from "@/app/components/NavReturn";
 import useGetBill from "@/app/hooks/useGetBill";
 import { useStarredBillsStore } from "@/app/store/starredBillsStore";
 import { ThemeContext } from "@/app/theme/themeContext";
+import scaleFont from "@/app/utils/scaleFont";
 import React, { useCallback, useContext, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -44,21 +45,24 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
     return (
       <View style={styles.headerCard}>
         <View style={styles.rowBetween}>
-          <BillBadgeInactive billNum={billNum} />
-          <BillStatus status_type={bill?.status} />
-          
+          <View >
+            <BillBadgeInactive billNum={billNum} />
+            <View style = {{margin: 8}}></View>
+            <BillStatus status_type={bill?.status} />
+          </View>
           {String(bill_id).startsWith('119') && <StarButton billId={bill_id} />}
         </View>
 
         <Text style={styles.title}>{title}</Text>
 
         <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Origin:</Text>
+          <Text style={styles.metaLabel}>Origin date:</Text>
           <Text style={styles.metaValue}>{originDate}</Text>
-          <Text style={[styles.metaLabel, { marginLeft: 12 }]}>Latest:</Text>
+        </View>
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>Latest action:</Text>
           <Text style={styles.metaValue}>{latestActionDate}</Text>
         </View>
-
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Policy area:</Text>
           <Text style={styles.metaValue}>{policyArea}</Text>
@@ -103,23 +107,19 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.container}>
-        <NavReturn onPress={handleGoBack} />
-        <ActionList data={actions} summary_text={summaryText} navigator={navigation} header={headerElement} />
-      </View>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <NavReturn onPress={handleGoBack} />
+      <ActionList data={actions} summary_text={summaryText} navigator={navigation} header={headerElement} />
     </SafeAreaView>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
+    flex: 1,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
+    backgroundColor: theme.background,
   },
   headerCard: {
     backgroundColor: theme.card,
@@ -140,17 +140,17 @@ const createStyles = (theme: any) => StyleSheet.create({
   rowBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
   metaRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginTop: 8,
     flexWrap: "wrap",
   },
   metaLabel: {
-    fontSize: 13,
+    fontSize: 16,
     color: theme.subtext,
     marginRight: 6,
     fontWeight: "600",
@@ -162,6 +162,9 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   subjectsRow: {
     marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
   chipsContainer: {
     flexDirection: "row",
@@ -170,7 +173,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginLeft: 6,
   },
   chipsScroll: {
-    maxHeight: 44,
+    maxHeight: scaleFont(44),
     marginLeft: 6,
   },
   chip: {
@@ -184,6 +187,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignSelf: 'center',
     justifyContent: 'center',
     minHeight: 32,
+    height: scaleFont(32),
   },
   chipText: {
     color: theme.text,

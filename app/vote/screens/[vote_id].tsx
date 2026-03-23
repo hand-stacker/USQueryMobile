@@ -3,6 +3,7 @@ import BillBadgeInactive from "@/app/bill/components/BillBadgeInactive";
 import NavReturn from "@/app/components/NavReturn";
 import useGetVote from "@/app/hooks/useGetVote";
 import { ThemeContext } from "@/app/theme/themeContext";
+import scaleFont from "@/app/utils/scaleFont";
 import React, { useCallback, useContext, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -61,38 +62,36 @@ export default function VoteInfo({ navigation, route}: VoteInfoProps) {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.container}>
-        <NavReturn onPress={handleGoBack} />
-        <ScrollView contentContainerStyle={styles.listWrap}>
-          <View style={styles.headerCard}>
-            <Text style={styles.dateText}>{formattedDate} EST</Text>
-            {/* only allow navigation to Bill if we got vote from a vote_list, 
-                this is to prevent the user from recursively trapping themselves in nested bills/votes */}
-            {allowBillNav && <BillBadge navigation={navigation} billNum={billNumber} />}
-            {!allowBillNav && <BillBadgeInactive billNum={billNumber} />}
-            <Text style={styles.title}>{vote.title}</Text>
-            {vote.question ? <Text style={styles.question}>{vote.question}</Text> : null}
-            <View style={styles.rowBetween}>
-              <Text style={styles.resultLabel}>Result:</Text>
-              <ResultBadge result={vote.result ?? '—'} />
-            </View>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <NavReturn onPress={handleGoBack} />
+      <ScrollView contentContainerStyle={styles.listWrap}>
+        <View style={styles.headerCard}>
+          <Text style={styles.dateText}>{formattedDate} UTC</Text>
+          {/* only allow navigation to Bill if we got vote from a vote_list, 
+              this is to prevent the user from recursively trapping themselves in nested bills/votes */}
+          {allowBillNav && <BillBadge navigation={navigation} billNum={billNumber} />}
+          {!allowBillNav && <BillBadgeInactive billNum={billNumber} />}
+          <Text style={styles.title}>{vote.title}</Text>
+          {vote.question ? <Text style={styles.question}>{vote.question}</Text> : null}
+          <View style={styles.rowBetween}>
+            <Text style={styles.resultLabel}>Result:</Text>
+            <ResultBadge result={vote.result ?? '—'} />  
           </View>
-          <View style={[styles.pieChartContainer, 
-            rowCount > 4 ? styles.pieChartFiveRow :
-            rowCount > 3 ? styles.pieChartFourRow :
-            rowCount > 2 ? styles.pieChartThreeRow :
-            rowCount > 1 ? styles.pieChartTwoRow :
-            styles.pieChartOneRow
-          ]}>
-            <VotePieChart data={{ YEAS: yeas.length, NAYS: nays.length, PRES: pres.length, NOVT: novt.length }} />
-          </View>
-          {yeasElem}
-          {naysElem}
-          {presElem}
-          {novtElem}
-        </ScrollView>
-      </View>
+        </View>
+        <View style={[styles.pieChartContainer, 
+          rowCount > 4 ? styles.pieChartFiveRow :
+          rowCount > 3 ? styles.pieChartFourRow :
+          rowCount > 2 ? styles.pieChartThreeRow :
+          rowCount > 1 ? styles.pieChartTwoRow :
+          styles.pieChartOneRow
+        ]}>
+          <VotePieChart data={{ YEAS: yeas.length, NAYS: nays.length, PRES: pres.length, NOVT: novt.length }} />
+        </View>
+        {yeasElem}
+        {naysElem}
+        {presElem}
+        {novtElem}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -109,11 +108,11 @@ function formatDate(value: string | null | undefined) {
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.background },
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 40,
+    flex: 1,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
+    backgroundColor: theme.background,
   },
   centerOverlay: { justifyContent: 'center', alignItems: 'center' },
   headerCard: {
@@ -129,14 +128,14 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   dateText: { fontSize: 13, color: theme.subtext, marginBottom: 6 },
   title: { fontSize: 18, fontWeight: '700', color: theme.titleText, marginBottom: 8 },
-  question: { fontSize: 15, color: theme.subtext, marginBottom: 12 },
+  question: { fontSize: 15, color: theme.subtext, marginBottom: 12, fontWeight: '600' },
   rowBetween: { flexDirection: 'row', alignItems: 'center' },
   resultLabel: { fontSize: 13, color: theme.subtext, fontWeight: '600', marginRight: 8 },
   listWrap: { paddingTop: 6, paddingBottom: 50 },
   pieChartContainer: { alignItems: 'center', marginBottom: 12 },
-  pieChartOneRow : { height: 240 },
-  pieChartTwoRow : { height: 260 },
-  pieChartThreeRow : { height: 280 },
-  pieChartFourRow : { height: 300 },
-  pieChartFiveRow : { height: 320 },
+  pieChartOneRow : { height: scaleFont(240) },
+  pieChartTwoRow : { height: scaleFont(260) },
+  pieChartThreeRow : { height: scaleFont(280) },
+  pieChartFourRow : { height: scaleFont(300) },
+  pieChartFiveRow : { height: scaleFont(320) },
 });

@@ -2,7 +2,7 @@ import useGetRecentBills from "@/app/hooks/useGetRecentBills";
 import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../../theme/themeContext";
 import BillList from '../components/BillList';
@@ -59,11 +59,9 @@ export default function BillFYP( {navigation} : any) {
   
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.container}>
-        <BillTopNav navigation={navigation} mode="FYP"/>
-        <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
-      </View>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <BillTopNav navigation={navigation} mode="FYP"/>
+      <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
     </SafeAreaView>
   );
 }
@@ -71,10 +69,10 @@ export default function BillFYP( {navigation} : any) {
 
 const createStyles = (theme : any) =>
   StyleSheet.create({
-    safe: { flex: 1, backgroundColor: theme.background },
-    container : {
-      flex:1,
-      paddingHorizontal:'6%',
-      paddingTop:'5%',
-    },
+  container: {
+    flex: 1,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
+    backgroundColor: theme.background,
+  },
   });

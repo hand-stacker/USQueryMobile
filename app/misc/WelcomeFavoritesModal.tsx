@@ -109,10 +109,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 12,
   },
   header: {
+    maxWidth: '80%',
     fontSize: 18,
     fontWeight: '700',
     color: theme.titleText,
@@ -129,8 +130,8 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   button: {
     flex: 1,
-    height: 44,
-    borderRadius: 10,
+    minHeight: 50,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 6,

@@ -26,6 +26,7 @@ import ResetPassword from "./auth/password_reset";
 import RegisterAccount from "./auth/register";
 import VerifyEmail from "./auth/verify";
 import BillSearchResults from "./bill/screens/searched_bills";
+import { UnscalableText } from './components/UnscalableText';
 import './globals.css';
 import SearchedMembers from "./member/screens/searched_members";
 import StarredMembers from "./member/screens/starred_members";
@@ -73,6 +74,8 @@ function SharedStack({ route } : {route:any}) {
 
 function TabNavigator() {
   const { theme } = useContext(ThemeContext);
+  const { height } = useWindowDimensions(); 
+  const tabBarHeight = Math.round(height * 0.14);
   return (
     <Tabs.Navigator 
       initialRouteName="Bills"
@@ -80,6 +83,7 @@ function TabNavigator() {
         tabBarStyle: {
           backgroundColor: theme.card,
           borderTopColor: theme.border,
+          height: tabBarHeight,
         },
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
@@ -99,25 +103,37 @@ function TabNavigator() {
         name="Bills"
         component={SharedStack}
         initialParams={{ initialRoute: "Bill_FYP" }}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: false,
+          tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Bills</UnscalableText>
+      }}
       />
       <Tabs.Screen
         name="Members"
         component={SharedStack}
         initialParams={{ initialRoute: "Starred_Members" }}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: false,
+          tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Members</UnscalableText>
+        }}
       />
       <Tabs.Screen
         name="Votes"
         component={SharedStack}
         initialParams={{ initialRoute: "Vote_FYP" }}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: false,
+          tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Votes</UnscalableText>
+        }}
       />
       <Tabs.Screen
         name="Options"
         component={SharedStack}
         initialParams={{ initialRoute: "Options_screen" }}
-        options={{ headerShown: false }}
+        options={{ 
+          headerShown: false,
+          tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Options</UnscalableText>
+        }}
       />
     </Tabs.Navigator>
   );
@@ -169,6 +185,7 @@ function AppNavigation() {
 }
 
 import { DefaultTheme, DarkTheme as NavDarkTheme } from "@react-navigation/native";
+import { useWindowDimensions } from "react-native";
 
 export const createNavTheme = (theme: any) => {
   const base = theme.name === "dark" ? NavDarkTheme : DefaultTheme;

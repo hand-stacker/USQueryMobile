@@ -1,6 +1,7 @@
 import CloseButton from "@/app/components/CloseButton";
 import MemberList from "@/app/member/components/MemberList";
 import { ThemeContext } from "@/app/theme/themeContext";
+import scaleFont from "@/app/utils/scaleFont";
 import { useContext, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -85,9 +86,9 @@ const createStyles = (theme: any) => StyleSheet.create({
   text: { fontSize: 16, color: theme.text },
   subText: { fontSize: 13, color: theme.subtext, marginTop: 4 },
   pieChartContainer: { alignItems: 'center', marginBottom: 12},
-  pieChartOneRow : { height: 180 },
-  pieChartTwoRow : { height: 200 },
-  pieChartThreeRow : { height: 220 },
-  pieChartFourRow : { height: 240 },
-  pieChartFiveRow : { height: 260 },
+  pieChartOneRow : { height: scaleFont(180) },
+  pieChartTwoRow : { height: scaleFont(200) },
+  pieChartThreeRow : { height: scaleFont(220) },
+  pieChartFourRow : { height: scaleFont(240) },
+  pieChartFiveRow : { height: scaleFont(260) },
 });

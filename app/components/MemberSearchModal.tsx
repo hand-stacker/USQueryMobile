@@ -41,7 +41,6 @@ export default function MemberSearchModal({ visible, onClose, onSearch, initial}
       <SafeAreaView style={styles.modalOverlay}>
         <View style={styles.form}>
           <NavReturn onPress={onClose} />
-          <Text style={styles.title}>Search for Representatives:</Text>
           <Text style={styles.subtitle}>Select Congress</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
             {congress_list.map((num)=> (

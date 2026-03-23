@@ -1,6 +1,6 @@
 import EmptyPage from "@/app/components/EmptyPage";
 import { ThemeContext } from "@/app/theme/themeContext";
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import VoteInfographic from "./VoteInfographic";
 interface Props {
@@ -9,11 +9,13 @@ interface Props {
     navigation: any;
     onEndReached?: () => void;
     loadingMore?: boolean;
+    header?: React.ReactElement | null;
 }
 
-const VoteList = ({data, personal, navigation, onEndReached, loadingMore}:Props)=> {
+const VoteList = ({data, personal, navigation, onEndReached, loadingMore, header}:Props)=> {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
+  const headerElement = useMemo(() => header ? <>{header}</> : null, [header]);
   const renderItem = ({ item }: any) => {
     const node = item.node ?? item;
     return <VoteInfographic node={node} personal={personal} navigation={navigation} />;
@@ -34,6 +36,7 @@ const VoteList = ({data, personal, navigation, onEndReached, loadingMore}:Props)
       onEndReachedThreshold={0.5}
       contentContainerStyle={styles.container}
       initialNumToRender={8}
+      ListHeaderComponent={headerElement}
       ListEmptyComponent={EmptyPage}
       maxToRenderPerBatch={12}
       windowSize={7}

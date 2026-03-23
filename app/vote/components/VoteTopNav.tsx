@@ -1,7 +1,8 @@
 import SearchButton from "@/app/components/SearchButton";
+import { UnscalableText } from "@/app/components/UnscalableText";
 import { ThemeContext } from "@/app/theme/themeContext";
 import { useContext } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 interface Props {
   navigation: any;
@@ -17,10 +18,10 @@ const VoteTopNav = ({ navigation, mode, handleOpenModal }: Props) => {
       <View style={styles.leftSpacer} />
       <View style={styles.centerGroup}>
         <Pressable onPress={() => navigation?.navigate('Vote_FYP') } style={styles.navItem}>
-          <Text style={[styles.pageTitle, mode === 'FYP' && styles.activePageTitle]}>For You</Text>
+          <UnscalableText style={[styles.pageTitle, mode === 'FYP' && styles.activePageTitle]}>For You</UnscalableText>
         </Pressable>
         <Pressable onPress={() => navigation?.navigate('Searched_Votes') } style={styles.navItem}>
-          <Text style={[styles.pageTitle, mode === 'Search' && styles.activePageTitle]}>Search</Text>
+          <UnscalableText style={[styles.pageTitle, mode === 'Search' && styles.activePageTitle]}>Search</UnscalableText>
         </Pressable>
       </View>
       <View style={styles.rightGroup}>
@@ -34,7 +35,7 @@ export default VoteTopNav;
 
 const createStyles = (theme: any) => StyleSheet.create({
   pageTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: theme.titleText,
   },

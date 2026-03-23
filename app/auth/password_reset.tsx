@@ -101,28 +101,33 @@ export default function ResetPassword({ navigation }: ResetPasswordProps) {
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
     backgroundColor: theme.background,
   },
   title: {
+    color: theme.text,
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 20,
-    color: theme.titleText,
   },
   label: {
-    marginTop: 12,
+    fontSize: 16,
     marginBottom: 6,
     color: theme.text,
   },
   input: {
+    color: theme.text,
     borderWidth: 1,
     borderColor: theme.border,
     padding: 12,
     borderRadius: 8,
+    marginBottom: 20,
   },
   button: {
-    marginTop: 24,
+    width: "100%",
+    minHeight: 50,
+    marginBottom: 12,
     backgroundColor: theme.primary,
     padding: 14,
     borderRadius: 8,
@@ -136,13 +141,17 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
+    textAlign: "center",
+    fontSize: 16,
     color: theme.innerText,
     fontWeight: "600",
   },
   errorBox: {
-    marginTop: 12,
+    marginBottom: 12,
     backgroundColor: theme.secondary,
     borderRadius: 6,
+    borderColor: theme.border,
+    borderWidth: 1,
     padding: 10,
   },
   errorText: {

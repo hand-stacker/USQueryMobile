@@ -28,9 +28,7 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
   const resultText = personal ? node.mem_vote : node.result;
   return (
     <View style={styles.card}>
-      <View style={[styles.dateContainer, styles.headerRow]}>
-          <Text style={styles.date}>{formatDateTime(node.dateTime)}</Text>
-        </View>
+      <Text style={styles.date}>{formatDateTime(node.dateTime)}</Text>
       <View style={styles.resultRow}>
         <ResultBadge result={resultText} />
       </View>
@@ -41,6 +39,7 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
         contentContainerStyle={styles.headerRow}
       >
         <BillBadge navigation={navigation} billNum={Number(billId)} />
+        <View style={{ width: 8 }} />
         <VoteBadge navigation={navigation} voteId={node.id} allowBillNav={true} />
       </ScrollView>
       
@@ -67,6 +66,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   date: {
     fontSize: 12,
     color: theme.subtext,
+    fontWeight: '600',
   },
   cardRight: {
     flex: 1,
@@ -95,11 +95,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 8,
-  },
-  dateContainer: {
-    width: 120,
-    paddingRight: 12,
-    justifyContent: 'center',
   },
   resultRow: {
     marginVertical: 8,

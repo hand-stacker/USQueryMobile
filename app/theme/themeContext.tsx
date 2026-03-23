@@ -22,7 +22,7 @@ export const ThemeProvider = ({ children }: any) => {
           setIsDark(storedTheme === "dark");
         }
       } catch (error) {
-        console.log("Failed to load theme:", error);
+        console.error("Failed to load theme:", error);
       } finally {
         setIsLoaded(true);
       }

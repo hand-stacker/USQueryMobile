@@ -5,7 +5,7 @@ import { useSubjectListStore } from "@/app/store/subjectListStore";
 import { ThemeContext } from "@/app/theme/themeContext";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillList from '../components/BillList';
 import BillTopNav from "../components/BillTopNav";
@@ -84,28 +84,25 @@ export default function BillSearchResults( {navigation} : any) {
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.container}>
-        <BillTopNav navigation={navigation} handleOpenModal={handleOpenModal} mode="Search"/>
-        <BillSearchModal
-          visible={modalVisible}
-          onClose={handleCloseModal}
-          initial={searchVars}
-          onSearch={handleSearch}
-          subjects={subjects}
-          desc="Search for bills by congress, type, and subject."
-        />
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <BillTopNav navigation={navigation} handleOpenModal={handleOpenModal} mode="Search"/>
+      <BillSearchModal
+        visible={modalVisible}
+        onClose={handleCloseModal}
+        initial={searchVars}
+        onSearch={handleSearch}
+        subjects={subjects}
+      />
       <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
-      </View>
     </SafeAreaView>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.background },
-  container : {
-    flex:1,
-    paddingHorizontal:'6%',
-    paddingTop:'5%',
-  }
+  container: {
+    flex: 1,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
+    backgroundColor: theme.background,
+  },
 });

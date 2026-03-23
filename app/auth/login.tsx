@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
@@ -126,6 +126,7 @@ export default function Login({ navigation }: LoginProps) {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
+    <ScrollView showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Enter your credentials</Text>
 
       <Text style={styles.label}>Email</Text>
@@ -180,6 +181,7 @@ export default function Login({ navigation }: LoginProps) {
       <Pressable style={styles.button} onPress={() => navigation.navigate("Register")}>
         <Text style={styles.buttonText}>Register a new account</Text>
       </Pressable>
+    </ScrollView>
     </SafeAreaView>
   );
 }
@@ -187,7 +189,8 @@ export default function Login({ navigation }: LoginProps) {
 const createStyles = (theme: any) => StyleSheet.create({ 
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
     backgroundColor: theme.background,
   },
   title: {
@@ -197,7 +200,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    marginTop: 12,
+    fontSize: 16,
     marginBottom: 6,
     color: theme.text,
   },
@@ -207,9 +210,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderColor: theme.border,
     padding: 12,
     borderRadius: 8,
+    marginBottom: 20,
   },
   button: {
-    marginTop: 24,
+    width: "100%",
+    minHeight: 50,
+    marginBottom: 12,
     backgroundColor: theme.primary,
     padding: 14,
     borderRadius: 8,
@@ -223,13 +229,17 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
+    textAlign: "center",
+    fontSize: 16,
     color: theme.innerText,
     fontWeight: "600",
   },
   errorBox: {
-    marginTop: 12,
+    marginBottom: 12,
     backgroundColor: theme.secondary,
     borderRadius: 6,
+    borderColor: theme.border,
+    borderWidth: 1,
     padding: 10,
   },
   errorText: {

@@ -1,7 +1,8 @@
 import { starMember, unstarMember } from '@/app/api/members';
+import { UnscalableText } from '@/app/components/UnscalableText';
 import { useStarredMembersStore } from '@/app/store/starredMembersStore';
 import React from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 
 type Props = {
 	membershipId: string | number;
@@ -41,9 +42,9 @@ export default function MemStarButton({ membershipId, size = 22, style, onChange
 
 	return (
 		<TouchableOpacity onPress={handlePress} style={[styles.btn, style]} accessibilityLabel={isStarred ? 'Unstar' : 'Star'}>
-			<Text style={[styles.star, { fontSize: size, color: isStarred ? '#f59e0b' : '#9CA3AF' }]}>
+			<UnscalableText style={[styles.star, { fontSize: size, color: isStarred ? '#f59e0b' : '#9CA3AF' }]}>
 				{isStarred ? '★' : '☆'}
-			</Text>
+			</UnscalableText>
 		</TouchableOpacity>
 	);
 }

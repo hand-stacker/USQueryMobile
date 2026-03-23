@@ -1,6 +1,7 @@
 
 import MicroSummary from "@/app/components/MicroSummary";
 import { ThemeContext } from "@/app/theme/themeContext";
+import scaleFont from "@/app/utils/scaleFont";
 import { useContext, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import BillBadgeInactive from "./BillBadgeInactive";
@@ -20,13 +21,15 @@ function navToBill(navigation: any, billId: any) {
 export default function BillInfographic({navigator, billId, billTitle, billNum, billSummary }:BillInfographicProps) {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
+  const maxHeight = scaleFont(200);
+  const minHeight = scaleFont(90);
   // Provide a typed navigation prop so `navigate` accepts the route name and params.
   const [isExpanded, setIsExpanded] = useState(false);
   const [prevInteraction, setPrevInteraction] = useState(false);
-  const animatedHeight = useRef(new Animated.Value(90)).current;
+  const animatedHeight = useRef(new Animated.Value(minHeight)).current;
   const expand = () => {
     Animated.timing(animatedHeight, {
-      toValue: 220,
+      toValue: maxHeight,
       duration: 220,
       useNativeDriver: false,
     }).start();
@@ -36,7 +39,7 @@ export default function BillInfographic({navigator, billId, billTitle, billNum, 
 
   const collapse = () => {
     Animated.timing(animatedHeight, {
-      toValue: 90,
+      toValue: minHeight,
       duration: 220,
       useNativeDriver: false,
     }).start();
@@ -104,7 +107,7 @@ const createStyles = (theme : any) =>
     },
     summaryContainer: {
       marginTop: 8,
-      maxHeight: 240,
+      maxHeight: scaleFont(240),
     },
     infoHint: {
     marginVertical: 8,

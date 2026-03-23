@@ -30,7 +30,7 @@ export default function SelectFavoritesModal({ visible, onClose }: Props) {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.headerRow}>
-          <Text style={styles.header}>Select Favorite Subjects</Text>
+          <Text style={styles.title}>Select Favorite Subjects</Text>
           <CloseButton onPress={onClose} />
         </View>
 
@@ -57,19 +57,21 @@ export default function SelectFavoritesModal({ visible, onClose }: Props) {
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
     backgroundColor: theme.background,
   },
-  header: {
-    fontSize: 20,
-    fontWeight: '600',
+  title: {
     color: theme.text,
-
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 20,
+    maxWidth: "80%",
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 12,
   },
 });

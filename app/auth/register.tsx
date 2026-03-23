@@ -1,5 +1,5 @@
-import React, { useContext, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegister } from "../hooks/useRegister";
 import { ThemeContext } from "../theme/themeContext";
@@ -11,6 +11,7 @@ interface RegisterProps {
 export default function RegisterAccount({ navigation}: RegisterProps) {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
+  const scrollRef = useRef<ScrollView | null>(null);
   const [email, setEmail] = useState("");
   const [emailConfirm, setEmailConfirm] = useState("");
   const [password, setPassword] = useState("");
@@ -40,6 +41,12 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
     setErrors(errs);
     return errs.length === 0;
   };
+
+  useEffect(() => {
+    if (errors.length > 0) {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }
+  }, [errors]);
 
   const onSubmit = async () => {
     if (!validate()) return;
@@ -72,59 +79,60 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <Text style={styles.title}>Create an account</Text>
+      <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Create an account</Text>
+        <Text style={styles.label}>Email</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="you@example.com"
+        />
 
-      <Text style={styles.label}>Email</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
-        placeholder="you@example.com"
-      />
+        <Text style={styles.label}>Confirm Email</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={emailConfirm}
+          onChangeText={setEmailConfirm}
+          placeholder="you@example.com"
+        />
 
-      <Text style={styles.label}>Confirm Email</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={emailConfirm}
-        onChangeText={setEmailConfirm}
-        placeholder="you@example.com"
-      />
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          style={styles.input}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Choose a password"
+        />
 
-      <Text style={styles.label}>Password</Text>
-      <TextInput
-        style={styles.input}
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Choose a password"
-      />
+        <Text style={styles.label}>Confirm Password</Text>
+        <TextInput
+          style={styles.input}
+          secureTextEntry
+          value={passwordConfirm}
+          onChangeText={setPasswordConfirm}
+          placeholder="Repeat password"
+        />
 
-      <Text style={styles.label}>Confirm Password</Text>
-      <TextInput
-        style={styles.input}
-        secureTextEntry
-        value={passwordConfirm}
-        onChangeText={setPasswordConfirm}
-        placeholder="Repeat password"
-      />
+        {errors.length > 0 && (
+          <View style={styles.errorBox}>
+            {errors.map((e, i) => (
+              <Text key={i} style={styles.errorText}>
+                • {e}
+              </Text>
+            ))}
+          </View>
+        )}
 
-      {errors.length > 0 && (
-        <View style={styles.errorBox}>
-          {errors.map((e, i) => (
-            <Text key={i} style={styles.errorText}>
-              • {e}
-            </Text>
-          ))}
-        </View>
-      )}
-
-      <Pressable style={styles.button} onPress={onSubmit}>
-        <Text style={styles.buttonText}>Register</Text>
-      </Pressable>
+        <Pressable style={styles.button} onPress={onSubmit}>
+          <Text style={styles.buttonText}>Register</Text>
+        </Pressable>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -132,42 +140,50 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
 const createStyles = (theme: any) => StyleSheet.create({ 
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
     backgroundColor: theme.background,
   },
   title: {
+    color: theme.text,
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 20,
-    color: theme.text,
   },
   label: {
-    marginTop: 12,
+    fontSize: 16,
     marginBottom: 6,
     color: theme.text,
   },
   input: {
+    color: theme.text,
     borderWidth: 1,
     borderColor: theme.border,
     padding: 12,
     borderRadius: 8,
-    color: theme.text,
+    marginBottom: 20,
   },
   button: {
-    marginTop: 24,
+    width: "100%",
+    minHeight: 50,
+    marginBottom: 12,
     backgroundColor: theme.primary,
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
   },
   buttonText: {
+    textAlign: "center",
+    fontSize: 16,
     color: theme.innerText,
     fontWeight: "600",
   },
   errorBox: {
-    marginTop: 12,
+    marginBottom: 12,
     backgroundColor: theme.secondary,
     borderRadius: 6,
+    borderColor: theme.border,
+    borderWidth: 1,
     padding: 10,
   },
   errorText: {

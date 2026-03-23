@@ -3,7 +3,7 @@ import React, { useContext, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
 import { ThemeContext } from '../theme/themeContext';
-
+import scaleFont from '../utils/scaleFont';
 interface Props {
   data: any[];
   value?: string[];
@@ -17,7 +17,6 @@ const MultiSelectComponent = ({ data, value, placeholder, onChange, maxContainer
   const styles = createStyles(theme);
   const selected = value ?? [];
   const maxContHeight = useRef(maxContainerHeight ? maxContainerHeight : 150).current;
-
   const renderItem = (item: any) => {
     return (
       <View style={styles.item}>
@@ -109,9 +108,11 @@ const createStyles = (theme : any) => StyleSheet.create({
     height: 20,
   },
   inputSearchStyle: {
-    height: 40,
+    minHeight: 40,
+    height: scaleFont(40),
     fontSize: 16,
     color: theme.text,
+    flex: 1,
   },
   item: {
     padding: 17,

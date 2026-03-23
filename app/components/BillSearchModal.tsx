@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/themeContext";
+import scaleFont from "../utils/scaleFont";
 import MultiSelectComponent from "./MultiSelect";
 import NavReturn from "./NavReturn";
 
@@ -19,7 +20,7 @@ interface Props {
   onSearch: (vars: SearchVars) => void;
   initial?: SearchVars;
   subjects: any[];
-  desc: string;
+  desc?: string;
 }
 
 export default function BillSearchModal({ visible, onClose, onSearch, initial, subjects, desc}: Props) {
@@ -58,9 +59,9 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.modalOverlay}>
-        <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
+        <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <NavReturn onPress={onClose} />
-          <Text style={styles.title}>{desc}</Text>
+          {desc && <Text style={styles.title}>{desc}</Text>}
           <Text style={styles.subtitle}>Select Congress</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
             {[119,118,117,116,115,114,113,112].map((num)=> (
@@ -83,6 +84,7 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
             value={selectedSubjects.map(String)}
             placeholder="Select Subjects"
             onChange={(vals: string[]) => setSelectedSubjects(vals.map(Number))}
+            maxContainerHeight={scaleFont(200)}
           />
 
           <Pressable style={styles.searchButton} onPress={onPressSearch} android_ripple={{color:'#00000010'}}>
@@ -113,8 +115,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     gap: 2,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '600',
     color: theme.text,
     marginBottom: 6,
   },
@@ -149,7 +151,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 14,
   },
   searchButton: {
-    marginTop: 18,
+    marginBottom: 30,
     backgroundColor: theme.primary,
     paddingVertical: 14,
     borderRadius: 12,
@@ -158,6 +160,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginHorizontal: 4,
   },
   searchButtonText: {
+    textAlign: 'center',
     color: theme.innerText,
     fontWeight: '700',
     fontSize: 16,

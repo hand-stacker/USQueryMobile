@@ -3,7 +3,7 @@ import { useFavoritesStore } from '@/app/store/favoriteSubjectsStore';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
 import { ThemeContext } from '@/app/theme/themeContext';
 import React, { useCallback, useContext, useEffect, useMemo } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BillList from '../components/BillList';
 import BillTopNav from '../components/BillTopNav';
@@ -47,21 +47,19 @@ export default function StarredBills({ navigation }: any) {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.container}>
-        <BillTopNav navigation={navigation} mode="Starred"/>
-        <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
-      </View>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <BillTopNav navigation={navigation} mode="Starred"/>
+      <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
     </SafeAreaView>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.background },
   container: {
-    flex:1,
-    paddingHorizontal:'6%',
-    paddingTop:'5%'
+    flex: 1,
+    paddingHorizontal: '18%',
+    paddingTop: '24%',
+    backgroundColor: theme.background,
   },
   headerRow: {
     flexDirection: 'row',
