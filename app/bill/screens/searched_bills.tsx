@@ -68,7 +68,7 @@ export default function BillSearchResults( {navigation} : any) {
   const handleSearch = useCallback((vars: any) => {
     setSearchVars((prev: any) => {
       const merged = { ...prev, ...vars };
-      const effective = (merged.subject_list && merged.subject_list.length > 0) ? merged.subject_list : subject_list;
+      const effective = (merged.subject_list && merged.subject_list.length > 0) ? merged.subject_list : [];
       const next = { ...merged, subject_list: effective };
       useSubjectListStore.getState().setSubjectList(effective);
       try {

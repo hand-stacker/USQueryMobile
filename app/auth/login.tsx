@@ -42,7 +42,6 @@ export default function Login({ navigation }: LoginProps) {
   }, []);
 
   const onSubmit = async() => {
-    // TODO: Call registration API. For now navigate to verification screen.
     try {
       const result = await login(email, password);
       if (result.ok && result.data) {

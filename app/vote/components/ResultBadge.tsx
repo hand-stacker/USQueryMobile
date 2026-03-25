@@ -1,4 +1,5 @@
-import React from 'react';
+import { ThemeContext } from '@/app/theme/themeContext';
+import React, { useContext } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface Props {
@@ -6,30 +7,46 @@ interface Props {
 }
 
 export default function ResultBadge({result}: Props) {
+  const { theme } = useContext(ThemeContext);
+  const styles = createStyles(theme);
   const resultPassed = typeof result === 'string' && /pass|yea|aye|agreed|accepted/i.test(result);
   const resultFailed = typeof result === 'string' && /fail|nay|no|rejected|defeated/i.test(result);
   return (
-    <View style={[styles.resultBadge, resultPassed ? styles.passed : resultFailed ? styles.failed : styles.neutral]}>
-    <Text style={styles.resultText} numberOfLines={1} ellipsizeMode="tail">{result ?? '—'}</Text>
+    <View style={styles.labelContainer}>
+      <View style={[styles.labelBar, resultPassed ? styles.colorPassed : resultFailed ? styles.colorFailed : styles.colorNeutral]} />
+      <Text style={styles.label} >
+          {result ?? '—'}
+        </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  resultBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    color: '#fff',
-    fontWeight: '700',
-    alignSelf: 'flex-start',
+const createStyles = (theme: any) => StyleSheet.create({
+  labelBar: {
+    width: 4,
+    height: '90%',
+    borderRadius: 2,
+    marginRight: 8,
   },
-  resultText: {
-    color: 'white',
-    fontWeight: '700',
+  labelContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  colorPassed: {
+    backgroundColor: "#16A34A",
+  },
+  colorFailed: {
+    backgroundColor: "#EF4444",
+  },
+  label: {
     fontSize: 16,
-  },
-  passed: { backgroundColor: '#16A34A' },
-  failed: { backgroundColor: '#EF4444' },
-  neutral: { backgroundColor: '#6B7280' },
+    color: theme.text,
+    fontWeight: "700",
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    width:'80%'
+  }
 });

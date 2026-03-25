@@ -4,7 +4,7 @@ import { ThemeContext } from "@/app/theme/themeContext";
 import scaleFont from "@/app/utils/scaleFont";
 import { useContext, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import BillBadgeInactive from "./BillBadgeInactive";
+import BillBadge from "./BillBadge";
 
 type BillInfographicProps={
   navigator: any;
@@ -62,7 +62,7 @@ export default function BillInfographic({navigator, billId, billTitle, billNum, 
       >
     <Animated.View style={[styles.card, {height: animatedHeight}]}> 
       <View style={styles.headerRow}>
-        <BillBadgeInactive billNum={Number(billNum)} />
+        <BillBadge navigation={navigator} billNum={Number(billNum)} />
         <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{billTitle}</Text>
       </View>
       {!isExpanded && (

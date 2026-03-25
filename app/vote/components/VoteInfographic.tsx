@@ -1,9 +1,8 @@
 import { ThemeContext } from "@/app/theme/themeContext";
 import React, { memo, useContext } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import BillBadge from "../../bill/components/BillBadge";
 import ResultBadge from "./ResultBadge";
-import VoteBadge from "./VoteBadge";
 interface Props {
   node: any;
   personal: boolean;
@@ -27,23 +26,22 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
   const billId = personal ? node.bill : (node.bill?.id ?? node.bill);
   const resultText = personal ? node.mem_vote : node.result;
   return (
-    <View style={styles.card}>
-      <Text style={styles.date}>{formatDateTime(node.dateTime)}</Text>
-      <View style={styles.resultRow}>
-        <ResultBadge result={resultText} />
+    <Pressable onPress={() => navigation.navigate("Vote_info", {vote_id: node.id, allowBillNav: true})}>
+      <View style={styles.card}>
+        <Text style={styles.date}>{formatDateTime(node.dateTime)}</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.headerRow}
+        >
+          <Text style={styles.label}>Bill: </Text>
+          <BillBadge navigation={navigation} billNum={Number(billId)} />
+        </ScrollView>
+        <View style={styles.resultRow}>
+          <ResultBadge result={resultText} />
+        </View>
       </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.headerRow}
-      >
-        <BillBadge navigation={navigation} billNum={Number(billId)} />
-        <View style={{ width: 8 }} />
-        <VoteBadge navigation={navigation} voteId={node.id} allowBillNav={true} />
-      </ScrollView>
-      
-    </View>
+    </Pressable>
   );
 }, (prev, next) => {
   return prev.node?.id === next.node?.id && prev.personal === next.personal;
@@ -58,20 +56,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   list: {
     flex: 1,
   },
-  cardLeft: {
-    width: 120,
-    paddingRight: 12,
-    justifyContent: 'center',
-  },
   date: {
     fontSize: 12,
     color: theme.subtext,
     fontWeight: '600',
-  },
-  cardRight: {
-    flex: 1,
-    justifyContent: 'center',
-    minWidth: 0,
+    marginBottom: 6,
   },
   row: {
     flexDirection: 'row',
@@ -82,7 +71,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     width: '100%',
     backgroundColor: theme.card,
     borderRadius: 12,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingTop: 12,
     shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -94,9 +84,18 @@ const createStyles = (theme: any) => StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     paddingRight: 8,
   },
   resultRow: {
     marginVertical: 8,
+  },
+  label: {
+    fontSize: 18,
+    color: theme.text,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginRight: 5,
   },
 });

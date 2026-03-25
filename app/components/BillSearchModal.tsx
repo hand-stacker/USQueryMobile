@@ -43,6 +43,17 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
         case 'hres': return 'H.Res.';
         case 'hconres': return 'H.Con.Res';
         case 'hjres': return 'H.J.Res';}}   
+  
+    const numToDate = (type: number | string) => {
+    switch(type) {
+        case 119: return '119 (2025-2027)';
+        case 118: return '118 (2023-2025)';
+        case 117: return '117 (2021-2023)';
+        case 116: return '116 (2019-2021)';
+        case 115: return '115 (2017-2019)';
+        case 114: return '114 (2015-2017)';
+        case 113: return '113 (2013-2015)';
+        case 112: return '112 (2011-2013)';}}   
 
   const onPressSearch = () => {
     const variables: any = {
@@ -66,7 +77,7 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
             {[119,118,117,116,115,114,113,112].map((num)=> (
               <Pressable key={num} onPress={()=> setSelectedCongress(num)} style={[styles.chip, selectedCongress===num && styles.chipSelected]}>
-                <Text style={[styles.chipText, selectedCongress===num && styles.chipTextSelected]}>{num}</Text>
+                <Text style={[styles.chipText, selectedCongress===num && styles.chipTextSelected]}>{numToDate(num)}</Text>
               </Pressable>
             ))}
           </ScrollView>

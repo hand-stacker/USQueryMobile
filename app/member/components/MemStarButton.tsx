@@ -1,5 +1,6 @@
 import { starMember, unstarMember } from '@/app/api/members';
 import { UnscalableText } from '@/app/components/UnscalableText';
+import { useFavoritesStore } from '@/app/store/favoriteSubjectsStore';
 import { useStarredMembersStore } from '@/app/store/starredMembersStore';
 import React from 'react';
 import { Alert, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export default function MemStarButton({ membershipId, size = 22, style, onChange }: Props) {
+	const loggedIn = useFavoritesStore(s => s.loggedIn)
 	const id = String(membershipId);
 	const stars = useStarredMembersStore((s) => s.stars);
 	const addStar = useStarredMembersStore((s) => s.addStar);
@@ -26,6 +28,10 @@ export default function MemStarButton({ membershipId, size = 22, style, onChange
 				removeStar(id);
 				onChange?.(false);
 			} else {
+				if (!loggedIn) {
+					Alert.alert('Please log in', 'You must be logged in to star members.');
+					return;
+				}
 				const ret = await starMember(id);
 				if (ret?.status == "starred" || ret?.error?.__all__?.[0]?.includes('already exists')) {
 					addStar(id);

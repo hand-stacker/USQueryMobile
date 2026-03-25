@@ -4,7 +4,7 @@ import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useStarredMembersStore } from "@/app/store/starredMembersStore";
 import { ThemeContext } from "@/app/theme/themeContext";
 import React, { memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MemberList from "../components/MemberList";
 import MemTopNav from "../components/MemTopNav";
@@ -35,14 +35,22 @@ function StarredMembers({navigation}: any) {
   }, [fetchMembers, starred_members]);
 
   const loggedIn = useFavoritesStore(s => s.loggedIn);
-  useEffect(() => {
-    if (loggedIn === false) {
-      Alert.alert('Login required', 'You must be logged in to view your starred members.', [
-        { text: 'Log in', onPress: () => navigation.navigate('Login') },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    }
-  }, [loggedIn]);
+
+  if (!loggedIn) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <MemTopNav navigation={navigation} mode="Starred" />
+        <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center' }}>
+          <Text style={{ color: theme.text, textAlign: 'center', marginBottom: 20, fontWeight: '600' }}>
+            You need to log in to save and view your starred members.
+          </Text>
+          <Pressable style={styles.button} onPress={() => navigation.navigate("Login")}>
+            <Text style={styles.buttonText}>Log In</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const memberData = useMemo(() => data?.members ?? [], [data]);
 
@@ -90,5 +98,20 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex:1,
     paddingHorizontal:'6%',
     paddingTop:'5%',
+  },
+  button: {
+    width: "80%",
+    minHeight: 50,
+    marginBottom: 12,
+    backgroundColor: theme.primary,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: theme.innerText,
+    fontWeight: "600",
   },
 });

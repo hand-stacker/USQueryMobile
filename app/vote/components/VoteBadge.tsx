@@ -8,7 +8,7 @@ interface Props {
   allowBillNav?: boolean;
 }
 
-function navToBill(navigation: any, voteId: any, allowBillNav: boolean) {
+function navToVote(navigation: any, voteId: any, allowBillNav: boolean) {
   navigation.navigate("Vote_info", {vote_id: voteId, allowBillNav: allowBillNav});
 }
 
@@ -16,7 +16,7 @@ export default function VoteBadge({navigation, voteId, allowBillNav = false}: Pr
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
   return (
-    <Pressable onPress={() => navToBill(navigation, voteId, allowBillNav)} style={styles.billBadge} accessibilityRole="button">
+    <Pressable onPress={() => navToVote(navigation, voteId, allowBillNav)} style={styles.billBadge} accessibilityRole="button">
       <Text style={styles.billBadgeText}>Open Vote</Text>
     </Pressable>
   );

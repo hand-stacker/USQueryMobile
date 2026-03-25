@@ -145,7 +145,7 @@ const createStyles = (theme : any) => StyleSheet.create({
     marginRight: 6,
     fontSize: 16,
     lineHeight: 20,
-    color: theme.text,
+    color: theme.innerText,
   },
   selectedContainer: {
     maxHeight: 150,

@@ -1,4 +1,5 @@
 import { starBill, unstarBill } from '@/app/api/bills';
+import { useFavoritesStore } from '@/app/store/favoriteSubjectsStore';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export default function StarButton({ billId, size = 22, style, onChange }: Props) {
+  const loggedIn = useFavoritesStore(s => s.loggedIn);
   const id = String(billId);
   const stars = useStarredBillsStore((s) => s.stars);
   const addStar = useStarredBillsStore((s) => s.addStar);
@@ -27,6 +29,10 @@ export default function StarButton({ billId, size = 22, style, onChange }: Props
         removeStar(id);
         onChange?.(false);
       } else {
+        if (!loggedIn) {
+          Alert.alert('Please log in', 'You must be logged in to star bills.');
+          return;
+        }
         const ret = await starBill(id);
         if (ret?.status == "starred" || ret?.error?.__all__?.[0]?.includes('already exists')) {
           addStar(id);

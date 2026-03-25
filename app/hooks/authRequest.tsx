@@ -1,4 +1,3 @@
-import { Alert } from "react-native";
 import { refreshAccessToken, removeUserSession, retrieveUserSession } from "../encrypted-storage/functions";
 const API_BASE_URL = "https://www.usquery.com/api/";
 
@@ -64,19 +63,8 @@ export async function authRequest(
 
         return retryResponse.json();
     } catch (error) {
-        // Refresh failed → logout
+        // Refresh failed → logout; let caller handle UI/alerts
         await removeUserSession();
-        // Notify the user and ask them to log in again
-        try {
-            Alert.alert(
-                "Session expired",
-                "Your session has expired. Please log in again.",
-                [{ text: "OK" }]
-            );
-        } catch (e) {
-            // ignore alerts failing in non-UI environments
-        }
-
-        throw new Error("Session expired. Please log in again.");
+        throw new Error("Session expired");
     }
 }

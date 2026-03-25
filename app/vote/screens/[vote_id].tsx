@@ -8,7 +8,6 @@ import React, { useCallback, useContext, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModalVoteList from "../components/ModalVoteList";
-import ResultBadge from "../components/ResultBadge";
 import VotePieChart from "../components/VotePieChart";
 
 interface VoteInfoProps {
@@ -75,7 +74,9 @@ export default function VoteInfo({ navigation, route}: VoteInfoProps) {
           {vote.question ? <Text style={styles.question}>{vote.question}</Text> : null}
           <View style={styles.rowBetween}>
             <Text style={styles.resultLabel}>Result:</Text>
-            <ResultBadge result={vote.result ?? '—'} />  
+            <Text style={styles.label}>
+                {vote.result ?? '—'}
+              </Text>
           </View>
         </View>
         <View style={[styles.pieChartContainer, 
@@ -128,8 +129,17 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   dateText: { fontSize: 13, color: theme.subtext, marginBottom: 6 },
   title: { fontSize: 18, fontWeight: '700', color: theme.titleText, marginBottom: 8 },
+  label: {
+    fontSize: 16,
+    color: theme.text,
+    fontWeight: "700",
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginRight: 30,
+  },
   question: { fontSize: 15, color: theme.subtext, marginBottom: 12, fontWeight: '600' },
-  rowBetween: { flexDirection: 'row', alignItems: 'center' },
+  rowBetween: { flexDirection: 'row', alignItems: 'flex-start' },
   resultLabel: { fontSize: 13, color: theme.subtext, fontWeight: '600', marginRight: 8 },
   listWrap: { paddingTop: 6, paddingBottom: 50 },
   pieChartContainer: { alignItems: 'center', marginBottom: 12 },

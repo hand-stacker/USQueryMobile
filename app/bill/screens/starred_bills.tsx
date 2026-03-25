@@ -3,7 +3,7 @@ import { useFavoritesStore } from '@/app/store/favoriteSubjectsStore';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
 import { ThemeContext } from '@/app/theme/themeContext';
 import React, { useCallback, useContext, useEffect, useMemo } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BillList from '../components/BillList';
 import BillTopNav from '../components/BillTopNav';
@@ -17,20 +17,29 @@ export default function StarredBills({ navigation }: any) {
   const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetStarredBills(undefined, 30);
   const edges = useMemo(() => Array.isArray(bills) ? [] : (bills?.edges ?? []), [bills]);
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
+
+  const loggedIn = useFavoritesStore(s => s.loggedIn);
+
   // When the starred IDs change elsewhere in the app, refetch the starred bills list
   useEffect(() => {
     if (refetch) refetch();
   }, [refetch, starredIds.join(',')]);
 
-  const loggedIn = useFavoritesStore(s => s.loggedIn);
-  useEffect(() => {
-    if (loggedIn === false) {
-      Alert.alert('Login required', 'You must be logged in to view your starred bills.', [
-        { text: 'Log in', onPress: () => navigation.navigate('Login') },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    }
-  }, [loggedIn]);
+  if (!loggedIn) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <BillTopNav navigation={navigation} mode="Starred" />
+        <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center' }}>
+          <Text style={{ color: theme.text, textAlign: 'center', marginBottom: 20, fontWeight: '600' }}>
+            You need to log in to save and view your starred bills. 
+          </Text>
+          <Pressable style={styles.button} onPress={() => navigation.navigate("Login")}>
+            <Text style={styles.buttonText}>Log In</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   
 
@@ -71,5 +80,20 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: theme.titleText,
-  }
+  },
+  button: {
+    width: "80%",
+    minHeight: 50,
+    marginBottom: 12,
+    backgroundColor: theme.primary,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: theme.innerText,
+    fontWeight: "600",
+  },
 });

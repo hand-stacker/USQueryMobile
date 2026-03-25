@@ -14,7 +14,7 @@ export default function SearchedMembers({navigation}: any) {
   // use MMKV later to store favorite subjects persistently
   // const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const [modalVisible, setModalVisible] = useState(true);
-  const [searchVars, setSearchVars] = useState<any>({ congress: 119, chamber: 'Senate', state: 'AL' });
+  const [searchVars, setSearchVars] = useState<any>({ congress: 119, chamber: 'Senate', state: 'All' });
   const {members, loading, error, refetch} = useGetMembershipSet(searchVars.congress,searchVars.chamber,searchVars.state);
 
   const isFocused = useIsFocused();
