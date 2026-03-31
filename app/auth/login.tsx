@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useCallback, useContext, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
@@ -12,6 +12,14 @@ import { ThemeContext } from "../theme/themeContext";
 interface LoginProps {
   navigation: any;
 }
+const numToAccountType = (num: number) => {
+  switch(num) {
+    case 0: return "Free";
+    case 1: return "Premium";
+    case 2: return "Congressional";
+    default: return "Custom";
+  }
+};
 
 export default function Login({ navigation }: LoginProps) {
   const { theme } = useContext(ThemeContext);
@@ -89,6 +97,29 @@ export default function Login({ navigation }: LoginProps) {
       Alert.alert("Login error", err?.message ?? "Network or unexpected error occurred.");
     }
   };
+  const handleOpenLink = useCallback((url?: string) => {
+    if (!url) return;
+    const normalized = url.startsWith('http') ? url : `https://${url}`;
+    Linking.openURL(normalized).catch(() => {});
+  }, []);
+
+  const [userDetails, setUserDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(true);
+  useEffect(() => {
+    const fetchDetails = async () => {
+      if (userSession === null) return;
+      try {
+        const result = await authRequest("auth/view-details/");
+        setUserDetails(result);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
+
+    fetchDetails();
+  }, [userSession]);
   if (userSession != null) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
@@ -119,6 +150,20 @@ export default function Login({ navigation }: LoginProps) {
         }}>
           <Text style={styles.buttonText}>Log out of {userSession.email}?</Text>
         </Pressable>
+        <Pressable style={styles.button} onPress={() => handleOpenLink('www.usquery.com/api/auth/delete/')} >
+          <Text style={[styles.buttonText, {}]}>Delete my account</Text>
+        </Pressable>
+        <View style={styles.card}>
+          {detailsLoading ? (<ActivityIndicator />): (
+            <>
+            <Text style={styles.label}>Account Details</Text>
+            <Text style={styles.text}>• Account Type: {numToAccountType(userDetails?.user_type ?? 0)}</Text>
+            <Text style={styles.text}>• Starred Bill Limit: {userDetails?.bill_limit ?? "N/A"}</Text>
+            <Text style={styles.text}>• Starred Member Limit: {userDetails?.member_limit ?? "N/A"}</Text>
+            <Text style={styles.text}>• Device Limit: {userDetails?.device_limit ?? "N/A"}</Text>
+            </>
+            )}
+        </View>
       </SafeAreaView>
     );
   }
@@ -203,6 +248,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: 6,
     color: theme.text,
   },
+  text: {
+    fontSize: 12,
+    marginBottom: 6,
+    color: theme.text,
+  },
   input: {
     color: theme.text,
     borderWidth: 1,
@@ -214,7 +264,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   button: {
     width: "100%",
     minHeight: 50,
-    marginBottom: 12,
+    marginBottom: 20,
     backgroundColor: theme.primary,
     padding: 14,
     borderRadius: 8,
@@ -244,5 +294,19 @@ const createStyles = (theme: any) => StyleSheet.create({
   errorText: {
     color: theme.text,
     fontSize: 13,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: theme.card,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+    marginVertical: 4,
   },
 });

@@ -66,6 +66,9 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
         <Pressable style={styles.button} onPress={toggleTheme}>
           <Text style={styles.buttonText}>Switch to {theme.name === 'light' ? 'dark' : 'light'} theme</Text>
         </Pressable>
+        <Pressable style={styles.button} onPress={async () => navigation.navigate('Privacy_Policy') }>
+          <Text style={styles.buttonText}>Privacy Policy</Text>
+        </Pressable>
       </View>
 
       <SelectFavoritesModal visible={open} onClose={handleClose} />

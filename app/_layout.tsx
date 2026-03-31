@@ -16,11 +16,13 @@ import BillInfo from "./bill/screens/[bill_id]";
 import BillFYP from "./bill/screens/bill_fyp";
 import StarredBills from "./bill/screens/starred_bills";
 import MemberInfo from "./member/screens/[membershipId]";
+import PrivacyPolicyModal from './misc/PrivacyPolicyModal';
 import WelcomeFavoritesModal from './misc/WelcomeFavoritesModal';
 import VoteInfo from "./vote/screens/[vote_id]";
 import VoteFYP from "./vote/screens/vote_fyp";
 
 import { Tinos_400Regular, Tinos_700Bold, useFonts } from '@expo-google-fonts/tinos';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Login from "./auth/login";
 import ResetPassword from "./auth/password_reset";
 import RegisterAccount from "./auth/register";
@@ -68,14 +70,15 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Verify" component={VerifyEmail} options={{ headerShown: false }}/>
       <Stack.Screen name="Reset_Password" component={ResetPassword} options={{ headerShown: false }}/>
       <Stack.Screen name="Notification_Settings" component={NotificationSettings} options={{ headerShown: false }}/>
+      <Stack.Screen name="Privacy_Policy" component={PrivacyPolicy} options={{ headerShown: false }}/>
     </Stack.Navigator>
   );
 }
 
 function TabNavigator() {
   const { theme } = useContext(ThemeContext);
-  const { height } = useWindowDimensions(); 
-  const tabBarHeight = Math.round(height * 0.14);
+  const { height: windowHeight } = useWindowDimensions(); 
+  const tabBarHeight = Math.round(windowHeight * 0.14);
   return (
     <Tabs.Navigator 
       initialRouteName="Bills"
@@ -93,7 +96,7 @@ function TabNavigator() {
             route.name === 'Bills' ? 'newspaper-outline' :
             route.name === 'Members' ? 'people-outline' :
             route.name === 'Votes' ? 'checkmark-done-outline' :
-            route.name === 'Options' ? 'options-outline' :
+            route.name === 'Settings' ? 'options-outline' :
             'ellipse-outline';
           return <Ionicons name={name as any} size={size} color={color} />;
         },
@@ -127,12 +130,12 @@ function TabNavigator() {
         }}
       />
       <Tabs.Screen
-        name="Options"
+        name="Settings"
         component={SharedStack}
         initialParams={{ initialRoute: "Options_screen" }}
         options={{ 
           headerShown: false,
-          tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Options</UnscalableText>
+          tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Settings</UnscalableText>
         }}
       />
     </Tabs.Navigator>
@@ -176,16 +179,20 @@ function AppNavigation() {
   const navTheme = createNavTheme(theme);
   return (
     <NavigationIndependentTree>
+      <SafeAreaProvider>
       <NavigationContainer ref={navigationRef} theme={navTheme}>
         <TabNavigator />
         <WelcomeFavoritesModal />
+        <PrivacyPolicyModal />
       </NavigationContainer>
+      </SafeAreaProvider>
     </NavigationIndependentTree>
   );
 }
 
 import { DefaultTheme, DarkTheme as NavDarkTheme } from "@react-navigation/native";
 import { useWindowDimensions } from "react-native";
+import PrivacyPolicy from "./misc/privacy_policy";
 
 export const createNavTheme = (theme: any) => {
   const base = theme.name === "dark" ? NavDarkTheme : DefaultTheme;

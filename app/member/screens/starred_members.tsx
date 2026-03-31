@@ -1,5 +1,6 @@
 import EmptyPage from "@/app/components/EmptyPage";
 import { authRequest } from "@/app/hooks/authRequest";
+import TempAlphatestLoginCreds from "@/app/misc/temp_alphatest_login_creds";
 import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useStarredMembersStore } from "@/app/store/starredMembersStore";
 import { ThemeContext } from "@/app/theme/themeContext";
@@ -35,6 +36,10 @@ function StarredMembers({navigation}: any) {
   }, [fetchMembers, starred_members]);
 
   const loggedIn = useFavoritesStore(s => s.loggedIn);
+  const memberData = useMemo(() => data?.members ?? [], [data]);
+  const handleRefresh = useCallback(() => {
+    void fetchMembers();
+  }, [fetchMembers]);
 
   if (!loggedIn) {
     return (
@@ -44,6 +49,7 @@ function StarredMembers({navigation}: any) {
           <Text style={{ color: theme.text, textAlign: 'center', marginBottom: 20, fontWeight: '600' }}>
             You need to log in to save and view your starred members.
           </Text>
+          <TempAlphatestLoginCreds />
           <Pressable style={styles.button} onPress={() => navigation.navigate("Login")}>
             <Text style={styles.buttonText}>Log In</Text>
           </Pressable>
@@ -51,12 +57,6 @@ function StarredMembers({navigation}: any) {
       </SafeAreaView>
     );
   }
-
-  const memberData = useMemo(() => data?.members ?? [], [data]);
-
-  const handleRefresh = useCallback(() => {
-    void fetchMembers();
-  }, [fetchMembers]);
 
   if (data?.error) return (
     <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
