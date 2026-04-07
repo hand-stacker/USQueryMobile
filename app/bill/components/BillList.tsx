@@ -1,6 +1,6 @@
 import EmptyPage from "@/app/components/EmptyPage";
 import { ThemeContext } from "@/app/theme/themeContext";
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import BillInfographic from "./BillInfographic";
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
 const BillList = ({data, navigator, onEndReached, loadingMore}:Props)=> {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
-  const renderItem = ({ item }: any) => {
+  const renderItem = useCallback(({ item }: any) => {
     const node = item.node ?? item;
     return (
       <BillInfographic key={node.id}
@@ -22,7 +22,7 @@ const BillList = ({data, navigator, onEndReached, loadingMore}:Props)=> {
       billNum={node.billNum ?? node.id}
       billSummary={node.summary ?? node.billSummary?? 'No summary available.'}
       billTitle={node.title ?? node.billTitle}/>);
-};
+}, [navigator]);
 
   return (
     <FlatList
@@ -35,10 +35,15 @@ const BillList = ({data, navigator, onEndReached, loadingMore}:Props)=> {
       onEndReached={onEndReached}
       ListEmptyComponent={EmptyPage}
       onEndReachedThreshold={0.5}
-      initialNumToRender={8}
-      maxToRenderPerBatch={12}
-      windowSize={7}
+      initialNumToRender={15}
+      maxToRenderPerBatch={20}
+      windowSize={10}
       removeClippedSubviews={true}
+      getItemLayout={(data, index) => ({
+        length: 120, // Approximate height of each item
+        offset: 120 * index + 12 * index, // Height + separator
+        index,
+      })}
     />
   );
 }

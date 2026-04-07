@@ -1,5 +1,5 @@
 import { ThemeContext } from '@/app/theme/themeContext';
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 interface Props {
@@ -43,7 +43,7 @@ function getBillIdentifier(billNum: number): string {
 export default function BillBadge({navigation, billNum}: Props) {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
-  const label = getBillIdentifier(billNum);
+  const label = useMemo(() => getBillIdentifier(billNum), [billNum]);
   return (
     <Pressable onPress={() => navToBill(navigation, billNum)} style={styles.billBadge} accessibilityRole="button">
       <Text style={styles.billBadgeText}>{label}</Text>

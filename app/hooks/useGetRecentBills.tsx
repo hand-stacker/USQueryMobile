@@ -10,13 +10,15 @@ const GET_RECENT_BILLS = gql`
     $congress_num: Int,
     $first: Int,
     $subject_list: [Int!]
+    $truncate: Boolean! = false
     ) {
     getRecommendedBills(
         after: $after,
         billType: $bill_type,
         congressNum: $congress_num,
         first: $first,
-        subjectList: $subject_list
+        subjectList: $subject_list,
+        truncate: $truncate
     ) {
     edges {
       node {
@@ -42,9 +44,9 @@ const GET_RECENT_BILLS = gql`
   }
 `;
 
-export function useGetRecentBills(after?: string, bill_type?: string, first?: number, congress_num?: number, subject_list?: number[]) {
+export function useGetRecentBills(after?: string, bill_type?: string, first?: number, congress_num?: number, subject_list?: number[], truncate: boolean = false) {
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_RECENT_BILLS, {
-    variables: { after, bill_type, first, congress_num, subject_list },
+    variables: { after, bill_type, first, congress_num, subject_list, truncate },
     client,
   });
 
@@ -73,6 +75,7 @@ export function useGetRecentBills(after?: string, bill_type?: string, first?: nu
           first,
           congress_num,
           subject_list,
+          truncate,
         },
         updateQuery: (prev: any, { fetchMoreResult }: any) => {
           if (!fetchMoreResult) return prev;

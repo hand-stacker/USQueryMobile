@@ -1,5 +1,4 @@
 import useGetStarredBills from '@/app/hooks/useGetStarredBills';
-import TempAlphatestLoginCreds from '@/app/misc/temp_alphatest_login_creds';
 import { useFavoritesStore } from '@/app/store/favoriteSubjectsStore';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
 import { ThemeContext } from '@/app/theme/themeContext';
@@ -34,7 +33,6 @@ export default function StarredBills({ navigation }: any) {
           <Text style={{ color: theme.text, textAlign: 'center', marginBottom: 20, fontWeight: '600' }}>
             You need to log in to save and view your starred bills. 
           </Text>
-          <TempAlphatestLoginCreds />
           <Pressable style={styles.button} onPress={() => navigation.navigate("Login")}>
             <Text style={styles.buttonText}>Log In</Text>
           </Pressable>

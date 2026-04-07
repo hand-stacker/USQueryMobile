@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { StyleSheet } from "react-native";
 import { ThemeContext } from "../theme/themeContext";
 import scaleFont from "../utils/scaleFont";
@@ -20,10 +20,11 @@ function markdownToPlaintext(md: string | null | undefined) {
   text = text.replace(/\n{2,}/g, "\n\n");
   return text.trim();
 }
+
 const MicroSummary: React.FC<{ text?: string }> = ({ text }) => {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
-  const plain = markdownToPlaintext(text);
+  const plain = useMemo(() => markdownToPlaintext(text), [text]);
   const [isTruncated, setIsTruncated] = useState(false);
   if (!plain) return null;
 

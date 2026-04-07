@@ -1,8 +1,7 @@
-
 import MicroSummary from "@/app/components/MicroSummary";
 import { ThemeContext } from "@/app/theme/themeContext";
 import scaleFont from "@/app/utils/scaleFont";
-import { useContext, useRef, useState } from "react";
+import { useCallback, useContext, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import BillBadge from "./BillBadge";
 
@@ -27,7 +26,8 @@ export default function BillInfographic({navigator, billId, billTitle, billNum, 
   const [isExpanded, setIsExpanded] = useState(false);
   const [prevInteraction, setPrevInteraction] = useState(false);
   const animatedHeight = useRef(new Animated.Value(minHeight)).current;
-  const expand = () => {
+  
+  const expand = useCallback(() => {
     Animated.timing(animatedHeight, {
       toValue: maxHeight,
       duration: 220,
@@ -35,26 +35,28 @@ export default function BillInfographic({navigator, billId, billTitle, billNum, 
     }).start();
     setIsExpanded(true);
     if (!prevInteraction) setPrevInteraction(true);
-  };
+  }, [animatedHeight, maxHeight, prevInteraction]);
 
-  const collapse = () => {
+  const collapse = useCallback(() => {
     Animated.timing(animatedHeight, {
       toValue: minHeight,
       duration: 220,
       useNativeDriver: false,
     }).start();
     setIsExpanded(false);
-  };
-  const handleLongPress = () => {
+  }, [animatedHeight, minHeight]);
+  
+  const handleLongPress = useCallback(() => {
     if (isExpanded) {
       collapse();
     } else {
       expand();
     }
-  };
-  const handlePress = () => {
+  }, [isExpanded, collapse, expand]);
+  
+  const handlePress = useCallback(() => {
     navToBill(navigator, billId);
-  };
+  }, [navigator, billId]);
   return (
     <Pressable 
       onPress={handlePress}

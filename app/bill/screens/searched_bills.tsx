@@ -25,9 +25,9 @@ export default function BillSearchResults( {navigation} : any) {
   const subject_list_store = useSubjectListStore(s => s.subject_list);
   const subject_list = useMemo(() => (subject_list_store && subject_list_store.length > 0) ? subject_list_store : [], [subject_list_store]);
   const [modalVisible, setModalVisible] = useState(subject_list.length === 0);
-  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list }));
+  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list , truncate: true }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
-  const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list);
+  const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.truncate);
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
 
   const isFocused = useIsFocused();
@@ -37,18 +37,26 @@ export default function BillSearchResults( {navigation} : any) {
   // when navigating away and back without changes.
   useEffect(() => {
     if (!isFocused) return;
-    if (arraysEqual(lastUsedSubjectsRef.current, subject_list)) return;
-    lastUsedSubjectsRef.current = subject_list;
+    
+    // Deep compare the subject lists
+    const currentSubjects = subject_list_store && subject_list_store.length > 0 ? subject_list_store : [];
+    const prevSubjects = lastUsedSubjectsRef.current || [];
+    
+    const subjectsChanged = !arraysEqual(prevSubjects, currentSubjects);
+    
+    if (!subjectsChanged) return;
+    
+    lastUsedSubjectsRef.current = currentSubjects;
     setSearchVars((prev: any) => {
-      const next = { ...prev, subject_list: subject_list, after: undefined };
+      const next = { ...prev, subject_list: currentSubjects, after: undefined };
       try {
-        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
+        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, truncate: next.truncate });
       } catch (err) {
         console.error('Refetch on focus failed', err);
       }
       return next;
     });
-  }, [isFocused, subject_list, refetch]);
+  }, [isFocused, subject_list_store, refetch]);
   // `bills` may be the GraphQL connection object or an array/falsy value.
   const edges = useMemo(() => Array.isArray(bills) ? [] : (bills?.edges ?? []), [bills]);
 
@@ -72,7 +80,7 @@ export default function BillSearchResults( {navigation} : any) {
       const next = { ...merged, subject_list: effective };
       useSubjectListStore.getState().setSubjectList(effective);
       try {
-        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
+        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, truncate: next.truncate });
       } catch (err) {
         console.error('Refetch on search failed', err);
       }
