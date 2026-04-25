@@ -1,7 +1,16 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppleSignInButton from "../components/AppleSignInButton";
+import GoogleSignInButton from "../components/GoogleSignInButton";
+import { storeUserSession } from "../encrypted-storage/functions";
+import { authRequest } from "../hooks/authRequest";
+import { useAppleSignIn } from "../hooks/useAppleSignIn";
+import { useGoogleSignIn } from "../hooks/useGoogleSignIn";
 import { useRegister } from "../hooks/useRegister";
+import { useFavoritesStore } from "../store/favoriteSubjectsStore";
+import { useStarredBillsStore } from "../store/starredBillsStore";
+import { useStarredMembersStore } from "../store/starredMembersStore";
 import { ThemeContext } from "../theme/themeContext";
 
 interface RegisterProps {
@@ -18,6 +27,12 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const { register, ok, loading, data, errors: registerErrors } = useRegister(email,password);
+  const { signIn: googleSignIn, loading: googleLoading, ok: googleOk, data: googleData, errors: googleErrors } = useGoogleSignIn();
+  const { signIn: appleSignIn, loading: appleLoading, ok: appleOk, data: appleData, errors: appleErrors } = useAppleSignIn();
+  const setFavorites = useFavoritesStore(s => s.setFavorites);
+  const setStarrMem = useStarredMembersStore(s => s.setStars);
+  const setStarrBills = useStarredBillsStore(s => s.setStars);
+  const setLoggedIn = useFavoritesStore(s => s.setIsLoggedIn);
 
   const isValidEmail = (e: string) => /\S+@\S+\.\S+/.test(e);
   const isStrongPassword = (p: string) => {
@@ -42,11 +57,72 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
     return errs.length === 0;
   };
 
+  const handleAuthSuccess = async (authData: any, isOAuth = false) => {
+    await storeUserSession(authData.email, authData.access, authData.refresh, authData.is_verified);
+    if (!authData.is_verified) {
+      navigation.navigate("Verify", { email: authData.email, fromLogin: true });
+      return;
+    }
+    setLoggedIn(true);
+    try {
+      const userPrefs = await authRequest("notif/get-preferences/");
+      setFavorites(userPrefs.subject_ids);
+      setStarrMem(userPrefs.membership_ids.map((id: any) => String(id)));
+      setStarrBills(userPrefs.bill_ids.map((id: any) => String(id)));
+    } catch (prefErr) {
+      console.error("Failed to load user preferences:", prefErr);
+    }
+    const message = isOAuth && authData.is_new_user ? "Account created and logged in" : "You are now logged in from this device.";
+    Alert.alert("Success", message, [
+      {
+        text: "Continue",
+        onPress: () => navigation.navigate("Bill_FYP"),
+      },
+    ]);
+  };
+
   useEffect(() => {
     if (errors.length > 0) {
       scrollRef.current?.scrollToEnd({ animated: true });
     }
   }, [errors]);
+
+  useEffect(() => {
+    if (googleOk && googleData) {
+      handleAuthSuccess(googleData, true);
+    }
+  }, [googleOk, googleData]);
+
+  useEffect(() => {
+    if (appleOk && appleData) {
+      handleAuthSuccess(appleData, true);
+    }
+  }, [appleOk, appleData]);
+
+  useEffect(() => {
+    const oauthErrs: string[] = [];
+    if (googleErrors) {
+      for (const key in googleErrors) {
+        if (Array.isArray(googleErrors[key])) {
+          googleErrors[key].forEach((msg: string) => oauthErrs.push(`Google: ${msg}`));
+        } else {
+          oauthErrs.push(`Google: ${googleErrors[key]}`);
+        }
+      }
+    }
+    if (appleErrors) {
+      for (const key in appleErrors) {
+        if (Array.isArray(appleErrors[key])) {
+          appleErrors[key].forEach((msg: string) => oauthErrs.push(`Apple: ${msg}`));
+        } else {
+          oauthErrs.push(`Apple: ${appleErrors[key]}`);
+        }
+      }
+    }
+    if (oauthErrs.length > 0) {
+      setErrors(oauthErrs);
+    }
+  }, [googleErrors, appleErrors]);
 
   const onSubmit = async () => {
     if (!validate()) return;
@@ -132,6 +208,14 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
         <Pressable style={styles.button} onPress={onSubmit}>
           <Text style={styles.buttonText}>Register</Text>
         </Pressable>
+
+        <View style={styles.divider}>
+          <Text style={styles.dividerText}>or</Text>
+        </View>
+
+        <GoogleSignInButton onPress={googleSignIn} loading={googleLoading} label="Sign up with Google" />
+
+        <AppleSignInButton onPress={appleSignIn} loading={appleLoading} label="Sign up with Apple" display={false} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -177,6 +261,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 16,
     color: theme.innerText,
     fontWeight: "600",
+  },
+  divider: {
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  dividerText: {
+    color: theme.subtext,
+    fontSize: 14,
   },
   errorBox: {
     marginBottom: 12,

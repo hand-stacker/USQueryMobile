@@ -1,13 +1,17 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
+import AppleSignInButton from "../components/AppleSignInButton";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
+import { useAppleSignIn } from "../hooks/useAppleSignIn";
+import { useGoogleSignIn } from "../hooks/useGoogleSignIn";
 import { useLogin } from "../hooks/useLogin";
 import { useFavoritesStore } from "../store/favoriteSubjectsStore";
 import { useStarredBillsStore } from "../store/starredBillsStore";
 import { useStarredMembersStore } from "../store/starredMembersStore";
-import { ThemeContext } from "../theme/themeContext";
+import { ThemeContext } from '../theme/themeContext';
 
 interface LoginProps {
   navigation: any;
@@ -28,6 +32,8 @@ export default function Login({ navigation }: LoginProps) {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const {login, ok, loading, data, errors : loginErrors} = useLogin();
+  const { signIn: googleSignIn, loading: googleLoading, ok: googleOk, data: googleData, errors: googleErrors } = useGoogleSignIn();
+  const { signIn: appleSignIn, loading: appleLoading, ok: appleOk, data: appleData, errors: appleErrors } = useAppleSignIn();
   const [userSession, setUserSession] = useState<null | { refreshToken?: string; accessToken?: string; email?: string; isVerified?: boolean }>(null);
   const setFavorites = useFavoritesStore(s => s.setFavorites);
   const setStarrMem = useStarredMembersStore(s => s.setStars);
@@ -49,31 +55,73 @@ export default function Login({ navigation }: LoginProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (googleOk && googleData) {
+      handleAuthSuccess(googleData, true);
+    }
+  }, [googleOk, googleData]);
+
+  useEffect(() => {
+    if (appleOk && appleData) {
+      handleAuthSuccess(appleData, true);
+    }
+  }, [appleOk, appleData]);
+
+  useEffect(() => {
+    const oauthErrs: string[] = [];
+    if (googleErrors) {
+      for (const key in googleErrors) {
+        if (Array.isArray(googleErrors[key])) {
+          googleErrors[key].forEach((msg: string) => oauthErrs.push(`Google: ${msg}`));
+        } else {
+          oauthErrs.push(`Google: ${googleErrors[key]}`);
+        }
+      }
+    }
+    if (appleErrors) {
+      for (const key in appleErrors) {
+        if (Array.isArray(appleErrors[key])) {
+          appleErrors[key].forEach((msg: string) => oauthErrs.push(`Apple: ${msg}`));
+        } else {
+          oauthErrs.push(`Apple: ${appleErrors[key]}`);
+        }
+      }
+    }
+    if (oauthErrs.length > 0) {
+      setErrors(oauthErrs);
+    }
+  }, [googleErrors, appleErrors]);
+
+  const handleAuthSuccess = async (authData: any, isOAuth = false) => {
+    await storeUserSession(authData.email, authData.access, authData.refresh, authData.is_verified);
+    if (!isOAuth && !authData.is_verified) {
+      navigation.navigate("Verify", { email: authData.email, fromLogin: true });
+      return;
+    }
+    setLoggedIn(true);
+    try {
+      const userPrefs = await authRequest("notif/get-preferences/");
+      setFavorites(userPrefs.subject_ids);
+      setStarrMem(userPrefs.membership_ids.map((id: any) => String(id)));
+      setStarrBills(userPrefs.bill_ids.map((id: any) => String(id)));
+    } catch (prefErr) {
+      console.error("Failed to load user preferences:", prefErr);
+      // Proceed; preferences are optional and shouldn't block login
+    }
+    const message = isOAuth && authData.is_new_user ? "Account created and logged in" : "You are now logged in from this device.";
+    Alert.alert("Success", message, [
+      {
+        text: "Continue",
+        onPress: () => navigation.navigate("Bill_FYP"),
+      },
+    ]);
+  };
+
   const onSubmit = async() => {
     try {
       const result = await login(email, password);
       if (result.ok && result.data) {
-        await storeUserSession(result.data.email, result.data.access, result.data.refresh, result.data.is_verified);
-        if (!result.data.is_verified) {
-          navigation.navigate("Verify", { email: email, fromLogin: true });
-          return;
-        }
-        setLoggedIn(true);
-        try {
-          const userPrefs = await authRequest("notif/get-preferences/");
-          setFavorites(userPrefs.subject_ids);
-          setStarrMem(userPrefs.membership_ids.map((id: any) => String(id)));
-          setStarrBills(userPrefs.bill_ids.map((id: any) => String(id)));
-        } catch (prefErr) {
-          console.error("Failed to load user preferences:", prefErr);
-          // Proceed; preferences are optional and shouldn't block login
-        }
-        Alert.alert("Logged In", "You are now logged in from this device.", [
-          {
-            text: "Continue",
-            onPress: () => navigation.navigate("Bill_FYP"),
-          },
-        ]);
+        await handleAuthSuccess(result.data);
       } else {
         const errs: string[] = [];
         const source = result.errors ?? loginErrors ?? {};
@@ -90,8 +138,6 @@ export default function Login({ navigation }: LoginProps) {
         setErrors(errs);
         return;
       }
-
-
     } catch (err:any) {
       console.error("Login flow error:", err);
       Alert.alert("Login error", err?.message ?? "Network or unexpected error occurred.");
@@ -219,6 +265,15 @@ export default function Login({ navigation }: LoginProps) {
           <Text style={styles.buttonText}>Log In</Text>
         )}
       </Pressable>
+
+      <View style={styles.divider}>
+        <Text style={styles.dividerText}>or</Text>
+      </View>
+
+      <GoogleSignInButton onPress={googleSignIn} loading={googleLoading} />
+
+      <AppleSignInButton onPress={appleSignIn} loading={appleLoading} display={false} />
+
       <Pressable style={styles.button} onPress={() => navigation.navigate("Reset_Password")}>
         <Text style={styles.buttonText}>Reset your password</Text>
       </Pressable>
@@ -282,6 +337,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 16,
     color: theme.innerText,
     fontWeight: "600",
+  },
+  divider: {
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  dividerText: {
+    color: theme.subtext,
+    fontSize: 14,
   },
   errorBox: {
     marginBottom: 12,

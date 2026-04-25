@@ -9,7 +9,9 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jerem13.USQ_Mobile_App",
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {

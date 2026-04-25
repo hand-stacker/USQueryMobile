@@ -1,9 +1,10 @@
 import { ApolloProvider } from "@apollo/client/react";
 import { Ionicons } from '@expo/vector-icons';
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
-  NavigationContainer,
-  NavigationIndependentTree
+    NavigationContainer,
+    NavigationIndependentTree
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Notifications from "expo-notifications";
@@ -35,6 +36,8 @@ import StarredMembers from "./member/screens/starred_members";
 import NotificationSettings from "./misc/notification_settings";
 import OptionsPage from "./misc/options";
 import VoteSearchResults from "./vote/screens/searched_votes";
+
+import { GOOGLE_CLIENT_ID } from "../constants/auth";
 
 const Tabs = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -161,6 +164,13 @@ export default function RootLayout() {
       });
 
     return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: GOOGLE_CLIENT_ID,
+      offlineAccess: true,
+    });
   }, []);
 
   if (!fontsLoaded) return null;

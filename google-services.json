@@ -12,7 +12,20 @@
           "package_name": "com.jerem13.USQ_Mobile_App"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "440682963132-cq353en24rvp3hn45505c3s22ddl20j2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jerem13.USQ_Mobile_App",
+            "certificate_hash": "3f171b502f530ecce5fc76381b4676f2eb2b01d8"
+          }
+        },
+        {
+          "client_id": "440682963132-e9e0n348g58lq0fmtu12oojjlu3n9c2q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBz4Xk4FAmfNKxhw55gTvBCjRkJvsbLoWU"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "440682963132-e9e0n348g58lq0fmtu12oojjlu3n9c2q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
