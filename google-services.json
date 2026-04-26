@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "440682963132-s81rgjuphrn2r088mkdp88u903aghoan.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jerem13.USQ_Mobile_App",
+            "certificate_hash": "d3c8887b4f890b348e963f392c764b72ab7f0d1f"
+          }
+        },
+        {
           "client_id": "440682963132-e9e0n348g58lq0fmtu12oojjlu3n9c2q.apps.googleusercontent.com",
           "client_type": 3
         }
