@@ -16,14 +16,6 @@ import { ThemeContext } from '../theme/themeContext';
 interface LoginProps {
   navigation: any;
 }
-const numToAccountType = (num: number) => {
-  switch(num) {
-    case 0: return "Free";
-    case 1: return "Premium";
-    case 2: return "Congressional";
-    default: return "Custom";
-  }
-};
 
 export default function Login({ navigation }: LoginProps) {
   const { theme } = useContext(ThemeContext);
@@ -149,13 +141,30 @@ export default function Login({ navigation }: LoginProps) {
     Linking.openURL(normalized).catch(() => {});
   }, []);
 
-  const [userDetails, setUserDetails] = useState(null);
+  const [userDetails, setUserDetails] = useState<any>(null);
   const [detailsLoading, setDetailsLoading] = useState(true);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const openPortal = async () => {
+    setPortalLoading(true);
+    try {
+      const result = await authRequest("subscription/portal/", { method: "POST" });
+      if (result.portal_url) {
+        Linking.openURL(result.portal_url).catch(() => {});
+      } else {
+        Alert.alert("Error", result.error ?? "Could not open billing portal.");
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err?.message ?? "Could not open billing portal.");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
   useEffect(() => {
     const fetchDetails = async () => {
       if (userSession === null) return;
       try {
-        const result = await authRequest("auth/view-details/");
+        const result = await authRequest("subscription/status/");
         setUserDetails(result);
       } catch (err) {
         console.error(err);
@@ -167,14 +176,94 @@ export default function Login({ navigation }: LoginProps) {
     fetchDetails();
   }, [userSession]);
   if (userSession != null) {
+    const tier: number = userDetails?.tier ?? 0;
+    const hasPaidPlan = tier > 0;
+    const predictionsText = tier === 0 ? null : tier === 1 ? "3/day" : "Unlimited";
+    const chatText       = tier === 0 ? null : tier === 1 ? "3/day" : "Unlimited";
+    const fmtDate = (iso: string) =>
+      new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <Text style={styles.title}>You are already logged in!</Text>
-        <Pressable style={styles.button} onPress={ async () => {
-          Alert.alert("Log out?", "You are about to log out of " + userSession.email, [
-            {
-              text: "Continue",
-              onPress: async () => {
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Text style={styles.title}>Manage Subscription</Text>
+
+          <View style={styles.card}>
+            {detailsLoading ? (
+              <ActivityIndicator style={{ paddingVertical: 24 }} />
+            ) : (
+              <>
+                {/* ── Current Plan ── */}
+                <Text style={styles.sectionLabel}>CURRENT PLAN</Text>
+                <Text style={styles.planName}>{userDetails?.tier_name ?? "Free"}</Text>
+
+                <View style={styles.sectionDivider} />
+
+                {/* ── Billing Status ── */}
+                <Text style={styles.sectionLabel}>BILLING STATUS</Text>
+                {userDetails?.cancel_at_period_end && userDetails?.period_end ? (
+                  <View style={styles.warningBox}>
+                    <Text style={styles.warningText}>
+                      ⚠ Cancels at end of billing period on {fmtDate(userDetails.period_end)}
+                    </Text>
+                    <Text style={styles.warningSubtext}>
+                      You'll keep access until that date. After that your account reverts to Free.
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={styles.statusText}>
+                      {hasPaidPlan ? "Active subscription" : "Free plan"}
+                    </Text>
+                    {hasPaidPlan && userDetails?.period_end && (
+                      <Text style={styles.nextBillingText}>
+                        Next billing date: {fmtDate(userDetails.period_end)}
+                      </Text>
+                    )}
+                  </>
+                )}
+
+                <View style={styles.sectionDivider} />
+
+                {/* ── Limits grid ── */}
+                <Text style={styles.sectionLabel}>YOUR LIMITS</Text>
+                <View style={styles.limitRow}>
+                  <LimitCell value={String(userDetails?.starred_members_limit ?? "—")} label="Starred Members" theme={theme} />
+                  <LimitCell value={String(userDetails?.starred_bills_limit ?? "—")} label="Starred Bills" theme={theme} />
+                </View>
+                <View style={[styles.limitRow, { marginTop: 8 }]}>
+                  <LimitCell value={predictionsText ?? "—"} label="Predictions" dim={!predictionsText} theme={theme} />
+                  <LimitCell value={chatText ?? "—"} label="AI Chats" dim={!chatText} theme={theme} />
+                </View>
+
+                <View style={styles.sectionDivider} />
+
+                {/* ── Actions ── */}
+                <View style={styles.actionRow}>
+                  <Pressable style={[styles.actionBtn, styles.actionBtnSecondary]} onPress={() => navigation.navigate("Plans")}>
+                    <Text style={[styles.actionBtnText, { color: theme.innerText }]}>View All Plans</Text>
+                  </Pressable>
+                  {hasPaidPlan && (
+                    <Pressable
+                      style={[styles.actionBtn, styles.actionBtnPrimary, portalLoading && { opacity: 0.7 }]}
+                      onPress={openPortal}
+                      disabled={portalLoading}
+                    >
+                      {portalLoading
+                        ? <ActivityIndicator color="#fff" />
+                        : <Text style={[styles.actionBtnText, { color: theme.innerText }]}>Billing Portal</Text>}
+                    </Pressable>
+                  )}
+                </View>
+              </>
+            )}
+          </View>
+
+          <Pressable style={[styles.button, { marginTop: 4 }]} onPress={async () => {
+            Alert.alert("Log out?", "You are about to log out of " + userSession.email, [
+              {
+                text: "Continue",
+                onPress: async () => {
                   if (userSession?.refreshToken) {
                     await authRequest("auth/token/blacklist/", { method: "POST", body: JSON.stringify({ refresh: userSession.refreshToken }) });
                   }
@@ -186,30 +275,17 @@ export default function Login({ navigation }: LoginProps) {
                   setLoggedIn(false);
                   navigation.navigate("Login");
                 },
-            },
-            { text: "Cancel",
-              onPress: () => {
-                return;
-              }
-            },
-          ]);
-        }}>
-          <Text style={styles.buttonText}>Log out of {userSession.email}?</Text>
-        </Pressable>
-        <Pressable style={styles.button} onPress={() => handleOpenLink('www.usquery.com/api/auth/delete/')} >
-          <Text style={[styles.buttonText, {}]}>Delete my account</Text>
-        </Pressable>
-        <View style={styles.card}>
-          {detailsLoading ? (<ActivityIndicator />): (
-            <>
-            <Text style={styles.label}>Account Details</Text>
-            <Text style={styles.text}>• Account Type: {numToAccountType(userDetails?.user_type ?? 0)}</Text>
-            <Text style={styles.text}>• Starred Bill Limit: {userDetails?.bill_limit ?? "N/A"}</Text>
-            <Text style={styles.text}>• Starred Member Limit: {userDetails?.member_limit ?? "N/A"}</Text>
-            <Text style={styles.text}>• Device Limit: {userDetails?.device_limit ?? "N/A"}</Text>
-            </>
-            )}
-        </View>
+              },
+              { text: "Cancel", onPress: () => {} },
+            ]);
+          }}>
+            <Text style={styles.buttonText}>Log out of {userSession.email}?</Text>
+          </Pressable>
+
+          <Pressable style={styles.button} onPress={() => handleOpenLink("www.usquery.com/api/auth/delete/")}>
+            <Text style={styles.buttonText}>Delete my account</Text>
+          </Pressable>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -285,7 +361,16 @@ export default function Login({ navigation }: LoginProps) {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({ 
+function LimitCell({ value, label, dim, theme }: { value: string; label: string; dim?: boolean; theme: any }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.secondary, borderRadius: 10, padding: 12, alignItems: 'center' }}>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: dim ? theme.subtext : theme.text }}>{value}</Text>
+      <Text style={{ fontSize: 12, color: theme.subtext, marginTop: 4, textAlign: 'center' }}>{label}</Text>
+    </View>
+  );
+}
+
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
@@ -324,6 +409,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -361,15 +447,85 @@ const createStyles = (theme: any) => StyleSheet.create({
   card: {
     width: '100%',
     backgroundColor: theme.card,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    borderRadius: 14,
+    padding: 20,
     shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
-    overflow: 'hidden',
-    marginVertical: 4,
+    marginBottom: 16,
+  },
+  // ── Manage Subscription card styles ──
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: theme.subtext,
+    marginBottom: 6,
+  },
+  planName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: theme.text,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: theme.border,
+    marginVertical: 16,
+    opacity: 0.5,
+  },
+  statusText: {
+    fontSize: 14,
+    color: theme.text,
+  },
+  nextBillingText: {
+    fontSize: 12,
+    color: theme.subtext,
+    marginTop: 4,
+  },
+  warningBox: {
+    backgroundColor: 'rgba(245,158,11,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.3)',
+    borderRadius: 10,
+    padding: 12,
+  },
+  warningText: {
+    color: '#F59E0B',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  warningSubtext: {
+    color: theme.subtext,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  limitRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  actionBtnPrimary: {
+    backgroundColor: theme.primary,
+  },
+  actionBtnSecondary: {
+    backgroundColor: theme.accent,
+  },
+  actionBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

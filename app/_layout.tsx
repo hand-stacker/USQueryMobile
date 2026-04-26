@@ -33,8 +33,10 @@ import { UnscalableText } from './components/UnscalableText';
 import './globals.css';
 import SearchedMembers from "./member/screens/searched_members";
 import StarredMembers from "./member/screens/starred_members";
+import CheckoutSuccess from "./misc/checkout_success";
 import NotificationSettings from "./misc/notification_settings";
 import OptionsPage from "./misc/options";
+import PlansScreen from "./misc/plans";
 import VoteSearchResults from "./vote/screens/searched_votes";
 
 import { GOOGLE_CLIENT_ID } from "../constants/auth";
@@ -74,6 +76,8 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Reset_Password" component={ResetPassword} options={{ headerShown: false }}/>
       <Stack.Screen name="Notification_Settings" component={NotificationSettings} options={{ headerShown: false }}/>
       <Stack.Screen name="Privacy_Policy" component={PrivacyPolicy} options={{ headerShown: false }}/>
+      <Stack.Screen name="Plans" component={PlansScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="Checkout_Success" component={CheckoutSuccess} options={{ headerShown: false }}/>
     </Stack.Navigator>
   );
 }
