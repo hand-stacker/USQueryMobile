@@ -11,6 +11,12 @@ export default function PrivacyPolicy() {
     <ScrollView>
       <Text style={styles.title}>Privacy Policy</Text>
 
+      <Text style={styles.header}>Independent App Disclaimer</Text>
+
+      <Text style={styles.text}>
+        My Congress is an independent, third-party app and is not affiliated with, endorsed by, or authorized by the U.S. government or any government entity. Congressional data is sourced from official government sources, including congress.gov (Library of Congress), senate.gov, and house.gov.
+      </Text>
+
       <Text style={styles.text}>
         This privacy policy applies to the My Congress app (hereby referred to as "Application") for mobile devices that was created by USQuery (hereby referred to as "Service Provider") as a Freemium service. This service is intended for use "AS IS".
       </Text>

@@ -72,6 +72,12 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
       </View>
 
       <SelectFavoritesModal visible={open} onClose={handleClose} />
+
+      <View style={styles.disclaimer}>
+        <Text style={styles.disclaimerText}>
+          My Congress is an independent, third-party app and is not affiliated with, endorsed by, or authorized by the U.S. government or any government entity. Congressional data is sourced from official government sources, including congress.gov (Library of Congress), senate.gov, and house.gov.
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }
@@ -88,6 +94,18 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     marginBottom: 20,
+  },
+  disclaimer: {
+    marginTop: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  disclaimerText: {
+    color: theme.subtext,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   button: {
     width: "100%",

@@ -6,14 +6,26 @@ import { zustandStorage } from '../services/zustandStorage';
 interface AppSettingsState {
   privacyAccepted: boolean;
   setPrivacyAccepted: (accepted: boolean) => void;
+  disclaimerAccepted: boolean;
+  setDisclaimerAccepted: (accepted: boolean) => void;
+  reviewStatus: 'pending' | 'never' | 'reviewed';
+  setReviewStatus: (status: 'pending' | 'never' | 'reviewed') => void;
+  reviewCountdown: number;
+  setReviewCountdown: (count: number) => void;
   _hasHydrated: boolean;
 }
 
 export const useAppSettingsStore = create<AppSettingsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       privacyAccepted: false,
       setPrivacyAccepted: (accepted: boolean) => set({ privacyAccepted: accepted }),
+      disclaimerAccepted: false,
+      setDisclaimerAccepted: (accepted: boolean) => set({ disclaimerAccepted: accepted }),
+      reviewStatus: 'pending',
+      setReviewStatus: (status) => set({ reviewStatus: status }),
+      reviewCountdown: 2,
+      setReviewCountdown: (count) => set({ reviewCountdown: count }),
       _hasHydrated: false,
     }),
     {
@@ -39,13 +51,15 @@ export const useAppSettingsStore = create<AppSettingsState>()(
       return;
     }
     const parsed = JSON.parse(raw);
-    const privacyAccepted = parsed?.state?.privacyAccepted ?? parsed?.privacyAccepted ?? false;
-    const current = useAppSettingsStore.getState().privacyAccepted;
-    if (current === false && privacyAccepted === true) {
-      useAppSettingsStore.setState({ privacyAccepted: true, _hasHydrated: true });
-    } else {
-      useAppSettingsStore.setState({ _hasHydrated: true });
-    }
+    const s = parsed?.state ?? parsed ?? {};
+    const current = useAppSettingsStore.getState();
+    useAppSettingsStore.setState({
+      privacyAccepted: current.privacyAccepted || (s.privacyAccepted ?? false),
+      disclaimerAccepted: current.disclaimerAccepted || (s.disclaimerAccepted ?? false),
+      reviewStatus: s.reviewStatus ?? current.reviewStatus,
+      reviewCountdown: s.reviewCountdown ?? current.reviewCountdown,
+      _hasHydrated: true,
+    });
   } catch (error) {
     console.error('Error hydrating app settings:', error);
     useAppSettingsStore.setState({ _hasHydrated: true });

@@ -17,7 +17,9 @@ import BillInfo from "./bill/screens/[bill_id]";
 import BillFYP from "./bill/screens/bill_fyp";
 import StarredBills from "./bill/screens/starred_bills";
 import MemberInfo from "./member/screens/[membershipId]";
+import DisclaimerModal from './misc/DisclaimerModal';
 import PrivacyPolicyModal from './misc/PrivacyPolicyModal';
+import ReviewModal from './misc/ReviewModal';
 import WelcomeFavoritesModal from './misc/WelcomeFavoritesModal';
 import VoteInfo from "./vote/screens/[vote_id]";
 import VoteFYP from "./vote/screens/vote_fyp";
@@ -198,6 +200,8 @@ function AppNavigation() {
         <TabNavigator />
         <WelcomeFavoritesModal />
         <PrivacyPolicyModal />
+        <DisclaimerModal />
+        <ReviewModal />
       </NavigationContainer>
       </SafeAreaProvider>
     </NavigationIndependentTree>
