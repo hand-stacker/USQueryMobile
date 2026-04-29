@@ -2,13 +2,13 @@ import StarButton from "@/app/bill/components/BillStarButton";
 import ActionList from "@/app/components/ActionList";
 import NavReturn from "@/app/components/NavReturn";
 import useGetBill from "@/app/hooks/useGetBill";
-import { useStarredBillsStore } from "@/app/store/starredBillsStore";
 import { ThemeContext } from "@/app/theme/themeContext";
-import scaleFont from "@/app/utils/scaleFont";
 import React, { useCallback, useContext, useMemo } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillBadgeInactive from "../components/BillBadgeInactive";
+import BillInfoTabs from "../components/BillInfoTabs";
+import BillProgressCard from "../components/BillProgressCard";
 import BillStatus from "../components/BillStatus";
 
 interface BillInfoProps {
@@ -16,38 +16,43 @@ interface BillInfoProps {
   route: any;
 }
 
-  function formatDate(value: string | null | undefined) {
-    if (!value) return "—";
-    try {
-      const d = new Date(value);
-      if (isNaN(d.getTime())) return value;
-      return d.toLocaleDateString();
-    } catch {
-      return value;
-    }
+function formatDate(value: string | null | undefined) {
+  if (!value) return "—";
+  try {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return value;
+    return d.toLocaleDateString();
+  } catch {
+    return value;
   }
+}
 
 export default function BillInfo({ navigation, route }: BillInfoProps) {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
   const { bill_id } = route.params;
-  const { bill, loading, error, refetch } = useGetBill(bill_id);
-  const storeStars = useStarredBillsStore((s) => s.stars);
-  const starred = useMemo(() => storeStars.includes(String(bill_id)), [storeStars, bill_id]);
+  const { bill, loading, error } = useGetBill(bill_id);
   const billNum = useMemo(() => Number(bill_id), [bill_id]);
-  const subjects = useMemo(() => bill?.subjects ?? [], [bill?.subjects]);
+
   const originDate = useMemo(() => formatDate(bill?.originDate), [bill?.originDate]);
   const latestActionDate = useMemo(() => formatDate(bill?.latestAction), [bill?.latestAction]);
   const policyArea = useMemo(() => bill?.policyArea ?? "—", [bill?.policyArea]);
   const title = useMemo(() => bill?.title ?? "", [bill?.title]);
+  const subjects = useMemo(() => bill?.subjects ?? [], [bill?.subjects]);
+  const actions = useMemo(() => bill?.actions ?? [], [bill?.actions]);
+  const summaryText = useMemo(() => bill?.summary ?? "", [bill?.summary]);
+  const currentStage = useMemo(() => bill?.currentStage ?? (bill?.status ? 4 : 0), [bill?.currentStage, bill?.status]);
+  const sponsor = useMemo(() => bill?.sponsor ?? null, [bill?.sponsor]);
+  const cosponsors = useMemo(() => bill?.cosponsors ?? [], [bill?.cosponsors]);
+  const relatedBills = useMemo(() => bill?.relatedBills ?? [], [bill?.relatedBills]);
 
-  const headerElement = useMemo(() => {
-    return (
+  const headerElement = useMemo(() => (
+    <>
       <View style={styles.headerCard}>
         <View style={styles.rowBetween}>
-          <View >
+          <View>
             <BillBadgeInactive billNum={billNum} />
-            <View style = {{margin: 8}}></View>
+            <View style={{ margin: 8 }} />
             <BillStatus status_type={bill?.status} />
           </View>
           {String(bill_id).startsWith('119') && <StarButton billId={bill_id} />}
@@ -63,53 +68,49 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
           <Text style={styles.metaLabel}>Latest action:</Text>
           <Text style={styles.metaValue}>{latestActionDate}</Text>
         </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Policy area:</Text>
-          <Text style={styles.metaValue}>{policyArea}</Text>
-        </View>
-
-        <View style={styles.subjectsRow}>
-          <Text style={styles.metaLabel}>Subjects:</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsContainer}
-            style={styles.chipsScroll}
-          >
-            {subjects.map((s: any, i: number) => (
-              <View key={s?.id ?? s?.name ?? i} style={styles.chip}>
-                <Text style={styles.chipText}>{s?.name ?? ""}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
       </View>
-    );
-  }, [subjects, originDate, latestActionDate, policyArea, title, billNum, bill?.status, starred, bill?.id, theme]);
 
-  const actions = useMemo(() => bill?.actions ?? [], [bill?.actions]);
-  const summaryText = useMemo(() => bill?.summary ?? "", [bill?.summary]);
+      <BillProgressCard currentStage={currentStage} />
+    </>
+  ), [title, originDate, latestActionDate, policyArea, billNum, bill?.status, bill_id, currentStage, theme]);
+
+  const preTimelineElement = useMemo(() => (
+    <BillInfoTabs
+      sponsor={sponsor}
+      cosponsors={cosponsors}
+      subjects={subjects}
+      policyArea={policyArea !== "—" ? policyArea : undefined}
+      relatedBills={relatedBills}
+      navigation={navigation}
+    />
+  ), [sponsor, cosponsors, subjects, policyArea, relatedBills]);
 
   const handleGoBack = useCallback(() => {
-    if (navigation && navigation.goBack) navigation.goBack();
+    if (navigation?.goBack) navigation.goBack();
   }, [navigation]);
 
   if (loading) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
+    <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={["top"]}>
       <ActivityIndicator />
     </SafeAreaView>
   );
 
   if (error) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <Text>Error loading bills: {error.message}</Text>
+    <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={["top"]}>
+      <Text>Error loading bill: {error.message}</Text>
     </SafeAreaView>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <NavReturn onPress={handleGoBack} />
-      <ActionList data={actions} summary_text={summaryText} navigator={navigation} header={headerElement} />
+      <ActionList
+        data={actions}
+        summary_text={summaryText}
+        navigator={navigation}
+        header={headerElement}
+        preTimeline={preTimelineElement}
+      />
     </SafeAreaView>
   );
 }
@@ -125,7 +126,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.card,
     borderRadius: 12,
     padding: 14,
-    marginBottom: 14,
+    marginBottom: 12,
     shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -136,6 +137,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: theme.titleText,
+    marginTop: 4,
   },
   rowBetween: {
     flexDirection: "row",
@@ -150,7 +152,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexWrap: "wrap",
   },
   metaLabel: {
-    fontSize: 16,
+    fontSize: 13,
     color: theme.subtext,
     marginRight: 6,
     fontWeight: "600",
@@ -159,40 +161,5 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: theme.text,
-  },
-  subjectsRow: {
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  chipsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 6,
-    marginLeft: 6,
-  },
-  chipsScroll: {
-    maxHeight: scaleFont(44),
-    marginLeft: 6,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginRight: 8,
-    backgroundColor: theme.card,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    minHeight: 32,
-    height: scaleFont(32),
-  },
-  chipText: {
-    color: theme.text,
-    fontWeight: '600',
-    fontSize: 14,
-    lineHeight: 18,
   },
 });

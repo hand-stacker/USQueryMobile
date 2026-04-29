@@ -33,16 +33,17 @@ const Summary: React.FC<{ text?: string }> = ({ text }) => {
 
   return (
     <>
-      <Pressable onLongPress={() => needsTruncate && setVisible(true)}>
+      <Pressable onPress={() => needsTruncate && setVisible(true)}>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryText}>{truncated}</Text>
-          {needsTruncate && <Text style={styles.summaryHint}>Long press to read full summary</Text>}
+          {needsTruncate && <Text style={styles.summaryHint}>Press to read full summary</Text>}
         </View>
       </Pressable>
 
       <Modal visible={visible} animationType="slide" transparent onRequestClose={() => setVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <Pressable style={{ flex: 1 }} onPress={() => setVisible(false)} />
+          <View style={styles.modalCard} >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Full Summary</Text>
               <CloseButton onPress={() => setVisible(false)} />
@@ -50,9 +51,6 @@ const Summary: React.FC<{ text?: string }> = ({ text }) => {
             <ScrollView contentContainerStyle={styles.modalScroll}>
               <Text style={styles.modalText}>{plain}</Text>
             </ScrollView>
-            <Pressable style={styles.modalCloseButton} onPress={() => setVisible(false)}>
-              <Text style={styles.modalCloseText}>Close</Text>
-            </Pressable>
           </View>
         </View>
       </Modal>
@@ -78,70 +76,53 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 15,
     color: theme.text,
     lineHeight: 20,
+    fontWeight: '500',
   },
   summaryHint: {
     marginTop: 8,
     fontSize: 12,
+    fontWeight: '500',
     color: theme.subtext,
     fontStyle: 'italic',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: theme.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  modalTitle: { 
-    fontSize: 20, 
-    fontWeight: '700', 
-    color: theme.titleText, 
-    marginBottom: 12
+  modalCard: {
+    backgroundColor: theme.card,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '80%',
+    paddingBottom: 20,
   },
   modalHeader: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 12},
-  modalCard: {
-    width: '100%',
-    maxHeight: '80%',
-    backgroundColor: theme.card,
-    borderRadius: 12,
-    paddingTop: 12,
-    paddingBottom: 18,
-    paddingHorizontal: 14,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  modalTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.text,
+    letterSpacing: 0.8,
   },
   modalClose: {
-    position: 'absolute',
-    right: 12,
-    top: 10,
-    zIndex: 10,
-    padding: 6,
+    fontSize: 14,
+    color: theme.subtext,
+    fontWeight: '500',
   },
   modalScroll: {
-    paddingTop: 36,
-    paddingBottom: 12,
+    padding: 16,
   },
   modalText: {
     fontSize: 15,
     lineHeight: 22,
     color: theme.text,
-  },
-  modalCloseButton: { 
-    marginTop: 12, 
-    backgroundColor: theme.card, 
-    paddingVertical: 10, 
-    borderRadius: 8, 
-    alignItems: 'center' 
-  },
-  modalCloseText: { 
-    color: theme.text, 
-    fontWeight: '700' 
+    fontWeight: '500',
   },
 });

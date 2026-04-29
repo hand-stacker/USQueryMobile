@@ -24,7 +24,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
       setDisclaimerAccepted: (accepted: boolean) => set({ disclaimerAccepted: accepted }),
       reviewStatus: 'pending',
       setReviewStatus: (status) => set({ reviewStatus: status }),
-      reviewCountdown: 2,
+      reviewCountdown: 5,
       setReviewCountdown: (count) => set({ reviewCountdown: count }),
       _hasHydrated: false,
     }),

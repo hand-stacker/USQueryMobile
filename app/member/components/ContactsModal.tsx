@@ -1,8 +1,7 @@
 import CloseButton from "@/app/components/CloseButton";
 import { ThemeContext } from "@/app/theme/themeContext";
 import { useContext } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 interface Props {
   contactModalVisible: boolean;
@@ -22,31 +21,32 @@ export default function ContactModal ({ contactModalVisible, setContactModalVisi
       animationType="slide"
       onRequestClose={() => setContactModalVisible(false)}
     >
-      <SafeAreaView style={styles.modalOverlay}>
+      <View style={styles.modalOverlay}>
+        <Pressable style={{ flex: 1 }} onPress={() => setContactModalVisible(false)} />
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Contact Information</Text>
             <CloseButton onPress={() => setContactModalVisible(false)} />
           </View>
-          <View style={styles.modalRow}>
-            <Text style={styles.modalRowLabel}>Office</Text>
-            <Text style={[styles.modalRowValue, { flex: 1 }]}>{office ?? 'No Address Provided Yet'}</Text>
-          </View>
-          <View style={styles.modalRow}>
-            <Text style={styles.modalRowLabel}>Phone</Text>
-            <Text style={[styles.modalRowValue, { flex: 1 }]}>{phone ?? 'No Phone Number Provided Yet'}</Text>
-          </View>
-          <View style={styles.modalRow}>
-            <Text style={styles.modalRowLabel}>Website</Text>
-            <Pressable onPress={() => handleOpenLink(official_link)} style={{ flex: 1 }}>
-            <Text style={[styles.modalRowValue, styles.linkText]}>{official_link ?? 'No Website Provided Yet'}</Text>
-            </Pressable>
-          </View>
-          <Pressable style={styles.modalCloseButton} onPress={() => setContactModalVisible(false)}>
-            <Text style={styles.modalCloseText}>Close</Text>
-          </Pressable>
+          <ScrollView contentContainerStyle={styles.modalScroll}>
+            <View style={styles.modalRow}>
+              <Text style={styles.modalRowLabel}>Office</Text>
+              <Text style={[styles.modalRowValue, { flex: 1 }]}>{office ?? 'No Address Provided Yet'}</Text>
+            </View>
+            <View style={styles.modalRow}>
+              <Text style={styles.modalRowLabel}>Phone</Text>
+              <Text style={[styles.modalRowValue, { flex: 1 }]}>{phone ?? 'No Phone Number Provided Yet'}</Text>
+            </View>
+            <View style={styles.modalRow}>
+              <Text style={styles.modalRowLabel}>Website</Text>
+              <Pressable onPress={() => handleOpenLink(official_link)} style={{ flex: 1 }}>
+                <Text style={[styles.modalRowValue, styles.linkText]}>{official_link ?? 'No Website Provided Yet'}</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
         </View>
-      </SafeAreaView>
+        <Pressable style={{ flex: 1 }} onPress={() => setContactModalVisible(false)} />
+      </View>
     </Modal>
   );
 }
@@ -54,63 +54,52 @@ export default function ContactModal ({ contactModalVisible, setContactModalVisi
 const createStyles = (theme: any) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: theme.overlay,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20 
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    padding: 20,
   },
   modalCard: {
     width: '100%',
-    maxHeight: '80%',
     backgroundColor: theme.card,
-    borderRadius: 12,
-    paddingTop: 12,
-    paddingBottom: 18,
-    paddingHorizontal: 14,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
+    borderRadius: 16,
+    maxHeight: '80%',
+    paddingBottom: 20,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 12
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
   },
-  modalTitle: { 
-    fontSize: 20, 
-    fontWeight: '700', 
-    color: theme.titleText, 
+  modalTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.text,
+    letterSpacing: 0.8,
+  },
+  modalScroll: {
+    padding: 16,
+  },
+  modalRow: {
+    flexDirection: 'row',
     marginBottom: 12,
-    maxWidth: '80%',
+    alignItems: 'flex-start',
   },
-  modalRow: { 
-    flexDirection: 'row', 
-    marginBottom: 8, 
-    alignItems: 'flex-start' },
   modalRowLabel: {
-    width: 80, 
-    color: theme.subtext, 
-    fontWeight: '600' },
-  modalRowValue: { 
-      color: theme.text, 
-      fontWeight: '600'
+    width: 80,
+    color: theme.subtext,
+    fontWeight: '600',
   },
-  modalCloseButton: { 
-      marginTop: 12, 
-      paddingVertical: 10, 
-      borderRadius: 8, 
-      alignItems: 'center' 
+  modalRowValue: {
+    color: theme.text,
+    fontWeight: '600',
   },
-  modalCloseText: { 
-      color: theme.text, 
-      fontWeight: '700' 
-  },
-  linkText: { 
-      fontSize: 13, 
-      color: theme.primary, 
-      lineHeight: 18
+  linkText: {
+    fontSize: 13,
+    color: theme.primary,
+    lineHeight: 18,
   },
 });

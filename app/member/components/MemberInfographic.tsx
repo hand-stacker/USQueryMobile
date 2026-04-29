@@ -17,12 +17,14 @@ function computeInitials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getPartyInfo(party: string | null | undefined): { name: string; color: string } {
+export function getPartyInfo(party: string | null | undefined): { name: string; color: string } {
   if (!party) return { name: '', color: '#9ca3af' };
-  const p = party.trim().toUpperCase();
-  if (p === 'R' || p.startsWith('REP')) return { name: 'Republican', color: '#ef4444' };
-  if (p === 'D' || p.startsWith('DEM')) return { name: 'Democrat',   color: '#3b82f6' };
-  if (p === 'I' || p === 'ID' || p.startsWith('IND')) return { name: 'Independent', color: '#9ca3af' };
+  const p = party.trim().charAt(0).toUpperCase();
+  if (p === 'R' ) return { name: 'Republican', color: '#ef4444' };
+  if (p === 'D' || p === 'DEM') return { name: 'Democratic',  color: '#3b82f6' };
+  if (p === 'I' || p === 'IND') return { name: 'Independent', color: '#9ca3af' };
+  if (p === 'L' || p === 'LIB') return { name: 'Libertarian', color: '#f59e0b' };
+  if (p === 'G' || p === 'GRN') return { name: 'Green',       color: '#22c55e' };
   return { name: party, color: '#9ca3af' };
 }
 
@@ -118,10 +120,25 @@ const createStyles = (theme: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarInitials: { color: theme.subtext, fontWeight: '600', fontSize: 16 },
-  textWrap: { flex: 1, justifyContent: 'center' },
-  text:    { fontSize: 16, color: theme.text,    fontWeight: '600' },
-  subText: { fontSize: 13, color: theme.subtext, marginTop: 2 },
+  avatarInitials: {
+    color: theme.subtext,
+     fontWeight: '600',
+      fontSize: 16 
+    },
+  textWrap: {
+    flex: 1,
+    justifyContent: 'center' 
+  },
+  text:    {
+    fontSize: 16, 
+    color: theme.text,    
+    fontWeight: '600' 
+  },
+  subText: { 
+    fontSize: 13, 
+    color: theme.subtext, 
+    marginTop: 2 
+  },
   voteBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -130,5 +147,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexShrink: 0,
     alignSelf: 'center',
   },
-  voteBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  voteBadgeText: { 
+    fontSize: 10, 
+    fontWeight: '700', 
+    letterSpacing: 0.5 
+  },
 });

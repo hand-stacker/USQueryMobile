@@ -11,6 +11,7 @@ const GET_BILL = gql`
         title
         originDate
         policyArea
+        currentStage
         actions {
             text
             actionDate
@@ -22,6 +23,17 @@ const GET_BILL = gql`
         subjects {
             name
         }
+        sponsor {
+            name
+            party
+            state
+        }
+        cosponsors {
+            name
+            party
+            state
+        }
+        relatedBills
     }
   }
 `;

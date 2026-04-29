@@ -63,5 +63,5 @@ const createStyles = (theme: any) => StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   dot: { width: 8, height: 8, borderRadius: 2 },
   legendLabel: { fontSize: 12, fontWeight: '700' },
-  legendCount: { fontSize: 12, color: theme.subtext },
+  legendCount: { fontSize: 12, color: theme.subtext, fontWeight: '600' },
 });

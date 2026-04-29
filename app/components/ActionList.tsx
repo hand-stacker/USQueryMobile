@@ -9,44 +9,60 @@ interface Props {
   summary_text: string;
   navigator: any;
   header?: React.ReactElement | null;
+  preTimeline?: React.ReactElement | null;
 }
 
 const SectionLabel: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => {
   const theme = useContext(ThemeContext).theme;
-  const styles = createStyles(theme); 
-  return (<View style={styles.labelContainer}>
-    <View style={styles.labelBar} />
-    <Text style={styles.label}>{children}</Text>
-  </View>);
+  const styles = createStyles(theme);
+  return (
+    <View style={styles.labelContainer}>
+      <View style={styles.labelBar} />
+      <Text style={styles.label}>{children}</Text>
+    </View>
+  );
 });
 
-const ActionList = ({data, summary_text, navigator, header}:Props)=> {
+const ActionList = ({ data, summary_text, navigator, header, preTimeline }: Props) => {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
-  const headerElement = useMemo(() => (
+
+  const listHeader = useMemo(() => (
     <>
       {header}
       <SectionLabel>Summary</SectionLabel>
       <Summary text={summary_text} />
+      {preTimeline}
       <SectionLabel>Action Timeline</SectionLabel>
     </>
-  ), [header, summary_text]);
+  ), [header, summary_text, preTimeline]);
 
-  const renderItem = useCallback(({ item } :any) => {
+  const renderItem = useCallback(({ item }: any) => {
     const node = item.node ?? item;
+    const isVote = !!node.voteId;
+    const typeLabel = isVote ? 'VOTE' : (node.type ?? 'FLOOR').toUpperCase();
+    const borderColor = isVote ? theme.primary : '#22c55e';
+    const badgeBg = isVote ? theme.primary + '30' : '#22c55e30';
+    const badgeTextColor = isVote ? theme.primary : '#22c55e';
+
     return (
-      <View style={styles.itemCard}>
+      <View style={[styles.itemCard, { borderLeftColor: borderColor, borderLeftWidth: 3 }]}>
+        <View style={styles.itemHeader}>
           <Text style={styles.itemDate}>{node.actionDate}</Text>
-          <Text style={styles.itemText}>{node.text}</Text>
-          {node.voteId && (
-            <VoteBadge voteId={node.voteId} navigation={navigator} allowBillNav={false} />
-          )}
+          <View style={[styles.typeBadge, { backgroundColor: badgeBg }]}>
+            <Text style={[styles.typeBadgeText, { color: badgeTextColor }]}>{typeLabel}</Text>
+          </View>
+        </View>
+        <Text style={styles.itemText}>{node.text}</Text>
+        {node.voteId && (
+          <VoteBadge voteId={node.voteId} navigation={navigator} allowBillNav={false} />
+        )}
       </View>
     );
-  }, [theme]);
+  }, [theme, navigator]);
 
-  const ItemSeparator = useMemo(() => <View style={{ height: 12 }} />, []);
-  const ListFooter = useMemo(() => <View style={{ height: 50 }} />, []);
+  const ItemSeparator = useCallback(() => <View style={{ height: 12 }} />, []);
+  const ListFooter = useCallback(() => <View style={{ height: 50 }} />, []);
   const keyExtractor = useCallback((item: any, index: number) => {
     const node = item?.node ?? item;
     return String(node?.id ?? node?.key ?? index);
@@ -57,13 +73,13 @@ const ActionList = ({data, summary_text, navigator, header}:Props)=> {
       data={data}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      ListHeaderComponent={headerElement}
+      ListHeaderComponent={listHeader}
       ItemSeparatorComponent={ItemSeparator}
       ListFooterComponent={ListFooter}
       contentContainerStyle={styles.listContainer}
     />
-);
-}
+  );
+};
 
 export default React.memo(ActionList);
 
@@ -82,14 +98,32 @@ const createStyles = (theme: any) => StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 7,
+  },
   itemDate: {
     fontSize: 12,
     color: theme.subtext,
-    marginBottom: 6,
+    fontWeight: '500',
+  },
+  typeBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  typeBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
   },
   itemText: {
-    fontSize: 15,
+    fontSize: 13,
     color: theme.text,
+    lineHeight: 20,
+    fontWeight: '500',
   },
   label: {
     fontSize: 13,
