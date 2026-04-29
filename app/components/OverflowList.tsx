@@ -19,7 +19,7 @@ export default function OverflowList({ data, renderItem, keyExtractor, title }: 
   const styles = createStyles(theme);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const hasMore = data.length > MAX_PREVIEW_ITEMS;
+  const hasMore = data.length >= MAX_PREVIEW_ITEMS;
   const previewData = hasMore ? data.slice(0, MAX_PREVIEW_ITEMS) : data;
   const chunks = useMemo(() => {
     const result: any[][] = [];

@@ -126,19 +126,24 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   tabStrip: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
   },
   tab: {
     flex: 1,
+    backgroundColor: theme.background,
     paddingVertical: 12,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-    marginBottom: -1,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
   },
   tabActive: {
-    borderBottomColor: theme.primary,
+    backgroundColor: theme.card,
+    borderTopRightRadius: 12,
+    borderTopLeftRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderBottomWidth: 0,
+
+
   },
   tabLabel: {
     fontSize: 11,
