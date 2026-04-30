@@ -72,7 +72,6 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
     const normalized = url.startsWith("http") ? url : `https://${url}`;
     Linking.openURL(normalized).catch(() => {});
   }, []);
-
   // main card
   const MainContent = useMemo(() => (
     <View style={[styles.main]}>
@@ -109,7 +108,6 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
     </View>
   ), [imageUrl, initials, fullName, membershipId, role, district, state, party, partyColor, styles]);
 
-  // ── Tab bar ─────────────────────────────────────────────────────────────────
   const TabBar = useMemo(() => (
     <View style={styles.tabBar}>
       {TABS.map(({ id, label }) => (
@@ -129,7 +127,6 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
     </View>
   ), [tab, styles, theme.primary]);
 
-  // ── Overview tab ─────────────────────────────────────────────────────────────
   const OverviewContent = useMemo(() => (
     <View style={styles.tabContent}>
       {/* Service Period */}
@@ -195,7 +192,6 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
     </View>
   ), [startDate, endDate, office, phone, officialLink, partyHistory, theme, styles, handleOpenLink]);
 
-  // ── Votes tab header (main + tabs + label) ──────────────────────────────────
   const VotesHeader = useMemo(() => (
     <>
       {MainContent}
@@ -207,7 +203,6 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
     </>
   ), [MainContent, TabBar, styles, theme.primary]);
 
-  // ── Loading / error ──────────────────────────────────────────────────────────
   if (loading) return (
     <SafeAreaView style={[styles.container, styles.centerOverlay]} edges={["top"]}>
       <ActivityIndicator />

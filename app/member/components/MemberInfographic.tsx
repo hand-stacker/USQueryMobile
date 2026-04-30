@@ -1,3 +1,4 @@
+import AccentCard from "@/app/components/AccentCard";
 import { ThemeContext } from "@/app/theme/themeContext";
 import { memo, useCallback, useContext, useMemo } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
@@ -53,56 +54,46 @@ const MemberInfographic = ({ node, handlePress, voteType }: Props) => {
   const badge = voteType ? VOTE_BADGE[voteType] : null;  
 
   return (
-    <Pressable onPress={onPress} style={styles.card}>
-      <View style={styles.avatarWrap}>
-        {imgSource ? (
-          <Image source={imgSource} style={styles.avatar} resizeMode="cover" />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitials}>{initials}</Text>
+    <AccentCard accentColor={partyColor} style={{ marginBottom: 0 }}>
+      <Pressable onPress={onPress} style={styles.row}>
+        <View style={styles.avatarWrap}>
+          {imgSource ? (
+            <Image source={imgSource} style={styles.avatar} resizeMode="cover" />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitials}>{initials}</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.textWrap}>
+          <Text style={styles.text} numberOfLines={1} ellipsizeMode="tail">{fullName}</Text>
+          <Text style={styles.subText} numberOfLines={1} ellipsizeMode="tail">
+            {node?.state ?? ''}{districtNum !== null ? `-${districtNum}` : ''}
+            {partyName ? (
+              <>
+                {' · '}
+                <Text style={{ color: partyColor }}>{partyName}</Text>
+              </>
+            ) : null}
+          </Text>
+        </View>
+        {badge && (
+          <View style={[styles.voteBadge, { backgroundColor: badge.bg }]}>
+            <Text style={[styles.voteBadgeText, { color: badge.color }]}>{badge.label}</Text>
           </View>
         )}
-      </View>
-      <View style={styles.textWrap}>
-        <Text style={styles.text} numberOfLines={1} ellipsizeMode="tail">{fullName}</Text>
-        <Text style={styles.subText} numberOfLines={1} ellipsizeMode="tail">
-          {node?.state ?? ''}{districtNum !== null ? `-${districtNum}` : ''}
-          {partyName ? (
-            <>
-              {' · '}
-              <Text style={{ color: partyColor }}>{partyName}</Text>
-            </>
-          ) : null}
-        </Text>
-      </View>
-
-      {badge && (
-        <View style={[styles.voteBadge, { backgroundColor: badge.bg }]}>
-          <Text style={[styles.voteBadgeText, { color: badge.color }]}>{badge.label}</Text>
-        </View>
-      )}
-    </Pressable>
+      </Pressable>
+    </AccentCard>
   );
 };
 
 export default memo(MemberInfographic);
 
 const createStyles = (theme: any) => StyleSheet.create({
-  card: {
+  row: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.card,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-    overflow: 'hidden',
-    marginVertical: 4,
   },
   avatarWrap: {
     width: 56,

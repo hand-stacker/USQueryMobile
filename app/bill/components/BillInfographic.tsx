@@ -1,3 +1,4 @@
+import AccentCard from "@/app/components/AccentCard";
 import MicroSummary from "@/app/components/MicroSummary";
 import { ThemeContext } from "@/app/theme/themeContext";
 import scaleFont from "@/app/utils/scaleFont";
@@ -58,43 +59,34 @@ export default function BillInfographic({navigator, billId, billTitle, billNum, 
     navToBill(navigator, billId);
   }, [navigator, billId]);
   return (
-    <Pressable 
-      onPress={handlePress}
-      onLongPress={handleLongPress}
-      >
-    <Animated.View style={[styles.card, {height: animatedHeight}]}> 
-      <View style={styles.headerRow}>
-        <BillBadge navigation={navigator} billNum={Number(billNum)} />
-        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{billTitle}</Text>
-      </View>
-      {!isExpanded && (
-        <Text style={styles.infoHint}>Long press to see more</Text>
-      )}
-      {isExpanded ? (
-        <View style={styles.summaryContainer} >
-          <MicroSummary text={billSummary} />
-          <Text style={styles.infoHint}>Press to see more</Text>
-        </View>
-      ) : null}
-    </Animated.View>
-    </Pressable>
+    <AccentCard accentColor={theme.primary} style={{ padding: 0, marginBottom: 0 }}>
+      <Pressable onPress={handlePress} onLongPress={handleLongPress}>
+        <Animated.View style={[styles.animatedContent, {height: animatedHeight}]}>
+          <View style={styles.headerRow}>
+            <BillBadge navigation={navigator} billNum={Number(billNum)} />
+            <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{billTitle}</Text>
+          </View>
+          {!isExpanded && (
+            <Text style={styles.infoHint}>Long press to see more</Text>
+          )}
+          {isExpanded ? (
+            <View style={styles.summaryContainer}>
+              <MicroSummary text={billSummary} />
+              <Text style={styles.infoHint}>Press to see more</Text>
+            </View>
+          ) : null}
+        </Animated.View>
+      </Pressable>
+    </AccentCard>
   );
 }
 const createStyles = (theme : any) =>
   StyleSheet.create({
-    card: {
+    animatedContent: {
       width: '100%',
-      backgroundColor: theme.card,
-      borderRadius: 12,
+      overflow: 'hidden',
       paddingHorizontal: 12,
       paddingVertical: 12,
-      shadowColor: theme.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 4,
-      overflow: 'hidden',
-      marginVertical: 4,
     },
     headerRow: {
       flexDirection: 'row',
