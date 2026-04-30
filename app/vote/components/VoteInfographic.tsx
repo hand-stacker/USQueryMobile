@@ -1,3 +1,4 @@
+import AccentCard from "@/app/components/AccentCard";
 import { ThemeContext } from "@/app/theme/themeContext";
 import React, { memo, useContext } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -25,9 +26,14 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
   const styles = createStyles(theme);
   const billId = personal ? node.bill : (node.bill?.id ?? node.bill);
   const resultText = personal ? node.mem_vote : node.result;
+  const accentColor = /pass|yea|aye|agreed|accepted|well/i.test(resultText ?? '')
+    ? '#16A34A'
+    : /fail|nay|no|rejected|defeated/i.test(resultText ?? '')
+    ? '#EF4444'
+    : theme.primary;
   return (
     <Pressable onPress={() => navigation.navigate("Vote_info", {vote_id: node.id, allowBillNav: true})}>
-      <View style={styles.card}>
+      <AccentCard accentColor={accentColor} style={{ marginVertical: 4, overflow: 'hidden' }}>
         <Text style={styles.date}>{formatDateTime(node.dateTime)}</Text>
         <ScrollView
           horizontal
@@ -40,7 +46,7 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
         <View style={styles.resultRow}>
           <ResultBadge result={resultText} />
         </View>
-      </View>
+      </AccentCard>
     </Pressable>
   );
 }, (prev, next) => {
@@ -49,13 +55,6 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
 
 export default VoteInfographic;
 const createStyles = (theme: any) => StyleSheet.create({
-  listContainer: {
-    paddingTop: 8,
-    paddingBottom: 24,
-  },
-  list: {
-    flex: 1,
-  },
   date: {
     fontSize: 12,
     color: theme.subtext,
@@ -66,20 +65,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-  },
-  card: {
-    width: '100%',
-    backgroundColor: theme.card,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-    overflow: 'hidden',
-    marginVertical: 4,
   },
   headerRow: {
     flexDirection: 'row',

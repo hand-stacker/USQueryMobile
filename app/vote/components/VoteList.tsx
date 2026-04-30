@@ -18,7 +18,11 @@ const VoteList = ({data, personal, navigation, onEndReached, loadingMore, header
   const headerElement = useMemo(() => header ? <>{header}</> : null, [header]);
   const renderItem = ({ item }: any) => {
     const node = item.node ?? item;
-    return <VoteInfographic node={node} personal={personal} navigation={navigation} />;
+    return (
+      <View style={styles.itemWrapper}>
+        <VoteInfographic node={node} personal={personal} navigation={navigation} />
+      </View>
+    );
   };
 
   return (
@@ -49,9 +53,10 @@ export default VoteList;
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
-    paddingBottom: 0,
-    paddingTop: 8,
     backgroundColor: theme.background,
-  }
+  },
+  itemWrapper: {
+    paddingTop: 8,
+    paddingHorizontal: 12,
+  },
 });

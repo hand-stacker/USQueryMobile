@@ -9,7 +9,7 @@ interface Props {
 export default function ResultBadge({result}: Props) {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
-  const resultPassed = typeof result === 'string' && /pass|yea|aye|agreed|accepted/i.test(result);
+  const resultPassed = typeof result === 'string' && /pass|yea|aye|agreed|accepted|well/i.test(result);
   const resultFailed = typeof result === 'string' && /fail|nay|no|rejected|defeated/i.test(result);
   return (
     <View style={styles.labelContainer}>
@@ -39,6 +39,9 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   colorFailed: {
     backgroundColor: "#EF4444",
+  },
+  colorNeutral: {
+    backgroundColor: theme.primary,
   },
   label: {
     fontSize: 16,

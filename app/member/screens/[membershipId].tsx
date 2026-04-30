@@ -1,12 +1,13 @@
 import { UnscalableText } from "@/app/components/UnscalableText";
 import { ThemeContext } from "@/app/theme/themeContext";
 import React, { useCallback, useContext, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import NavReturn from "../../components/NavReturn";
 import useGetMembership from "../../hooks/useGetMembership";
 import VoteList from "../../vote/components/VoteList";
-import ContactModal from "../components/ContactsModal";
+import { getPartyInfo } from "../components/MemberInfographic";
+import MemberTermList from "../components/MemberTermList";
 import MemStarButton from "../components/MemStarButton";
 
 interface MemberInfoProps {
@@ -14,130 +15,199 @@ interface MemberInfoProps {
   route?: any;
 }
 
+type Tab = "overview" | "terms" | "votes";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "terms",    label: "Terms"    },
+  { id: "votes",    label: "Votes"    },
+];
+
 function computeInitials(name: string) {
-  if (!name) return '';
+  if (!name) return "";
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const SectionLabel: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => {
-  const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
-  return (
-    <View style={styles.labelContainer}>
-      <View style={styles.labelBar} />
-      <Text style={styles.label}>{children}</Text>
-    </View>
-  );
-});
+function formatDate(value: string | null | undefined) {
+  if (!value) return "Present";
+  try {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return value;
+    return d.toLocaleDateString();
+  } catch {
+    return value;
+  }
+}
 
 export default function MemberInfo({ navigation, route }: MemberInfoProps) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { membershipId } = route.params;
   const { member, loading, error } = useGetMembership(membershipId);
-  const fullName = useMemo(() => member?.full_name ?? 'Unknown', [member?.full_name]);
-  const imageUrl = useMemo(() => member?.image_link ?? '-' , [member?.image_link]);
-  const initials = useMemo(() => computeInitials(fullName), [fullName]);
+  const [tab, setTab] = useState<Tab>("overview");
+
+  const fullName     = useMemo(() => member?.full_name     ?? "Unknown",  [member?.full_name]);
+  const imageUrl     = useMemo(() => member?.image_link    ?? null,       [member?.image_link]);
+  const initials     = useMemo(() => computeInitials(fullName),           [fullName]);
+  const role         = useMemo(() => (member?.house ? "Representative" : "Senator"), [member?.house]);
+  const state        = useMemo(() => member?.state         ?? "",         [member?.state]);
+  const party        = useMemo(() => member?.party         ?? "",         [member?.party]);
+  const district     = useMemo(() => member?.district_num  ?? null,       [member?.district_num]);
+  const startDate    = useMemo(() => member?.start_date    ?? null,       [member?.start_date]);
+  const endDate      = useMemo(() => member?.end_date      ?? null,       [member?.end_date]);
+  const office       = useMemo(() => member?.office,                      [member?.office]);
+  const phone        = useMemo(() => member?.phone,                       [member?.phone]);
+  const officialLink = useMemo(() => member?.official_link,               [member?.official_link]);
+  const termHistory  = useMemo(() => member?.external_terms  ?? [],       [member?.external_terms]);
+  const partyHistory = useMemo(() => member?.external_party_history ?? [],[member?.external_party_history]);
+  const voteList     = useMemo(() => member?.vote_list     ?? [],         [member?.vote_list]);
+
+  const { color: partyColor } = useMemo(() => getPartyInfo(party), [party]);
   const goBack = useCallback(() => navigation.goBack(), [navigation]);
-  const voteList = useMemo(() => member?.vote_list ?? [], [member?.vote_list]);
-  const role = useMemo(() => (member?.house ? 'House' : 'Senate'), [member?.house]);
-  const state = useMemo(() => member?.state, [member?.state]);
-  const party = useMemo(() => member?.party, [member?.party]);
-  const district = useMemo(() => member?.district_num ?? null, [member?.district_num]);
-  const startDate = useMemo(() => formatDate(member?.start_date ?? 'Present'), [member?.start_date]);
-  const endDate = useMemo(() => formatDate(member?.end_date ?? 'Present'), [member?.end_date]);
-  const office = useMemo(() => member?.office, [member?.office]);
-  const phone = useMemo(() => member?.phone, [member?.phone]);
-  const official_link = useMemo(() => member?.official_link, [member?.official_link]);
-
-  const [contactModalVisible, setContactModalVisible] = useState(false);
-
-  const MemberCard = useMemo(() => {
-    return (
-      <View style={styles.headerCard}>
-        <View style={styles.headerRow}>
-          <View style={styles.leftColumn}>
-            {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.avatarLarge} resizeMode="cover" />
-            ) : (
-              <View style={styles.avatarPlaceholderLarge}>
-                <UnscalableText style={styles.avatarInitialsLarge}>{initials?.slice(0,2)}</UnscalableText>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.middleColumn}>
-            <View style={styles.nameRow}>
-              <UnscalableText style={styles.title}>{fullName}</UnscalableText>
-              <MemStarButton membershipId={membershipId} />
-            </View>
-
-            <View style={styles.infoRow}>
-              <UnscalableText style={styles.infoLabel}>Role:</UnscalableText>
-              <UnscalableText style={styles.infoValue}>{role}</UnscalableText>
-            </View>
-
-            <View style={styles.infoRow}>
-              {role === 'House' && district !== null && (
-                <>
-                <UnscalableText style={styles.infoLabel}>District:</UnscalableText>
-                <UnscalableText style={styles.infoValue}>{state}-{district}</UnscalableText>
-                </>
-              )}
-              {role !== 'House' && district === null && (
-                <>
-                <UnscalableText style={styles.infoLabel}>State:</UnscalableText>
-                <UnscalableText style={styles.infoValue}>{state}</UnscalableText  >
-                </>
-              )}
-            </View>
-
-            <View style={styles.infoRow}>
-              <UnscalableText style={styles.infoLabel}>Party:</UnscalableText>
-              <UnscalableText style={styles.infoValue}>{party}</UnscalableText>
-            </View>
-
-            <View style={styles.infoRow}>
-              <UnscalableText style={styles.infoLabel}>Term:</UnscalableText>
-              <UnscalableText style={styles.infoValue}>{startDate} - {endDate}</UnscalableText>
-            </View>
-
-            <Pressable style={styles.contactButton} onPress={() => setContactModalVisible(true)}>
-              <UnscalableText style={styles.contactButtonText}>Contact</UnscalableText>
-            </Pressable>
-
-          </View>
-        </View>
-      </View>
-    );
-  }, [imageUrl, initials, fullName, membershipId, role, district, state, party, startDate, endDate, theme]
-);
 
   const handleOpenLink = useCallback((url?: string) => {
     if (!url) return;
-    const normalized = url.startsWith('http') ? url : `https://${url}`;
+    const normalized = url.startsWith("http") ? url : `https://${url}`;
     Linking.openURL(normalized).catch(() => {});
   }, []);
 
-  
-  const HeaderElement = useMemo(() => (
-    <>
-      {MemberCard}
-      <ContactModal
-        contactModalVisible={contactModalVisible}
-        setContactModalVisible={setContactModalVisible}
-        handleOpenLink={handleOpenLink}
-          office={office}
-          phone={phone}
-          official_link={official_link}
-      />
-      <SectionLabel>Recent Votes</SectionLabel>
-    </>),
-    [MemberCard, contactModalVisible, handleOpenLink, office, phone, official_link]
-  );
+  // main card
+  const MainContent = useMemo(() => (
+    <View style={[styles.main]}>
+      <View style={styles.mainRow}>
+        {/* Avatar */}
+        <View style={[styles.avatarBox]}>
+          {imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={styles.avatarImg} resizeMode="cover" />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: partyColor + "22" }]}>
+              <UnscalableText style={[styles.avatarInitials, { color: partyColor }]}>
+                {initials}
+              </UnscalableText>
+            </View>
+          )}
+        </View>
 
+        {/* Info */}
+        <View style={styles.mainInfo}>
+          <View style={styles.mainNameRow}>
+            <UnscalableText style={styles.mainName} numberOfLines={2}>
+              {fullName}
+            </UnscalableText>
+            <View style={[styles.partyBadge, { backgroundColor: partyColor }]}>
+              <UnscalableText style={styles.partyBadgeText}>{party}</UnscalableText>
+            </View>
+          </View>
+          <UnscalableText style={styles.mainSub}>
+            {role} · {state}{district !== null ? `-${district}` : ""}
+          </UnscalableText>
+        </View>
+        <MemStarButton membershipId={membershipId} />
+      </View>
+    </View>
+  ), [imageUrl, initials, fullName, membershipId, role, district, state, party, partyColor, styles]);
+
+  // ── Tab bar ─────────────────────────────────────────────────────────────────
+  const TabBar = useMemo(() => (
+    <View style={styles.tabBar}>
+      {TABS.map(({ id, label }) => (
+        <Pressable
+          key={id}
+          onPress={() => setTab(id)}
+          style={styles.tabBtn}
+        >
+          <UnscalableText style={[styles.tabLabel, tab === id && { color: theme.primary }]}>
+            {label}
+          </UnscalableText>
+          {tab === id && (
+            <View style={[styles.tabIndicator, { backgroundColor: theme.primary }]} />
+          )}
+        </Pressable>
+      ))}
+    </View>
+  ), [tab, styles, theme.primary]);
+
+  // ── Overview tab ─────────────────────────────────────────────────────────────
+  const OverviewContent = useMemo(() => (
+    <View style={styles.tabContent}>
+      {/* Service Period */}
+      <View style={styles.card}>
+        <UnscalableText style={styles.cardTitle}>Service Period</UnscalableText>
+        <UnscalableText style={styles.servicePeriodText}>
+          {formatDate(startDate)} - {formatDate(endDate ?? "Present")}
+        </UnscalableText>
+      </View>
+
+      {/* Office */}
+      <View style={styles.card}>
+        <UnscalableText style={styles.cardTitle}>Contacts</UnscalableText>
+        {([
+          { label: "Address", value: office, icon: "📍", isLink: false },
+          { label: "Phone", value: phone, icon: "📞", isLink: false },
+          { label: "Website", value: officialLink, icon: "🌐", isLink: true },
+        ] as const).map(({ label, value, icon, isLink }) => (
+          <View key={label} style={styles.officeRow}>
+            <View style={styles.officeIconBox}>
+              <UnscalableText style={styles.officeIcon}>{icon}</UnscalableText>
+            </View>
+            <View style={styles.officeTextWrap}>
+              <UnscalableText style={styles.officeLabel}>{label}</UnscalableText>
+              <Text style={[styles.officeValue, isLink && { color: theme.primary }]}>
+                {value ?? `No ${label} Provided Yet`}
+              </Text>
+            </View>
+          </View>
+        ))}
+        {officialLink ? (
+          <Pressable style={styles.officialWebBtn} onPress={() => handleOpenLink(officialLink)}>
+            <UnscalableText style={styles.officialWebBtnText}>Official Website</UnscalableText>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {/* Party History */}
+      <View style={styles.card}>
+        <UnscalableText style={styles.cardTitle}>Party History</UnscalableText>
+        {partyHistory.map((ph: any, i: number) => {
+          const { color: phColor } = getPartyInfo(ph.partyName);
+          const isActive = !ph.end || ph.end === "Present";
+          return (
+            <View
+              key={i}
+              style={[
+                styles.historyRow,
+                {
+                  backgroundColor: isActive ? phColor + "18" : theme.secondary,
+                  borderColor:     isActive ? phColor + "55" : theme.border,
+                },
+              ]}
+            >
+              <UnscalableText style={styles.historyParty}>{ph.partyName}</UnscalableText>
+              <UnscalableText style={styles.historyDates}>{ph.startYear} - {ph.endYear ?? "Present"}</UnscalableText>
+            </View>
+          );
+        })}
+      </View>
+
+      <View style={{ height: 50 }} />
+    </View>
+  ), [startDate, endDate, office, phone, officialLink, partyHistory, theme, styles, handleOpenLink]);
+
+  // ── Votes tab header (main + tabs + label) ──────────────────────────────────
+  const VotesHeader = useMemo(() => (
+    <>
+      {MainContent}
+      {TabBar}
+      <View style={styles.sectionLabelWrap}>
+        <View style={[styles.sectionLabelBar, { backgroundColor: theme.primary }]} />
+        <UnscalableText style={styles.sectionLabelText}>Recent Votes</UnscalableText>
+      </View>
+    </>
+  ), [MainContent, TabBar, styles, theme.primary]);
+
+  // ── Loading / error ──────────────────────────────────────────────────────────
   if (loading) return (
     <SafeAreaView style={[styles.container, styles.centerOverlay]} edges={["top"]}>
       <ActivityIndicator />
@@ -146,147 +216,267 @@ export default function MemberInfo({ navigation, route }: MemberInfoProps) {
 
   if (error) return (
     <SafeAreaView style={[styles.container, styles.centerOverlay]} edges={["top"]}>
-      <Text>Error loading member: {error.message}</Text>
+      <Text style={{ color: theme.text }}>Error loading member</Text>
     </SafeAreaView>
   );
-
-  function formatDate(value: string | null | undefined) {
-    if (!value) return '-';
-    if (value === 'Present') return 'Present';
-    try {
-      const d = new Date(value);
-      if (isNaN(d.getTime())) return value;
-      return d.toLocaleDateString();
-    } catch {
-      return value;
-    }
-  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <NavReturn onPress={goBack} />
-      <VoteList data={voteList} personal={true} navigation={navigation} header={HeaderElement}/>
-      { /* add party history section */}
-      { /* add external terms */}
+
+      {tab === "votes" ? (
+        <VoteList
+          data={voteList}
+          personal={true}
+          navigation={navigation}
+          header={VotesHeader}
+        />
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {MainContent}
+          {TabBar}
+          {tab === "overview" ? OverviewContent : <MemberTermList termHistory={termHistory} partyColor={partyColor} />}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
     container: {
-    flex: 1,
-    paddingHorizontal: '18%',
-    paddingTop: '24%',
-    backgroundColor: theme.background,
-  },
-  centerOverlay: {
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  headerCard: {
-    backgroundColor: theme.card,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerRow: { 
-    flexDirection: 'row',
-    alignItems: 'flex-start', 
-  },
-  label: {
-    fontSize: 13,
-    color: theme.text,
-    fontWeight: "700",
-    marginBottom: 6,
-    marginLeft: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  labelContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  labelBar: {
-    width: 4,
-    height: 18,
-    borderRadius: 2,
-    backgroundColor: theme.primary,
-    marginRight: 8,
-  },
-  leftColumn: {
-    width: 120, 
-    marginRight: 12 
-  },
-  rightColumn: {
-    width: 20 
-  },
-  middleColumn: {
-    flex: 1 
-  },
-  avatarLarge: {
-    width: '100%', 
-    height: 140, 
-    borderRadius: 12, 
-    backgroundColor: theme.card 
-  },
-  avatarPlaceholderLarge: { 
-    width: '100%', 
-    height: 140, 
-    borderRadius: 12, 
-    backgroundColor: theme.secondary, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  avatarInitialsLarge: { 
-    color: theme.text, 
-    fontWeight: '700', 
-    fontSize: 28 
-  },
-  title: { 
-    fontSize: 18, 
-    fontWeight: '700', 
-    color: theme.text, 
-    marginBottom: 8 
-  },
-  nameRow: { 
-    flexDirection: 'row', 
-    alignItems: 'flex-start', 
-    justifyContent: 'space-between', 
-    marginRight: 10 
-  },
-  infoRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginTop: 4 
-  },
-  infoLabel: { 
-    fontSize: 13, 
-    color: theme.text, 
-    width: 40, 
-    fontWeight: '600' 
-  },
-  infoValue: { 
-    fontSize: 13, 
-    color: theme.text, 
-    flex: 1 
-  },
-  contactButton: { 
-    marginTop: 10, 
-    backgroundColor: theme.primary, 
-    paddingVertical: 8, 
-    paddingHorizontal: 12, 
-    borderRadius: 8, 
-    alignSelf: 'flex-start' 
-  },
-  contactButtonText: { 
-    color: theme.innerText, 
-    fontWeight: '700' 
-  },
-});
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    centerOverlay: {
+      justifyContent: "center",
+      alignItems: "center",
+    },
+
+    // Main card
+    main: {
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    mainRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+    },
+    avatarBox: {
+      width: 86,
+      height: 86,
+      borderRadius: 14,
+      borderWidth: 2,
+      overflow: "hidden",
+      flexShrink: 0,
+      marginRight: 14,
+      borderColor: theme.border,
+    },
+    avatarImg: {
+      width: "100%",
+      height: "100%",
+    },
+    avatarFallback: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    avatarInitials: {
+      fontSize: 28,
+      fontWeight: "800",
+      letterSpacing: -0.5,
+    },
+    mainInfo: {
+      flex: 1,
+      minWidth: 0,
+      marginRight: 8,
+    },
+    mainNameRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      flexWrap: "wrap",
+      marginBottom: 4,
+    },
+    mainName: {
+      fontSize: 17,
+      fontWeight: "800",
+      color: theme.text,
+      lineHeight: 22,
+      flexShrink: 1,
+      marginRight: 6,
+    },
+    partyBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 5,
+      flexShrink: 0,
+      marginTop: 2,
+    },
+    partyBadgeText: {
+      color: "#fff",
+      fontWeight: "800",
+      fontSize: 11,
+      letterSpacing: 0.5,
+    },
+    mainSub: {
+      color: theme.subtext,
+      fontSize: 12,
+      marginBottom: 3,
+    },
+    // tabs
+    tabBar: {
+      flexDirection: "row",
+      backgroundColor: theme.card,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    tabBtn: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: 4,
+      position: "relative",
+    },
+    tabLabel: {
+      fontSize: 12,
+      fontWeight: "700",
+      letterSpacing: 0.6,
+      color: theme.subtext,
+    },
+    tabIndicator: {
+      position: "absolute",
+      bottom: 0,
+      left: "20%",
+      right: "20%",
+      height: 2,
+      borderRadius: 2,
+    },
+    tabContent: {
+      paddingHorizontal: 12,
+      paddingTop: 14,
+    },
+
+    // cards
+    card: {
+      backgroundColor: theme.card,
+      borderRadius: 14,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.border,
+      shadowColor: theme.shadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      elevation: 2,
+      marginBottom: 12,
+    },
+    cardTitle: {
+      fontSize: 10,
+      fontWeight: "800",
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      color: theme.subtext,
+      marginBottom: 12,
+    },
+    servicePeriodText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.text,
+      letterSpacing: 0.2,
+    },
+
+    // office stuff
+    officeRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
+    officeIconBox: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: theme.secondary,
+      borderWidth: 1,
+      borderColor: theme.border,
+      justifyContent: "center",
+      alignItems: "center",
+      flexShrink: 0,
+      marginRight: 12,
+    },
+    officeIcon: {
+      fontSize: 14,
+    },
+    officeTextWrap: {
+      flex: 1,
+      minWidth: 0,
+    },
+    officeLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: theme.subtext,
+      marginBottom: 2,
+    },
+    officeValue: {
+      fontSize: 13,
+      fontWeight: "500",
+      color: theme.text,
+    },
+    officialWebBtn: {
+      marginTop: 4,
+      width: "100%",
+      paddingVertical: 11,
+      borderRadius: 10,
+      backgroundColor: theme.primary,
+      alignItems: "center",
+    },
+    officialWebBtnText: {
+      color: "#fff",
+      fontSize: 13,
+      fontWeight: "700",
+    },
+
+    // party hist section
+    historyRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      marginBottom: 6,
+    },
+    historyParty: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: theme.text,
+    },
+    historyDates: {
+      fontSize: 12,
+      color: theme.subtext,
+      fontWeight: "500",
+    },
+
+    // vote section
+    sectionLabelWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingTop: 12,
+      paddingBottom: 8,
+    },
+    sectionLabelBar: {
+      width: 4,
+      height: 18,
+      borderRadius: 2,
+      marginRight: 8,
+    },
+    sectionLabelText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: theme.text,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+  });

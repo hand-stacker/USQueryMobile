@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useMemo } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { ThemeContext } from "../theme/themeContext";
 import VoteBadge from "../vote/components/VoteBadge";
+import AccentCard from "./AccentCard";
 import Summary from "./Summary";
 
 interface Props {
@@ -46,7 +47,7 @@ const ActionList = ({ data, summary_text, navigator, header, preTimeline }: Prop
     const badgeTextColor = isVote ? theme.primary : '#22c55e';
 
     return (
-      <View style={[styles.itemCard, { borderLeftColor: borderColor, borderLeftWidth: 3 }]}>
+      <AccentCard accentColor={borderColor} style={{ marginBottom: 0 }}>
         <View style={styles.itemHeader}>
           <Text style={styles.itemDate}>{node.actionDate}</Text>
           <View style={[styles.typeBadge, { backgroundColor: badgeBg }]}>
@@ -57,7 +58,7 @@ const ActionList = ({ data, summary_text, navigator, header, preTimeline }: Prop
         {node.voteId && (
           <VoteBadge voteId={node.voteId} navigation={navigator} allowBillNav={false} />
         )}
-      </View>
+      </AccentCard>
     );
   }, [theme, navigator]);
 
@@ -87,16 +88,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   listContainer: {
     paddingTop: 12,
     paddingBottom: 24,
-  },
-  itemCard: {
-    backgroundColor: theme.card,
-    borderRadius: 10,
-    padding: 12,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
   },
   itemHeader: {
     flexDirection: 'row',
