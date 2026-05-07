@@ -41,7 +41,13 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
   const subjects = useMemo(() => bill?.subjects ?? [], [bill?.subjects]);
   const actions = useMemo(() => bill?.actions ?? [], [bill?.actions]);
   const summaryText = useMemo(() => bill?.summary ?? "", [bill?.summary]);
-  const currentStage = useMemo(() => bill?.currentStage ?? (bill?.status ? 4 : 0), [bill?.currentStage, bill?.status]);
+  const statusCode = useMemo(() => bill?.statusCode ?? 0, [bill?.statusCode]);
+  const { origin, outer } = useMemo(() => {
+    const t = parseInt(String(billNum)[3] ?? '0', 10);
+    return t <= 3 ? { origin: 'Senate', outer: 'House' } : { origin: 'House', outer: 'Senate' };
+  }, [billNum]);
+  const confInHistory = useMemo(() => bill?.conf_in_history ?? false, [bill?.conf_in_history]);
+  const vetoInHistory = useMemo(() => bill?.veto_in_history ?? false, [bill?.veto_in_history]);
   const sponsor = useMemo(() => bill?.sponsor ?? null, [bill?.sponsor]);
   const cosponsors = useMemo(() => bill?.cosponsors ?? [], [bill?.cosponsors]);
   const relatedBills = useMemo(() => bill?.relatedBills ?? [], [bill?.relatedBills]);
@@ -70,9 +76,16 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
         </View>
       </View>
 
-      <BillProgressCard currentStage={currentStage} />
+      <BillProgressCard
+        status_code={statusCode}
+        origin={origin}
+        outer={outer}
+        conf_in_history={confInHistory}
+        veto_in_history={vetoInHistory}
+        passed={bill?.status ?? false}
+      />
     </>
-  ), [title, originDate, latestActionDate, policyArea, billNum, bill?.status, bill_id, currentStage, theme]);
+  ), [title, originDate, latestActionDate, policyArea, billNum, bill?.status, bill_id, statusCode, origin, outer, confInHistory, vetoInHistory, theme]);
 
   const preTimelineElement = useMemo(() => (
     <BillInfoTabs

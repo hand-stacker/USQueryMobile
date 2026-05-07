@@ -9,25 +9,24 @@ export default function PrivacyPolicyModal() {
   const styles = createStyles(theme);
   const privacyAccepted = useAppSettingsStore(s => s.privacyAccepted);
   const setPrivacyAccepted = useAppSettingsStore(s => s.setPrivacyAccepted);
+  const disclaimerAccepted = useAppSettingsStore(s => s.disclaimerAccepted);
   const hydrated = useAppSettingsStore(s => s._hasHydrated);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (hydrated && !privacyAccepted) {
+    if (hydrated && disclaimerAccepted && !privacyAccepted) {
       setVisible(true);
     } else if (hydrated && privacyAccepted) {
       setVisible(false);
     }
-  }, [hydrated, privacyAccepted]);
+  }, [hydrated, disclaimerAccepted, privacyAccepted]);
 
-  // Don't render anything until hydrated
-  if (!hydrated) return null;
+  if (!hydrated || !disclaimerAccepted || privacyAccepted) return null;
 
   const handleAccept = () => {
     setPrivacyAccepted(true);
     setVisible(false);
   };
-  if (privacyAccepted) return null;
 
   return (
     <Modal visible={visible} animationType="fade" transparent>

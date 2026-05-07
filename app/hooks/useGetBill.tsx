@@ -11,7 +11,9 @@ const GET_BILL = gql`
         title
         originDate
         policyArea
-        currentStage
+        statusCode
+        confInHistory
+        vetoInHistory
         actions {
             text
             actionDate

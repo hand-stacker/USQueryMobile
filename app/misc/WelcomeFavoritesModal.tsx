@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CloseButton from '../components/CloseButton';
+import { useAppSettingsStore } from '../store/appSettingsStore';
 import { useFavoritesStore } from '../store/favoriteSubjectsStore';
 import { ThemeContext } from '../theme/themeContext';
 
@@ -13,13 +14,15 @@ export default function WelcomeFavoritesModal() {
   const hydrated = useFavoritesStore(s => s._hasHydrated);
   const welcomeCounter = useFavoritesStore(s => s.welcomeCounter);
   const setWelcomeCounter = useFavoritesStore(s => s.setWelcomeCounter);
+  const privacyAccepted = useAppSettingsStore(s => s.privacyAccepted);
   const [visible, setVisible] = useState(false);
   const processedOpen = useRef(false);
   const navigation: any = useNavigation();
 
   // Run on app open (when persisted state has hydrated). Only process once per app session.
+  // Gates on privacyAccepted so this modal only opens after the disclaimer and privacy policy are done.
   useEffect(() => {
-    if (!hydrated || processedOpen.current) return;
+    if (!hydrated || !privacyAccepted || processedOpen.current) return;
     processedOpen.current = true;
 
     if (Array.isArray(favorites) && favorites.length === 0) {
@@ -38,7 +41,7 @@ export default function WelcomeFavoritesModal() {
       // Favorites not empty: ensure counter is 1 so modal can open immediately if user clears favorites next time
       if (welcomeCounter !== 1) setWelcomeCounter(1);
     }
-  }, [hydrated]);
+  }, [hydrated, privacyAccepted]);
 
   // If favorites become non-empty during a session, ensure counter is 1 (immediate on next open)
   useEffect(() => {
