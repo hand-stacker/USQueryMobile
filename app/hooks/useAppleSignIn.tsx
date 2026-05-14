@@ -1,5 +1,6 @@
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useState } from "react";
+import { Alert } from "react-native";
 
 type OAuthData = {
   access: string;
@@ -11,6 +12,8 @@ type OAuthData = {
 };
 
 type OAuthError = Record<string, string[]> | null;
+
+const SIGN_IN_TIMEOUT_MS = 15_000;
 
 export function useAppleSignIn() {
   const [loading, setLoading] = useState(false);
@@ -28,23 +31,30 @@ export function useAppleSignIn() {
     let resultData: OAuthData | null = null;
     let resultErrors: OAuthError | null = null;
     try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Apple sign-in timed out. Please try again.")),
+          SIGN_IN_TIMEOUT_MS
+        )
+      );
+      const credential = await Promise.race([
+        AppleAuthentication.signInAsync({
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          ],
+        }),
+        timeoutPromise,
+      ]);
       const identityToken = credential.identityToken;
       const email = credential.email;
       if (!identityToken) {
-        throw new Error("No identity token received");
+        throw new Error("No identity token received from Apple.");
       }
       const res = await fetch("https://www.usquery.com/api/auth/oauth/apple/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ identity_token: identityToken, email: email }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identity_token: identityToken, email: email ?? null }),
       });
       const json = await res.json();
       if (res.ok) {
@@ -60,9 +70,14 @@ export function useAppleSignIn() {
           setErrors(fallback);
           resultErrors = fallback;
         }
+        Alert.alert("Sign In Failed", "Could not sign in with Apple. Please try again.");
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === "ERR_CANCELED") {
+        return { ok: false, data: null, errors: null };
+      }
       console.error("Apple sign-in error:", error);
+      Alert.alert("Sign In Failed", error?.message ?? "Apple sign-in failed. Please try again.");
       setErrors(fallback);
       resultErrors = fallback;
     } finally {

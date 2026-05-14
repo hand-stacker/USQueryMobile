@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import AppleSignInButton from "../components/AppleSignInButton";
 import GoogleSignInButton from "../components/GoogleSignInButton";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
@@ -348,7 +348,7 @@ export default function Login({ navigation }: LoginProps) {
 
       <GoogleSignInButton onPress={googleSignIn} loading={googleLoading} />
 
-      <AppleSignInButton onPress={appleSignIn} loading={appleLoading} display={false} />
+      <AppleSignInButton onPress={appleSignIn} loading={appleLoading} display={Platform.OS === 'ios'} />
 
       <Pressable style={styles.button} onPress={() => navigation.navigate("Reset_Password")}>
         <Text style={styles.buttonText}>Reset your password</Text>

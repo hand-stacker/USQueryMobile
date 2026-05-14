@@ -25,7 +25,7 @@ import VoteInfo from "./vote/screens/[vote_id]";
 import VoteFYP from "./vote/screens/vote_fyp";
 
 import { Tinos_400Regular, Tinos_700Bold, useFonts } from '@expo-google-fonts/tinos';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Login from "./auth/login";
 import ResetPassword from "./auth/password_reset";
 import RegisterAccount from "./auth/register";
@@ -86,16 +86,20 @@ function SharedStack({ route } : {route:any}) {
 
 function TabNavigator() {
   const { theme } = useContext(ThemeContext);
-  const { height: windowHeight } = useWindowDimensions(); 
-  const tabBarHeight = Math.round(windowHeight * 0.14);
+  const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = Platform.OS === 'ios'
+    ? 50 + insets.bottom
+    : Math.round(windowHeight * 0.14);
   return (
-    <Tabs.Navigator 
+    <Tabs.Navigator
       initialRouteName="Bills"
       screenOptions={({ route }) => ({
         tabBarStyle: {
           backgroundColor: theme.card,
           borderTopColor: theme.border,
           height: tabBarHeight,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : undefined,
         },
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
@@ -209,7 +213,7 @@ function AppNavigation() {
 }
 
 import { DefaultTheme, DarkTheme as NavDarkTheme } from "@react-navigation/native";
-import { useWindowDimensions } from "react-native";
+import { Platform, useWindowDimensions } from "react-native";
 import PrivacyPolicy from "./misc/privacy_policy";
 
 export const createNavTheme = (theme: any) => {
