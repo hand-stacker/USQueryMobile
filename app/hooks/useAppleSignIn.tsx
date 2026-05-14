@@ -13,7 +13,7 @@ type OAuthData = {
 
 type OAuthError = Record<string, string[]> | null;
 
-const SIGN_IN_TIMEOUT_MS = 15_000;
+const SIGN_IN_TIMEOUT_MS = 60_000;
 
 export function useAppleSignIn() {
   const [loading, setLoading] = useState(false);
