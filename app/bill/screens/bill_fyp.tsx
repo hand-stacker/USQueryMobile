@@ -18,19 +18,26 @@ const arraysEqual = (a?: number[], b?: number[]) => {
   return true;
 };
 
-export default function BillFYP( {navigation} : any) {
+export default function BillFYP( {navigation, route} : any) {
   const { theme } = useContext(ThemeContext);
   const { width, height } = useWindowDimensions();
   const styles = createStyles(theme, width > height);
   // use MMKV later to store favorite subjects persistently
   const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const favorite_subjects = useMemo(() => (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [], [favorite_subjects_store]);
-  const [sortType, setSortType] = useState("datedesc");
-  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: favorite_subjects, truncate: true , sort: sortType}));
+  const [sortType, setSortType] = useState(route?.params?.sort ?? "datedesc");
+  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: favorite_subjects, truncate: true , sort: route?.params?.sort ?? "datedesc"}));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
   const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.truncate, searchVars.sort);
   const isFocused = useIsFocused();
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
+
+  useEffect(() => {
+    const paramSort = route?.params?.sort;
+    if (paramSort && paramSort !== sortType) {
+      handleSortChange(paramSort);
+    }
+  }, [route?.params?.sort]);
 
   const handleSortChange = useCallback((sort: string) => {
     setSortType(sort);

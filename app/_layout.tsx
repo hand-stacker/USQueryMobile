@@ -165,11 +165,11 @@ export default function RootLayout() {
   useEffect(() => {
     const sub =
       Notifications.addNotificationResponseReceivedListener(response => {
-        const billId =
-          response.notification.request.content.data?.bill_id;
-        if (billId) {
-          console.log('Notification tapped with bill_id:', billId);
-          navigate("Bill_info", { bill_id: billId });
+        const data = response.notification.request.content.data;
+        if (data?.screen === "Bill_FYP") {
+          navigate("Bill_FYP", { sort: data.sort ?? "datedesc" });
+        } else if (data?.bill_id) {
+          navigate("Bill_info", { bill_id: data.bill_id });
         }
       });
 
