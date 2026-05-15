@@ -82,6 +82,9 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   acceptButton: {
     marginTop: 8,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     backgroundColor: theme.primary,
     padding: 14,
     borderRadius: 8,

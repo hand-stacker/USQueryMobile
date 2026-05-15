@@ -51,6 +51,8 @@ export default function AppleSignInButton({ onPress, loading = false, label = 'S
 const styles = StyleSheet.create({
   button: {
     width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     minHeight: 50,
     marginBottom: 10,
     borderRadius: 8,

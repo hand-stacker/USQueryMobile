@@ -251,6 +251,8 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   },
   button: {
     width: "100%",
+    maxWidth: 480,
+    alignSelf: 'center',
     minHeight: 50,
     marginBottom: 12,
     backgroundColor: theme.primary,

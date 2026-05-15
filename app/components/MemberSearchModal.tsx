@@ -127,12 +127,14 @@ const createStyles = (theme: any) => StyleSheet.create({
   searchButton: {
     marginTop: 18,
     marginBottom: 30,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     backgroundColor: theme.primary,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 4,
   },
   searchButtonText: {
     color: theme.innerText,

@@ -123,6 +123,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: 10,
   },
   primary: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     backgroundColor: theme.primary,
     marginBottom: 10,
   },

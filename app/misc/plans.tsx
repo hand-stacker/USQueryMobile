@@ -484,6 +484,9 @@ const createStyles = (theme: any, isLandscape = false) =>
       marginBottom: 16,
     },
     btn: {
+      width: '100%',
+      maxWidth: 480,
+      alignSelf: 'center',
       minHeight: 46,
       borderRadius: 10,
       alignItems: 'center',

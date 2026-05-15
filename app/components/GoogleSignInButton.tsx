@@ -43,6 +43,8 @@ export default function GoogleSignInButton({ onPress, loading = false, label = '
 const styles = StyleSheet.create({
   button: {
     width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     minHeight: 50,
     marginBottom: 10,
     backgroundColor: '#FFFFFF',
