@@ -83,8 +83,8 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: '18%',
-    paddingTop: isLandscape ? '6%' : '24%',
+    paddingHorizontal: '6%',
+    paddingTop: isLandscape ? '2%' : '5%',
     backgroundColor: theme.background,
   },
   headerRow: {
