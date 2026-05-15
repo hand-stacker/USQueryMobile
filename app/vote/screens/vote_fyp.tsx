@@ -5,6 +5,7 @@ import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SortOptions from '../../components/SortOptions';
 import VoteList from "../components/VoteList";
 import VoteTopNav from "../components/VoteTopNav";
 
@@ -21,11 +22,25 @@ export default function VoteFYP( {navigation} : any) {
   const styles = createStyles(theme);
   const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const favorite_subjects = useMemo(() => (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [], [favorite_subjects_store]);
-  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: undefined }));
+  const [sortType, setSortType] = useState("datedesc");
+  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: undefined, sort: sortType }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
-  const { votes, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentVotes(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list);
+  const { votes, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentVotes(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.sort);
   const isFocused = useIsFocused();
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
+
+  const handleSortChange = useCallback((sort: string) => {
+    setSortType(sort);
+    setSearchVars((prev: any) => {
+      const next = { ...prev, sort, after: undefined };
+      try {
+        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, sort });
+      } catch (err) {
+        console.error('Refetch on sort change failed', err);
+      }
+      return next;
+    });
+  }, [refetch]);
   
   useEffect(() => {
     if (!isFocused) return;
@@ -34,11 +49,11 @@ export default function VoteFYP( {navigation} : any) {
     const next = { ...searchVars, subject_list: favorite_subjects, after: undefined };
     setSearchVars(next);
     try {
-      refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
+      refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, sort: next.sort });
     } catch (err) {
       console.error('Refetch on focus failed', err);
     }
-  }, [isFocused, favorite_subjects, searchVars, refetch]);
+  }, [isFocused, favorite_subjects, searchVars, sortType, refetch]);
 
   // `votes` may be the GraphQL connection object or an array/falsy value.
   const edges = useMemo(() => {
@@ -47,21 +62,33 @@ export default function VoteFYP( {navigation} : any) {
   }, [votes]);
 
   if ((loading && edges.length === 0)) return (
-    <SafeAreaView style={[styles.safe, styles.centerOverlay]} edges={["top"]}>
-      <ActivityIndicator />
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <VoteTopNav navigation={navigation} mode="FYP"/>
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} disabled />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      </View>
     </SafeAreaView>
   );
 
   if (error) return (
-    <SafeAreaView style={[styles.safe, styles.centerOverlay]} edges={["top"]}>
-      <Text>Error loading bills: {error?.message}</Text>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <VoteTopNav navigation={navigation} mode="FYP"/>
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} disabled />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Error loading votes: {error?.message}</Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
         <VoteTopNav navigation={navigation} mode="FYP"/>
-
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} />
         <VoteList data={edges} navigation={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} personal={false} />
       </View>
     </SafeAreaView>

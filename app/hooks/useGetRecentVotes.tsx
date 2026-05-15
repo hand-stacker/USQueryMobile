@@ -10,6 +10,7 @@ const GET_RECENT_VOTES = gql`
     $congress_num: Int,
     $first: Int,
     $subject_list: [Int!]
+    $sort: String = ""
     ) {
     getRecentVotes(
         after: $after,
@@ -17,6 +18,7 @@ const GET_RECENT_VOTES = gql`
         congressNum: $congress_num,
         first: $first,
         subjectList: $subject_list
+        sort: $sort
     ) {
     edges {
       node {
@@ -38,9 +40,9 @@ const GET_RECENT_VOTES = gql`
   }
 `;
 
-export function useGetRecentVotes(after?: string, bill_type?: string, first?: number, congress_num?: number, subject_list?: number[]) {
+export function useGetRecentVotes(after?: string, bill_type?: string, first?: number, congress_num?: number, subject_list?: number[], sort: string = "") {
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_RECENT_VOTES, {
-    variables: { after, bill_type, first, congress_num, subject_list },
+    variables: { after, bill_type, first, congress_num, subject_list, sort },
     client,
   });
 
@@ -69,6 +71,7 @@ export function useGetRecentVotes(after?: string, bill_type?: string, first?: nu
           first,
           congress_num,
           subject_list,
+          sort,
         },
         updateQuery: (prev : any, { fetchMoreResult }: any) => {
           if (!fetchMoreResult) return prev;

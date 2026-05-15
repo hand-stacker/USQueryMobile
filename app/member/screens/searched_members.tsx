@@ -28,15 +28,25 @@ export default function SearchedMembers({navigation}: any) {
         console.error('Refetch on focus failed', err);
       }
     }, [isFocused, searchVars.congress, searchVars.chamber, searchVars.state, refetch]);
-  if (loading ) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <ActivityIndicator />
+  if (loading) return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <MemTopNav navigation={navigation} mode="Search" handleOpenModal={() => setModalVisible(true)} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      </View>
     </SafeAreaView>
   );
 
-  if (error ) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <Text>Error loading bills: {error?.message}</Text>
+  if (error) return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <MemTopNav navigation={navigation} mode="Search" handleOpenModal={() => setModalVisible(true)} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Error loading members: {error?.message}</Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
   return (

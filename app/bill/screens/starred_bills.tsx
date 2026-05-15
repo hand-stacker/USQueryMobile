@@ -44,26 +44,42 @@ export default function StarredBills({ navigation }: any) {
   
 
   if (loading && edges.length === 0) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <ActivityIndicator />
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <BillTopNav navigation={navigation} mode="Starred"/>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      </View>
     </SafeAreaView>
   );
 
   if (error) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <Text>Error loading starred bills: {error?.message}</Text>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <BillTopNav navigation={navigation} mode="Starred"/>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Error loading starred bills: {error?.message}</Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <BillTopNav navigation={navigation} mode="Starred"/>
-      <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <BillTopNav navigation={navigation} mode="Starred"/>
+        <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
+      </View>
     </SafeAreaView>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: theme.background,
+  },
   container: {
     flex: 1,
     paddingHorizontal: '18%',

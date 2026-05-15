@@ -7,6 +7,7 @@ import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SortOptions from '../../components/SortOptions';
 import VoteList from '../components/VoteList';
 import VoteTopNav from '../components/VoteTopNav';
 
@@ -24,9 +25,10 @@ export default function VoteSearchResults( {navigation} : any) {
   const subject_list_store = useSubjectListStore(s => s.subject_list);
   const subject_list = useMemo(() => (subject_list_store && subject_list_store.length > 0) ? subject_list_store : [], [subject_list_store]);
   const [modalVisible, setModalVisible] = useState(subject_list.length === 0);
-  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list }));
+  const [sortType, setSortType] = useState("datedesc");
+  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list, sort: sortType }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
-  const { votes, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentVotes(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list);
+  const { votes, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentVotes(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.sort);
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
 
   const isFocused = useIsFocused();
@@ -38,31 +40,18 @@ export default function VoteSearchResults( {navigation} : any) {
     setSearchVars((prev: any) => {
       const next = { ...prev, subject_list: subject_list, after: undefined };
       try {
-        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
+        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, sort: next.sort });
       } catch (err) {
         console.error('Refetch on focus failed', err);
       }
       return next;
     });
-  }, [isFocused, subject_list, refetch]);
+  }, [isFocused, subject_list, sortType, refetch]);
 
-  // `votes` may be the GraphQL connection object or an array/falsy value.
   const edges = useMemo(() => {
     if (Array.isArray(votes)) return [];
     return votes?.edges ?? [];
   }, [votes]);
-
-  if ((loading && edges.length === 0) || subjectsLoading) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <ActivityIndicator />
-    </SafeAreaView>
-  );
-
-  if (error || subjectsError) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <Text>Error loading votes: {error?.message || subjectsError?.message}</Text>
-    </SafeAreaView>
-  );
 
   const handleOpenModal = useCallback(() => setModalVisible(true), []);
   const handleCloseModal = useCallback(() => setModalVisible(false), []);
@@ -73,22 +62,59 @@ export default function VoteSearchResults( {navigation} : any) {
       const next = { ...merged, subject_list: effective };
       useSubjectListStore.getState().setSubjectList(effective);
       try {
-        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list });
+        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, sort: next.sort });
       } catch (err) {
         console.error('Refetch on search failed', err);
       }
       lastUsedSubjectsRef.current = next.subject_list;
       return next;
     });
-  }, [subject_list, refetch]);
+  }, [subject_list, sortType, refetch]);
 
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
+
+  const handleSortChange = useCallback((sort: string) => {
+    setSortType(sort);
+    setSearchVars((prev: any) => {
+      const next = { ...prev, sort, after: undefined };
+      try {
+        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, sort });
+      } catch (err) {
+        console.error('Refetch on sort change failed', err);
+      }
+      return next;
+    });
+  }, [refetch]);
+
+  if ((loading && edges.length === 0) || subjectsLoading) return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <VoteTopNav navigation={navigation} mode="Search" handleOpenModal={handleOpenModal} />
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} disabled />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
+  if (error || subjectsError) return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <VoteTopNav navigation={navigation} mode="Search" handleOpenModal={handleOpenModal} />
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} disabled />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Error loading votes: {error?.message || subjectsError?.message}</Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
         <VoteTopNav navigation={navigation} mode="Search" handleOpenModal={handleOpenModal} />
-
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} />
         <BillSearchModal
           visible={modalVisible}
           onClose={handleCloseModal}
@@ -97,7 +123,6 @@ export default function VoteSearchResults( {navigation} : any) {
           subjects={subjects}
           desc="Search for votes by congress, type, and subject."
         />
-
         <VoteList data={edges} navigation={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} personal={false} />
       </View>
     </SafeAreaView>

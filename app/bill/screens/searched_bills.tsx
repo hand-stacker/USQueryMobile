@@ -5,8 +5,9 @@ import { useSubjectListStore } from "@/app/store/subjectListStore";
 import { ThemeContext } from "@/app/theme/themeContext";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SortOptions from '../../components/SortOptions';
 import BillList from '../components/BillList';
 import BillTopNav from "../components/BillTopNav";
 
@@ -25,52 +26,36 @@ export default function BillSearchResults( {navigation} : any) {
   const subject_list_store = useSubjectListStore(s => s.subject_list);
   const subject_list = useMemo(() => (subject_list_store && subject_list_store.length > 0) ? subject_list_store : [], [subject_list_store]);
   const [modalVisible, setModalVisible] = useState(subject_list.length === 0);
-  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list , truncate: true }));
+  const [sortType, setSortType] = useState("datedesc");
+  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list , truncate: true, sort: sortType }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
-  const { bills, pageInfo, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.truncate);
+  const { bills, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.truncate, searchVars.sort);
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
 
   const isFocused = useIsFocused();
 
-  // When screen becomes focused, only refetch if the subject list actually changed.
-  // Avoid depending on the whole `searchVars` object to prevent unnecessary refetches
-  // when navigating away and back without changes.
   useEffect(() => {
     if (!isFocused) return;
-    
-    // Deep compare the subject lists
+
     const currentSubjects = subject_list_store && subject_list_store.length > 0 ? subject_list_store : [];
     const prevSubjects = lastUsedSubjectsRef.current || [];
-    
-    const subjectsChanged = !arraysEqual(prevSubjects, currentSubjects);
-    
-    if (!subjectsChanged) return;
-    
+
+    if (!arraysEqual(prevSubjects, currentSubjects)) return;
+
     lastUsedSubjectsRef.current = currentSubjects;
     setSearchVars((prev: any) => {
       const next = { ...prev, subject_list: currentSubjects, after: undefined };
       try {
-        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, truncate: next.truncate });
+        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, truncate: next.truncate, sort: next.sort });
       } catch (err) {
         console.error('Refetch on focus failed', err);
       }
       return next;
     });
-  }, [isFocused, subject_list_store, refetch]);
-  // `bills` may be the GraphQL connection object or an array/falsy value.
+  }, [isFocused, subject_list_store, sortType, refetch]);
+
   const edges = useMemo(() => Array.isArray(bills) ? [] : (bills?.edges ?? []), [bills]);
 
-  if ((loading && edges.length === 0) || subjectsLoading) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <ActivityIndicator />
-    </SafeAreaView>
-  );
-
-  if (error || subjectsError) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-      <Text>Error loading bills: {error?.message || subjectsError?.message}</Text>
-    </SafeAreaView>
-  );
   const handleOpenModal = useCallback(() => setModalVisible(true), []);
   const handleCloseModal = useCallback(() => setModalVisible(false), []);
   const handleSearch = useCallback((vars: any) => {
@@ -80,37 +65,81 @@ export default function BillSearchResults( {navigation} : any) {
       const next = { ...merged, subject_list: effective };
       useSubjectListStore.getState().setSubjectList(effective);
       try {
-        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, truncate: next.truncate });
+        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, truncate: next.truncate, sort: next.sort });
       } catch (err) {
         console.error('Refetch on search failed', err);
       }
       lastUsedSubjectsRef.current = next.subject_list;
       return next;
     });
-  }, [subject_list, refetch]);
+  }, [subject_list, sortType, refetch]);
 
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
 
+  const handleSortChange = useCallback((sort: string) => {
+    setSortType(sort);
+    setSearchVars((prev: any) => {
+      const next = { ...prev, sort, after: undefined };
+      try {
+        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, truncate: next.truncate, sort });
+      } catch (err) {
+        console.error('Refetch on sort change failed', err);
+      }
+      return next;
+    });
+  }, [refetch]);
+
+  if ((loading && edges.length === 0) || subjectsLoading) return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <BillTopNav navigation={navigation} handleOpenModal={handleOpenModal} mode="Search"/>
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} disabled />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
+  if (error || subjectsError) return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <BillTopNav navigation={navigation} handleOpenModal={handleOpenModal} mode="Search"/>
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} disabled />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Error loading bills: {error?.message || subjectsError?.message}</Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <BillTopNav navigation={navigation} handleOpenModal={handleOpenModal} mode="Search"/>
-      <BillSearchModal
-        visible={modalVisible}
-        onClose={handleCloseModal}
-        initial={searchVars}
-        onSearch={handleSearch}
-        subjects={subjects}
-      />
-      <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <BillTopNav navigation={navigation} handleOpenModal={handleOpenModal} mode="Search"/>
+        <SortOptions sortType={sortType} onSortChange={handleSortChange} />
+        <BillSearchModal
+          visible={modalVisible}
+          onClose={handleCloseModal}
+          initial={searchVars}
+          onSearch={handleSearch}
+          subjects={subjects}
+        />
+        <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
+      </View>
     </SafeAreaView>
   );
 }
 
 const createStyles = (theme: any) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: theme.background,
+  },
   container: {
     flex: 1,
-    paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingHorizontal: '6%',
+    paddingTop: '5%',
     backgroundColor: theme.background,
   },
 });

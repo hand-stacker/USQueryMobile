@@ -57,7 +57,7 @@ function StarredMembers({navigation}: any) {
   }
 
   if (data?.error) return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
         <MemTopNav navigation={navigation} mode="Starred" />
         <EmptyPage />
@@ -65,18 +65,25 @@ function StarredMembers({navigation}: any) {
     </SafeAreaView>
   );
   if (data?.detail == 'Authentication credentials were not provided.') return (
-    <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.container}>
         <MemTopNav navigation={navigation} mode="Starred" />
-        <Text>Try logging in.</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Try logging in.</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
   if (loading) return (
-      <SafeAreaView style={[styles.container, {justifyContent:'center', alignItems:'center'}]} edges={["top"]}>
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.container}>
+        <MemTopNav navigation={navigation} mode="Starred" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      </View>
+    </SafeAreaView>
+  );
     
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
