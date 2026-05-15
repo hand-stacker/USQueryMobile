@@ -12,6 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,7 +29,8 @@ interface VoteInfoProps {
 
 export default function VoteInfo({ navigation, route }: VoteInfoProps) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const { vote_id } = route.params;
   const { allowBillNav } = route.params ?? { allowBillNav: false };
   const { vote, loading, error } = useGetVote(vote_id);
@@ -189,11 +191,11 @@ function formatDate(value: string | null | undefined): string {
   }
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   center: { justifyContent: 'center', alignItems: 'center' },

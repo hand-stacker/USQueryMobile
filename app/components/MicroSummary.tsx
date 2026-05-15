@@ -62,10 +62,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: scaleFont(14),
     color: theme.subtext,
     fontStyle: 'italic',
+    fontWeight: '400',
   },
   summaryText: {
     fontSize: scaleFont(14),
     color: theme.text,
     lineHeight: 20,
+    fontWeight: '400',
   }
 });

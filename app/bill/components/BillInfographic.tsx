@@ -108,5 +108,6 @@ const createStyles = (theme : any) =>
     fontSize: 12,
     color: theme.subtext,
     fontStyle: 'italic',
+    fontWeight: '400',
     },
   });

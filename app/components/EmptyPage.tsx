@@ -34,6 +34,7 @@ const styles = StyleSheet.create({
     color: '#8B0000',
     fontFamily: 'Tinos_700Bold',
     fontSize: 20,
+    fontWeight: '700',
     textAlign: 'center',
     letterSpacing: 0.5,
   },

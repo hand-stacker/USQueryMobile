@@ -2,7 +2,7 @@ import useGetRecentBills from "@/app/hooks/useGetRecentBills";
 import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SortOptions from '../../components/SortOptions';
 import { ThemeContext } from "../../theme/themeContext";
@@ -20,7 +20,8 @@ const arraysEqual = (a?: number[], b?: number[]) => {
 
 export default function BillFYP( {navigation} : any) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   // use MMKV later to store favorite subjects persistently
   const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const favorite_subjects = useMemo(() => (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [], [favorite_subjects_store]);
@@ -97,7 +98,7 @@ export default function BillFYP( {navigation} : any) {
 }
 
 
-const createStyles = (theme : any) =>
+const createStyles = (theme: any, isLandscape = false) =>
   StyleSheet.create({
   safe: {
     flex: 1,
@@ -106,7 +107,7 @@ const createStyles = (theme : any) =>
   container: {
     flex: 1,
     paddingHorizontal: '6%',
-    paddingTop: '5%',
+    paddingTop: isLandscape ? '2%' : '5%',
     backgroundColor: theme.background,
   },
   });

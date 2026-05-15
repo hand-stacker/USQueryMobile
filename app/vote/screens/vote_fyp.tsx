@@ -3,7 +3,7 @@ import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { ThemeContext } from "@/app/theme/themeContext";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SortOptions from '../../components/SortOptions';
 import VoteList from "../components/VoteList";
@@ -19,7 +19,8 @@ const arraysEqual = (a?: number[], b?: number[]) => {
 
 export default function VoteFYP( {navigation} : any) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const favorite_subjects = useMemo(() => (favorite_subjects_store && favorite_subjects_store.length > 0) ? favorite_subjects_store : [], [favorite_subjects_store]);
   const [sortType, setSortType] = useState("datedesc");
@@ -95,12 +96,12 @@ export default function VoteFYP( {navigation} : any) {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.background },
   container : {
     flex:1,
     paddingHorizontal:'6%',
-    paddingTop:'5%',
+    paddingTop: isLandscape ? '2%' : '5%',
   },
   centerOverlay: { justifyContent: 'center', alignItems: 'center' },
 });

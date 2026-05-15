@@ -3,14 +3,15 @@ import { useFavoritesStore } from '@/app/store/favoriteSubjectsStore';
 import { useStarredBillsStore } from '@/app/store/starredBillsStore';
 import { ThemeContext } from '@/app/theme/themeContext';
 import React, { useCallback, useContext, useEffect, useMemo } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BillList from '../components/BillList';
 import BillTopNav from '../components/BillTopNav';
 
 export default function StarredBills({ navigation }: any) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const stars = useStarredBillsStore(s => s.stars) ?? [];
   const starredIds = useMemo(() => stars.map(s => Number(s)).filter(n => !Number.isNaN(n)), [stars]);
 
@@ -75,7 +76,7 @@ export default function StarredBills({ navigation }: any) {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: theme.background,
@@ -83,7 +84,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   headerRow: {

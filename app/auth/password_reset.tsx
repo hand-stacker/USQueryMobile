@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/themeContext";
 interface ResetPasswordProps {
@@ -8,7 +8,8 @@ interface ResetPasswordProps {
 
 export default function ResetPassword({ navigation }: ResetPasswordProps) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -98,11 +99,11 @@ export default function ResetPassword({ navigation }: ResetPasswordProps) {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   title: {
@@ -115,6 +116,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 16,
     marginBottom: 6,
     color: theme.text,
+    fontWeight: '400',
   },
   input: {
     color: theme.text,
@@ -157,5 +159,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   errorText: {
     color: theme.text,
     fontSize: 13,
+    fontWeight: '400',
   },
 });

@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,7 +48,8 @@ interface SubStatus {
 
 export default function PlansScreen({ navigation }: PlansProps) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
 
   const [plansData, setPlansData] = useState<PlansData | null>(null);
   const [subStatus, setSubStatus] = useState<SubStatus | null>(null);
@@ -390,13 +392,13 @@ function FeatureRow({ label, included, theme }: { label: string; included: boole
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: any, isLandscape = false) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: theme.background,
       paddingHorizontal: '18%',
-      paddingTop: '10%',
+      paddingTop: isLandscape ? '4%' : '10%',
     },
     title: {
       color: theme.text,

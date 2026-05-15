@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/themeContext";
 import DropdownSelect from "./DropdownSelect";
@@ -39,7 +39,7 @@ export default function MemberSearchModal({ visible, onClose, onSearch, initial}
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.modalOverlay}>
-        <View style={styles.form}>
+        <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <NavReturn onPress={onClose} />
           <Text style={styles.subtitle}>Select Congress</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
@@ -64,7 +64,7 @@ export default function MemberSearchModal({ visible, onClose, onSearch, initial}
           <Pressable style={styles.searchButton} onPress={onPressSearch} android_ripple={{color:'#00000010'}}>
             <Text style={styles.searchButtonText}>Search</Text>
           </Pressable>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </Modal>
   );
@@ -126,6 +126,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   searchButton: {
     marginTop: 18,
+    marginBottom: 30,
     backgroundColor: theme.primary,
     paddingVertical: 14,
     borderRadius: 12,

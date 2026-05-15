@@ -37,7 +37,7 @@ export default function BillInfoTabs({ sponsor, cosponsors = [], subjects = [], 
           <View>
             <Text style={styles.sectionMeta}>SPONSOR</Text>
             {sponsor
-              ? <MemberPill member={sponsor} />
+              ? <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}><MemberPill member={sponsor} /></View>
               : <Text style={styles.emptyText}>No sponsor information available</Text>
             }
             {cosponsors.length > 0 && (

@@ -52,20 +52,22 @@ const MultiSelectComponent = ({ data, value, placeholder, onChange, maxContainer
       {/* Selected items rendered below in a scrollable list to avoid dropdown modal conflicts */}
       {((selected && selected.length) || (value && value.length)) ? (
         <ScrollView style={[styles.selectedContainer, {maxHeight: maxContHeight}]} nestedScrollEnabled>
-          {selected.map((val: string | number) => {
-            const item = (data ?? []).find((s: any) => String(s.id) === String(val));
-            return (
-              <TouchableOpacity key={String(val)} onPress={() => {
-                const next = selected.filter(p => String(p) !== String(val));
-                if (onChange) onChange(next);
-              }}>
-                <View style={[styles.general, styles.selectedStyle]}>
-                  <Text style={styles.textSelectedStyle}>{item?.name ?? String(val)}</Text>
-                  <Ionicons color="white" name="trash" size={17} />
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+          <View style={styles.selectedRow}>
+            {selected.map((val: string | number) => {
+              const item = (data ?? []).find((s: any) => String(s.id) === String(val));
+              return (
+                <TouchableOpacity key={String(val)} onPress={() => {
+                  const next = selected.filter(p => String(p) !== String(val));
+                  if (onChange) onChange(next);
+                }}>
+                  <View style={styles.selectedStyle}>
+                    <Text style={styles.textSelectedStyle}>{item?.name ?? String(val)}</Text>
+                    <Ionicons color="white" name="trash" size={17} />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </ScrollView>
       ) : null}
     </View>
@@ -102,6 +104,7 @@ const createStyles = (theme : any) => StyleSheet.create({
   placeholderStyle: {
     fontSize: 16,
     color: theme.subtext,
+    fontWeight: '400',
   },
   iconStyle: {
     width: 20,
@@ -113,6 +116,7 @@ const createStyles = (theme : any) => StyleSheet.create({
     fontSize: 16,
     color: theme.text,
     flex: 1,
+    fontWeight: '400',
   },
   item: {
     padding: 17,
@@ -129,23 +133,31 @@ const createStyles = (theme : any) => StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
     marginRight: 8,
+    fontWeight: '500',
+  },
+  selectedRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingTop: 8,
   },
   selectedStyle: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
+    maxWidth: '100%',
     backgroundColor: theme.primary,
-    marginBottom: 8,
   },
   textSelectedStyle: {
-    flex: 1,
-    flexWrap: 'wrap',
+    flexShrink: 1,
     marginRight: 6,
     fontSize: 16,
     lineHeight: 20,
     color: theme.innerText,
+    fontWeight: '500',
   },
   selectedContainer: {
     maxHeight: 150,

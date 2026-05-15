@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateVerificationStatus } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
@@ -17,7 +17,8 @@ interface VerifyProps {
 
 export default function VerifyEmail({ navigation, route }: VerifyProps) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const email = route?.params?.email;
   const fromLogin = route?.params?.fromLogin || false;
   const [code, setCode] = useState("");
@@ -180,11 +181,11 @@ export default function VerifyEmail({ navigation, route }: VerifyProps) {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
     container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   title: {
@@ -197,6 +198,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 16,
     marginBottom: 6,
     color: theme.text,
+    fontWeight: '400',
   },
   input: {
     color: theme.text,
@@ -239,5 +241,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   errorText: {
     color: theme.text,
     fontSize: 13,
+    fontWeight: '400',
   },
 });

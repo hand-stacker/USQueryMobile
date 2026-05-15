@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CloseButton from '../components/CloseButton';
 import MultiSelect from '../components/MultiSelect';
@@ -14,7 +14,8 @@ interface Props {
 
 export default function SelectFavoritesModal({ visible, onClose }: Props) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
   const favorites = useFavoritesStore(s => s.favorites);
   const hydrated = useFavoritesStore(s => s._hasHydrated);
@@ -54,11 +55,11 @@ export default function SelectFavoritesModal({ visible, onClose }: Props) {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   title: {

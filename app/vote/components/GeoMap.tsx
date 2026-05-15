@@ -1,6 +1,6 @@
 import { ThemeContext } from "@/app/theme/themeContext";
-import { useContext, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useContext, useMemo, useState } from "react";
+import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-native";
 
 type VoteTally = 'YEA' | 'NAY' | 'SPLIT' | 'UNKNOWN';
 
@@ -67,6 +67,15 @@ export default function GeoMap({ yeas, nays }: Props) {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
   const [expanded, setExpanded] = useState(true);
+  const [mapWidth, setMapWidth] = useState(0);
+
+  const onMapLayout = useCallback((e: LayoutChangeEvent) => {
+    setMapWidth(e.nativeEvent.layout.width);
+  }, []);
+
+  const dynamicCell = mapWidth > 0
+    ? Math.floor((mapWidth - (COLS - 1) * GAP) / COLS)
+    : CELL;
 
   const stateVotes = useMemo(() => computeStateVotes(yeas, nays), [yeas, nays]);
 
@@ -88,38 +97,36 @@ export default function GeoMap({ yeas, nays }: Props) {
       {expanded && (
         <>
           <Text style={styles.subtitle}>States colored by majority vote of their delegation</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mapScroll}>
-            <View style={styles.mapGrid}>
-              {Array.from({ length: ROWS }, (_, r) => (
-                <View key={r} style={styles.row}>
-                  {Array.from({ length: COLS }, (_, c) => {
-                    const st = grid[`${c},${r}`];
-                    if (!st) return <View key={c} style={styles.cellEmpty} />;
+          <View style={styles.mapGrid} onLayout={onMapLayout}>
+            {Array.from({ length: ROWS }, (_, r) => (
+              <View key={r} style={styles.row}>
+                {Array.from({ length: COLS }, (_, c) => {
+                  const st = grid[`${c},${r}`];
+                  if (!st) return <View key={c} style={{ width: dynamicCell, height: dynamicCell }} />;
 
-                    const v: VoteTally = stateVotes[st] ?? 'UNKNOWN';
-                    const bgColor =
-                      v === 'YEA' ? YEA_COLOR + '40' :
-                      v === 'NAY' ? NAY_COLOR + '40' :
-                      SPLIT_COLOR + '33';
-                    const borderColor =
-                      v === 'YEA' ? YEA_COLOR + '88' :
-                      v === 'NAY' ? NAY_COLOR + '88' :
-                      SPLIT_COLOR + '55';
-                    const textColor =
-                      v === 'YEA' ? YEA_COLOR :
-                      v === 'NAY' ? NAY_COLOR :
-                      SPLIT_COLOR;
+                  const v: VoteTally = stateVotes[st] ?? 'UNKNOWN';
+                  const bgColor =
+                    v === 'YEA' ? YEA_COLOR + '40' :
+                    v === 'NAY' ? NAY_COLOR + '40' :
+                    SPLIT_COLOR + '33';
+                  const borderColor =
+                    v === 'YEA' ? YEA_COLOR + '88' :
+                    v === 'NAY' ? NAY_COLOR + '88' :
+                    SPLIT_COLOR + '55';
+                  const textColor =
+                    v === 'YEA' ? YEA_COLOR :
+                    v === 'NAY' ? NAY_COLOR :
+                    SPLIT_COLOR;
 
-                    return (
-                      <View key={c} style={[styles.cell, { backgroundColor: bgColor, borderColor }]}>
-                        <Text style={[styles.cellText, { color: textColor }]}>{st}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              ))}
-            </View>
-          </ScrollView>
+                  return (
+                    <View key={c} style={[styles.cell, { width: dynamicCell, height: dynamicCell, backgroundColor: bgColor, borderColor }]}>
+                      <Text style={[styles.cellText, { color: textColor, fontSize: Math.max(6, Math.floor(dynamicCell * 0.38)) }]}>{st}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
 
           <View style={styles.legend}>
             {[
@@ -158,23 +165,19 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: 4,
   },
   title:    { fontSize: 14, fontWeight: '600', color: theme.text },
-  subtitle: { fontSize: 11, color: theme.subtext, marginBottom: 10 },
+  subtitle: { fontSize: 11, color: theme.subtext, marginBottom: 10, fontWeight: '400' },
   toggle:   { fontSize: 13, fontWeight: '600' },
-  mapScroll: { marginBottom: 10 },
-  mapGrid: { flexDirection: 'column', gap: GAP },
+  mapGrid: { flexDirection: 'column', gap: GAP, marginBottom: 10 },
   row:     { flexDirection: 'row', gap: GAP },
-  cellEmpty: { width: CELL, height: CELL },
   cell: {
-    width: CELL,
-    height: CELL,
     borderRadius: 3,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cellText: { fontSize: 7, fontWeight: '700', letterSpacing: 0.1 },
+  cellText: { fontWeight: '700', letterSpacing: 0.1 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 2 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 2, borderWidth: 1 },
-  legendLabel: { fontSize: 10, color: theme.subtext },
+  legendLabel: { fontSize: 10, color: theme.subtext, fontWeight: '400' },
 });

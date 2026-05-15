@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import AppleSignInButton from "../components/AppleSignInButton";
 import GoogleSignInButton from "../components/GoogleSignInButton";
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
@@ -19,7 +19,8 @@ interface LoginProps {
 
 export default function Login({ navigation }: LoginProps) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -365,16 +366,16 @@ function LimitCell({ value, label, dim, theme }: { value: string; label: string;
   return (
     <View style={{ flex: 1, backgroundColor: theme.secondary, borderRadius: 10, padding: 12, alignItems: 'center' }}>
       <Text style={{ fontSize: 20, fontWeight: '700', color: dim ? theme.subtext : theme.text }}>{value}</Text>
-      <Text style={{ fontSize: 12, color: theme.subtext, marginTop: 4, textAlign: 'center' }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: theme.subtext, marginTop: 4, textAlign: 'center', fontWeight: '400' }}>{label}</Text>
     </View>
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   title: {
@@ -387,11 +388,13 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 16,
     marginBottom: 6,
     color: theme.text,
+    fontWeight: '400',
   },
   text: {
     fontSize: 12,
     marginBottom: 6,
     color: theme.text,
+    fontWeight: '400',
   },
   input: {
     color: theme.text,
@@ -431,6 +434,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   dividerText: {
     color: theme.subtext,
     fontSize: 14,
+    fontWeight: '400',
   },
   errorBox: {
     marginBottom: 12,
@@ -443,6 +447,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   errorText: {
     color: theme.text,
     fontSize: 13,
+    fontWeight: '400',
   },
   card: {
     width: '100%',
@@ -479,11 +484,13 @@ const createStyles = (theme: any) => StyleSheet.create({
   statusText: {
     fontSize: 14,
     color: theme.text,
+    fontWeight: '400',
   },
   nextBillingText: {
     fontSize: 12,
     color: theme.subtext,
     marginTop: 4,
+    fontWeight: '400',
   },
   warningBox: {
     backgroundColor: 'rgba(245,158,11,0.1)',
@@ -501,6 +508,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.subtext,
     fontSize: 12,
     marginTop: 4,
+    fontWeight: '400',
   },
   limitRow: {
     flexDirection: 'row',

@@ -104,10 +104,12 @@ const createStyles = (theme : any) => StyleSheet.create({
   placeholderStyle: {
     fontSize: 16,
     color: theme.subtext,
+    fontWeight: '400',
   },
   selectedTextStyle: {
     fontSize: 14,
     color: theme.subtext,
+    fontWeight: '400',
   },
   iconStyle: {
     width: 20,
@@ -119,6 +121,7 @@ const createStyles = (theme : any) => StyleSheet.create({
     fontSize: 16,
     color: theme.text,
     flex: 1,
+    fontWeight: '400',
   },
   container: {
     paddingBottom: 16,
@@ -155,6 +158,7 @@ const createStyles = (theme : any) => StyleSheet.create({
     lineHeight: 20,
     marginRight: 8,
     color: theme.text,
+    fontWeight: '400',
   },
   selectedStyle: {
     flexDirection: 'row',

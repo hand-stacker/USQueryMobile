@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useContext, useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updatePrefs } from "../api/notifPreferencesUpdate";
 import { registerForPushNotifications, unregisterForPushNotifications } from "../hooks/usePushNotif";
@@ -9,7 +9,8 @@ import { ThemeContext } from "../theme/themeContext";
 
 export default function NotificationSettings() {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const [regLoading, setRegLoading] = useState(false);
   const [regStatus, setRegStatus] = useState<string | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -105,11 +106,11 @@ export default function NotificationSettings() {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   label: {

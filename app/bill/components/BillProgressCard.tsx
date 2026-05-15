@@ -297,5 +297,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     lineHeight: 11,
     flex: 1,
     letterSpacing: 0.2,
+    fontWeight: '600',
   },
 });

@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { updateFavorites } from '../api/favoritesUpdate';
 import { useGetSubjects } from '../hooks/useGetSubjects';
@@ -14,7 +14,8 @@ interface OptionsProps {
 
 export default function OptionsPage({navigation, route }: OptionsProps) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const [open, setOpen] = useState(false);
   const { loading: subjectsLoading, error: subjectsError } = useGetSubjects();
   const favorites = useFavoritesStore(s => s.favorites);
@@ -50,43 +51,45 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Text style={styles.title}>Options</Text>
-      <View style={{marginTop:12}}>
-        <Pressable
-          style={[styles.button]}
-          onPress={async () => navigation.navigate('Login') }
-        >
-          <Text style={styles.buttonText}>Account</Text>
-        </Pressable>
-        <Pressable style={styles.button} onPress={() => setOpen(true)}>
-          <Text style={styles.buttonText}>Select Favorite Subjects</Text>
-        </Pressable>
-        <Pressable style={styles.button} onPress={async () => navigation.navigate('Notification_Settings') }>
-          <Text style={styles.buttonText}>Notifications</Text>
-        </Pressable>
-        <Pressable style={styles.button} onPress={toggleTheme}>
-          <Text style={styles.buttonText}>Switch to {theme.name === 'light' ? 'dark' : 'light'} theme</Text>
-        </Pressable>
-        <Pressable style={styles.button} onPress={async () => navigation.navigate('Privacy_Policy') }>
-          <Text style={styles.buttonText}>Privacy Policy</Text>
-        </Pressable>
-      </View>
+      <ScrollView>
+        <View style={{marginTop:12}}>
+          <Pressable
+            style={[styles.button]}
+            onPress={async () => navigation.navigate('Login') }
+          >
+            <Text style={styles.buttonText}>Account</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={() => setOpen(true)}>
+            <Text style={styles.buttonText}>Select Favorite Subjects</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={async () => navigation.navigate('Notification_Settings') }>
+            <Text style={styles.buttonText}>Notifications</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={toggleTheme}>
+            <Text style={styles.buttonText}>Switch to {theme.name === 'light' ? 'dark' : 'light'} theme</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={async () => navigation.navigate('Privacy_Policy') }>
+            <Text style={styles.buttonText}>Privacy Policy</Text>
+          </Pressable>
+        </View>
 
-      <SelectFavoritesModal visible={open} onClose={handleClose} />
+        <SelectFavoritesModal visible={open} onClose={handleClose} />
 
-      <View style={styles.disclaimer}>
-        <Text style={styles.disclaimerText}>
-          My Congress is an independent, third-party app and is not affiliated with, endorsed by, or authorized by the U.S. government or any government entity. Congressional data is sourced from official government sources, including congress.gov (Library of Congress), senate.gov, and house.gov.
-        </Text>
-      </View>
+        <View style={styles.disclaimer}>
+          <Text style={styles.disclaimerText}>
+            My Congress is an independent, third-party app and is not affiliated with, endorsed by, or authorized by the U.S. government or any government entity. Congressional data is sourced from official government sources, including congress.gov (Library of Congress), senate.gov, and house.gov.
+          </Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   title: {
@@ -97,7 +100,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   disclaimer: {
     marginTop: 24,
-    paddingTop: 16,
+    paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },

@@ -125,10 +125,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.text,    
     fontWeight: '600' 
   },
-  subText: { 
-    fontSize: 13, 
-    color: theme.subtext, 
-    marginTop: 2 
+  subText: {
+    fontSize: 13,
+    color: theme.subtext,
+    marginTop: 2,
+    fontWeight: '400',
   },
   voteBadge: {
     paddingHorizontal: 8,

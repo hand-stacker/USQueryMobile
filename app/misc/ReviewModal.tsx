@@ -113,6 +113,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.text,
     textAlign: 'center',
     marginBottom: 20,
+    fontWeight: '400',
   },
   button: {
     minHeight: 46,

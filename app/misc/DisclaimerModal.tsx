@@ -78,6 +78,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     lineHeight: 22,
     color: theme.text,
     marginBottom: 12,
+    fontWeight: '400',
   },
   acceptButton: {
     marginTop: 8,

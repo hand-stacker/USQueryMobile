@@ -4,14 +4,15 @@ import { useFavoritesStore } from "@/app/store/favoriteSubjectsStore";
 import { useStarredMembersStore } from "@/app/store/starredMembersStore";
 import { ThemeContext } from "@/app/theme/themeContext";
 import React, { memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MemberList from "../components/MemberList";
 import MemTopNav from "../components/MemTopNav";
 
 function StarredMembers({navigation}: any) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   // use MMKV later to store favorite subjects persistently
   const starred_members = useStarredMembersStore((s) => s.stars);
 
@@ -97,12 +98,12 @@ function StarredMembers({navigation}: any) {
 
 export default memo(StarredMembers);
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.background },
   container : {
     flex:1,
     paddingHorizontal:'6%',
-    paddingTop:'5%',
+    paddingTop: isLandscape ? '2%' : '5%',
   },
   button: {
     width: "80%",

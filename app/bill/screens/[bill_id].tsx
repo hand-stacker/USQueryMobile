@@ -4,7 +4,7 @@ import NavReturn from "@/app/components/NavReturn";
 import useGetBill from "@/app/hooks/useGetBill";
 import { ThemeContext } from "@/app/theme/themeContext";
 import React, { useCallback, useContext, useMemo } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BillBadgeInactive from "../components/BillBadgeInactive";
 import BillInfoTabs from "../components/BillInfoTabs";
@@ -29,7 +29,8 @@ function formatDate(value: string | null | undefined) {
 
 export default function BillInfo({ navigation, route }: BillInfoProps) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const { bill_id } = route.params;
   const { bill, loading, error } = useGetBill(bill_id);
   const billNum = useMemo(() => Number(bill_id), [bill_id]);
@@ -128,11 +129,11 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '18%',
-    paddingTop: '24%',
+    paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
   },
   headerCard: {

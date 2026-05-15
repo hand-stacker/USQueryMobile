@@ -5,7 +5,7 @@ import { useSubjectListStore } from "@/app/store/subjectListStore";
 import { ThemeContext } from "@/app/theme/themeContext";
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SortOptions from '../../components/SortOptions';
 import BillList from '../components/BillList';
@@ -22,7 +22,8 @@ const arraysEqual = (a?: number[], b?: number[]) => {
 
 export default function BillSearchResults( {navigation} : any) {
   const { theme } = useContext(ThemeContext);
-  const styles = createStyles(theme);
+  const { width, height } = useWindowDimensions();
+  const styles = createStyles(theme, width > height);
   const subject_list_store = useSubjectListStore(s => s.subject_list);
   const subject_list = useMemo(() => (subject_list_store && subject_list_store.length > 0) ? subject_list_store : [], [subject_list_store]);
   const [modalVisible, setModalVisible] = useState(subject_list.length === 0);
@@ -131,7 +132,7 @@ export default function BillSearchResults( {navigation} : any) {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: theme.background,
@@ -139,7 +140,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: '6%',
-    paddingTop: '5%',
+    paddingTop: isLandscape ? '2%' : '5%',
     backgroundColor: theme.background,
   },
 });
