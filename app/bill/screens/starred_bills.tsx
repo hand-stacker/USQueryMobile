@@ -34,7 +34,7 @@ export default function StarredBills({ navigation }: any) {
           <Text style={{ color: theme.text, textAlign: 'center', marginBottom: 20, fontWeight: '600' }}>
             You need to log in to save and view your starred bills. 
           </Text>
-          <Pressable style={styles.button} onPress={() => navigation.navigate("Login")}>
+          <Pressable style={styles.button} onPress={() => navigation.navigate("Settings", { screen: "Login" })}>
             <Text style={styles.buttonText}>Log In</Text>
           </Pressable>
         </View>

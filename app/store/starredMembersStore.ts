@@ -5,6 +5,7 @@ import { zustandStorage } from '../services/zustandStorage';
 
 type StarredMembersState = {
   stars: string[];
+  limitReached: boolean;
   _hasHydrated: boolean;
   addStar: (membershipId: string) => void;
   removeStar: (membershipId: string) => void;
@@ -12,12 +13,14 @@ type StarredMembersState = {
   isStarred: (membershipId: string) => boolean;
   setStars: (ids: string[]) => void;
   clearStars: () => void;
+  setLimitReached: (val: boolean) => void;
 };
 
 export const useStarredMembersStore = create<StarredMembersState>()(
   persist(
     (set, get) => ({
       stars: [],
+      limitReached: false,
       _hasHydrated: false,
 
       addStar: (membershipId: string) =>
@@ -29,13 +32,13 @@ export const useStarredMembersStore = create<StarredMembersState>()(
         }),
 
       removeStar: (membershipId: string) =>
-        set((state) => ({ stars: state.stars.filter((s) => s !== String(membershipId)) })),
+        set((state) => ({ stars: state.stars.filter((s) => s !== String(membershipId)), limitReached: false })),
 
       toggleStar: (membershipId: string) =>
         set((state) => {
           const id = String(membershipId);
           if (state.stars.includes(id)) {
-            return { stars: state.stars.filter((s) => s !== id) } as any;
+            return { stars: state.stars.filter((s) => s !== id), limitReached: false } as any;
           }
           return { stars: [...state.stars, id] } as any;
         }),
@@ -44,7 +47,9 @@ export const useStarredMembersStore = create<StarredMembersState>()(
 
       setStars: (ids: string[]) => set({ stars: ids.map((i) => String(i)) }),
 
-      clearStars: () => set({ stars: [] }),
+      clearStars: () => set({ stars: [], limitReached: false }),
+
+      setLimitReached: (val: boolean) => set({ limitReached: val }),
     }),
     {
       name: 'starred-members',

@@ -1,8 +1,8 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
-import AppleSignInButton from "../components/AppleSignInButton";
-import GoogleSignInButton from "../components/GoogleSignInButton";
 import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppleSignInButton from "../components/AppleSignInButton";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
 import { useAppleSignIn } from "../hooks/useAppleSignIn";
@@ -92,6 +92,7 @@ export default function Login({ navigation }: LoginProps) {
       return;
     }
     setLoggedIn(true);
+    setUserSession({ email: authData.email, refreshToken: authData.refresh, accessToken: authData.access, isVerified: authData.is_verified });
     try {
       const userPrefs = await authRequest("notif/get-preferences/");
       setFavorites(userPrefs.subject_ids);
@@ -104,8 +105,7 @@ export default function Login({ navigation }: LoginProps) {
     const message = isOAuth && authData.is_new_user ? "Account created and logged in" : "You are now logged in from this device.";
     Alert.alert("Success", message, [
       {
-        text: "Continue",
-        onPress: () => navigation.navigate("Bill_FYP"),
+        text: "Ok",
       },
     ]);
   };

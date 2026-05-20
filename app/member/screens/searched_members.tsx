@@ -2,7 +2,7 @@ import MemberSearchModal from "@/app/components/MemberSearchModal";
 import useGetMembershipSet from "@/app/hooks/useGetMembershipSet";
 import { ThemeContext } from "@/app/theme/themeContext";
 import { useIsFocused } from "@react-navigation/native";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MemberList from "../components/MemberList";
@@ -15,6 +15,7 @@ export default function SearchedMembers({navigation}: any) {
   // use MMKV later to store favorite subjects persistently
   // const favorite_subjects_store = useFavoritesStore(s => s.favorites);
   const [modalVisible, setModalVisible] = useState(true);
+  const navigatedWithinStackRef = useRef(false);
   const [searchVars, setSearchVars] = useState<any>({ congress: 119, chamber: 'Senate', state: 'All' });
   const {members, loading, error, refetch} = useGetMembershipSet(searchVars.congress,searchVars.chamber,searchVars.state);
 
@@ -22,13 +23,26 @@ export default function SearchedMembers({navigation}: any) {
 
   useEffect(() => {
       if (!isFocused) return;
-      // Determine which subjects should drive the query: prefer explicit searchVars, otherwise favorites
       try {
         refetch(searchVars.congress, searchVars.chamber, searchVars.state);
       } catch (err) {
         console.error('Refetch on focus failed', err);
       }
     }, [isFocused, searchVars.congress, searchVars.chamber, searchVars.state, refetch]);
+
+  useEffect(() => {
+    const unsubBlur = navigation.addListener('blur', () => {
+      const state = navigation.getState();
+      navigatedWithinStackRef.current = state.routes[state.index]?.name !== 'Searched_Members';
+    });
+    const unsubFocus = navigation.addListener('focus', () => {
+      if (navigatedWithinStackRef.current) {
+        setModalVisible(true);
+        navigatedWithinStackRef.current = false;
+      }
+    });
+    return () => { unsubBlur(); unsubFocus(); };
+  }, [navigation]);
   if (loading) return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={[styles.container, { backgroundColor: theme.background }]}>

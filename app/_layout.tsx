@@ -119,6 +119,12 @@ function TabNavigator() {
         name="Bills"
         component={SharedStack}
         initialParams={{ initialRoute: "Bill_FYP" }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e: any) => {
+            e.preventDefault();
+            (navigation as any).navigate(route.name, { screen: (route.params as any).initialRoute });
+          },
+        })}
         options={{
           headerShown: false,
           tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Bills</UnscalableText>
@@ -128,6 +134,12 @@ function TabNavigator() {
         name="Members"
         component={SharedStack}
         initialParams={{ initialRoute: "Starred_Members" }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e: any) => {
+            e.preventDefault();
+            (navigation as any).navigate(route.name, { screen: (route.params as any).initialRoute });
+          },
+        })}
         options={{
           headerShown: false,
           tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Members</UnscalableText>
@@ -137,6 +149,12 @@ function TabNavigator() {
         name="Votes"
         component={SharedStack}
         initialParams={{ initialRoute: "Vote_FYP" }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e: any) => {
+            e.preventDefault();
+            (navigation as any).navigate(route.name, { screen: (route.params as any).initialRoute });
+          },
+        })}
         options={{
           headerShown: false,
           tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Votes</UnscalableText>
@@ -146,7 +164,13 @@ function TabNavigator() {
         name="Settings"
         component={SharedStack}
         initialParams={{ initialRoute: "Options_screen" }}
-        options={{ 
+        listeners={({ navigation, route }) => ({
+          tabPress: (e: any) => {
+            e.preventDefault();
+            (navigation as any).navigate(route.name, { screen: (route.params as any).initialRoute });
+          },
+        })}
+        options={{
           headerShown: false,
           tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Settings</UnscalableText>
         }}

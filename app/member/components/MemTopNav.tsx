@@ -20,7 +20,7 @@ const MemTopNav = ({ navigation, mode, handleOpenModal }: Props) => {
         <Pressable onPress={() => navigation?.navigate('Starred_Members') } style={styles.navItem}>
           <UnscalableText style={[styles.pageTitle, mode === 'Starred' && styles.activePageTitle]}>Starred</UnscalableText>
         </Pressable>
-        <Pressable onPress={() => navigation?.navigate('Searched_Members') } style={styles.navItem}>
+        <Pressable onPress={mode === 'Search' ? handleOpenModal : () => navigation?.navigate('Searched_Members')} style={styles.navItem}>
           <UnscalableText style={[styles.pageTitle, mode === 'Search' && styles.activePageTitle]}>Search</UnscalableText>
         </Pressable>
       </View>

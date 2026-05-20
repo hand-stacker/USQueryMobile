@@ -5,6 +5,7 @@ import { zustandStorage } from '../services/zustandStorage';
 
 type StarredState = {
   stars: string[];
+  limitReached: boolean;
   _hasHydrated: boolean;
   addStar: (billId: string) => void;
   removeStar: (billId: string) => void;
@@ -12,12 +13,14 @@ type StarredState = {
   isStarred: (billId: string) => boolean;
   setStars: (ids: string[]) => void;
   clearStars: () => void;
+  setLimitReached: (val: boolean) => void;
 };
 
 export const useStarredBillsStore = create<StarredState>()(
   persist(
     (set, get) => ({
       stars: [],
+      limitReached: false,
       _hasHydrated: false,
 
       addStar: (billId: string) =>
@@ -29,13 +32,13 @@ export const useStarredBillsStore = create<StarredState>()(
         }),
 
       removeStar: (billId: string) =>
-        set((state) => ({ stars: state.stars.filter((s) => s !== String(billId)) })),
+        set((state) => ({ stars: state.stars.filter((s) => s !== String(billId)), limitReached: false })),
 
       toggleStar: (billId: string) =>
         set((state) => {
           const id = String(billId);
           if (state.stars.includes(id)) {
-            return { stars: state.stars.filter((s) => s !== id) } as any;
+            return { stars: state.stars.filter((s) => s !== id), limitReached: false } as any;
           }
           return { stars: [...state.stars, id] } as any;
         }),
@@ -44,7 +47,9 @@ export const useStarredBillsStore = create<StarredState>()(
 
       setStars: (ids: string[]) => set({ stars: ids.map((i) => String(i)) }),
 
-      clearStars: () => set({ stars: [] }),
+      clearStars: () => set({ stars: [], limitReached: false }),
+
+      setLimitReached: (val: boolean) => set({ limitReached: val }),
     }),
     {
       name: 'starred-bills',

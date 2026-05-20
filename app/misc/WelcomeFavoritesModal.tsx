@@ -53,7 +53,7 @@ export default function WelcomeFavoritesModal() {
   const handleSelect = () => {
     setVisible(false);
     // navigate to the Options tab and open the select modal there
-    navigation.navigate('Options');
+    navigation.navigate('Settings', { screen: 'Login' });
   };
 
   const handleClose = () => {

@@ -30,6 +30,7 @@ export default function BillSearchResults( {navigation} : any) {
   const [sortType, setSortType] = useState("datedesc");
   const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list , truncate: true, sort: sortType }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
+  const navigatedWithinStackRef = useRef(false);
   const { bills, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.truncate, searchVars.sort);
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
 
@@ -56,6 +57,20 @@ export default function BillSearchResults( {navigation} : any) {
   }, [isFocused, subject_list_store, sortType, refetch]);
 
   const edges = useMemo(() => Array.isArray(bills) ? [] : (bills?.edges ?? []), [bills]);
+
+  useEffect(() => {
+    const unsubBlur = navigation.addListener('blur', () => {
+      const state = navigation.getState();
+      navigatedWithinStackRef.current = state.routes[state.index]?.name !== 'Searched_Bills';
+    });
+    const unsubFocus = navigation.addListener('focus', () => {
+      if (navigatedWithinStackRef.current) {
+        setModalVisible(true);
+        navigatedWithinStackRef.current = false;
+      }
+    });
+    return () => { unsubBlur(); unsubFocus(); };
+  }, [navigation]);
 
   const handleOpenModal = useCallback(() => setModalVisible(true), []);
   const handleCloseModal = useCallback(() => setModalVisible(false), []);
