@@ -37,11 +37,9 @@ export default function OverflowList({ data, renderItem, keyExtractor, title }: 
         ))}
       </View>
 
-      {hasMore && (
-        <Pressable style={styles.viewAllBtn} onPress={() => setModalVisible(true)}>
-          <Text style={styles.viewAllText}>View full list</Text>
-        </Pressable>
-      )}
+      <Pressable style={styles.viewAllBtn} onPress={() => setModalVisible(true)}>
+        <Text style={styles.viewAllText}>View full list</Text>
+      </Pressable>
 
       <Modal
         visible={modalVisible}

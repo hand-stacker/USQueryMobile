@@ -6,6 +6,7 @@ import { ThemeContext } from "@/app/theme/themeContext";
 import React, { useCallback, useContext, useMemo } from "react";
 import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AIFeaturesCarousel from "../components/AIFeaturesCarousel";
 import BillBadgeInactive from "../components/BillBadgeInactive";
 import BillInfoTabs from "../components/BillInfoTabs";
 import BillProgressCard from "../components/BillProgressCard";
@@ -89,15 +90,23 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
   ), [title, originDate, latestActionDate, policyArea, billNum, bill?.status, bill_id, statusCode, origin, outer, confInHistory, vetoInHistory, theme]);
 
   const preTimelineElement = useMemo(() => (
-    <BillInfoTabs
-      sponsor={sponsor}
-      cosponsors={cosponsors}
-      subjects={subjects}
-      policyArea={policyArea !== "—" ? policyArea : undefined}
-      relatedBills={relatedBills}
-      navigation={navigation}
-    />
-  ), [sponsor, cosponsors, subjects, policyArea, relatedBills]);
+    <>
+      <BillInfoTabs
+        sponsor={sponsor}
+        cosponsors={cosponsors}
+        subjects={subjects}
+        policyArea={policyArea !== "—" ? policyArea : undefined}
+        relatedBills={relatedBills}
+        navigation={navigation}
+      />
+      <AIFeaturesCarousel
+        bill_id={bill_id}
+        bill_passed={bill?.status ?? false}
+        bill_title={title}
+        navigation={navigation}
+      />
+    </>
+  ), [sponsor, cosponsors, subjects, policyArea, relatedBills, bill?.status, bill_id, title]);
 
   const handleGoBack = useCallback(() => {
     if (navigation?.goBack) navigation.goBack();

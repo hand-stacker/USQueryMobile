@@ -25,11 +25,23 @@ export default function BillInfoTabs({ sponsor, cosponsors = [], subjects = [], 
   return (
     <View style={styles.card}>
       <View style={styles.tabStrip}>
-        {TABS.map(t => (
-          <Pressable key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabActive]}>
-            <Text style={[styles.tabLabel, tab === t && styles.tabLabelActive]}>{t}</Text>
-          </Pressable>
-        ))}
+        {TABS.map((t, i) => {
+          const active = tab === t;
+          return (
+            <Pressable
+              key={t}
+              onPress={() => setTab(t)}
+              style={[
+                styles.tab,
+                active && styles.tabActive,
+                active && i !== 0 && styles.tabActiveLeftBorder,
+                active && i !== TABS.length - 1 && styles.tabActiveRightBorder,
+              ]}
+            >
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.tabContent}>
@@ -136,14 +148,20 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderBottomColor: theme.border,
   },
   tabActive: {
+    // The card supplies the top + outer side borders (via its own border).
+    // The active tab only "opens" its bottom edge into the content below.
     backgroundColor: theme.card,
-    borderTopRightRadius: 12,
-    borderTopLeftRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.border,
     borderBottomWidth: 0,
-
-
+  },
+  tabActiveLeftBorder: {
+    borderLeftWidth: 1,
+    borderLeftColor: theme.border,
+    borderTopLeftRadius: 10,
+  },
+  tabActiveRightBorder: {
+    borderRightWidth: 1,
+    borderRightColor: theme.border,
+    borderTopRightRadius: 10,
   },
   tabLabel: {
     fontSize: 11,

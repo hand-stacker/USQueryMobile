@@ -15,6 +15,8 @@ import { navigate, navigationRef } from "./navigation/navigationRef";
 
 import BillInfo from "./bill/screens/[bill_id]";
 import BillFYP from "./bill/screens/bill_fyp";
+import BillChatScreen from "./bill/screens/bill_chat";
+import VotePredictionsScreen from "./bill/screens/vote_predictions";
 import StarredBills from "./bill/screens/starred_bills";
 import MemberInfo from "./member/screens/[membershipId]";
 import DisclaimerModal from './misc/DisclaimerModal';
@@ -65,6 +67,8 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Starred_Bills" component={StarredBills} options={{ headerShown: false }} />
       <Stack.Screen name="Searched_Bills" component={BillSearchResults} options={{ headerShown: false }}/>
       <Stack.Screen name="Bill_info" component={BillInfo} options={{ headerShown: false }}/>
+      <Stack.Screen name="Vote_Predictions" component={VotePredictionsScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="Bill_Chat" component={BillChatScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Starred_Members" component={StarredMembers} options={{ headerShown: false }}/>
       <Stack.Screen name="Searched_Members" component={SearchedMembers} options={{ headerShown: false }}/>
       <Stack.Screen name="Member_info" component={MemberInfo} options={{ headerShown: false }}/>

@@ -3,7 +3,8 @@ const API_BASE_URL = "https://www.usquery.com/api/";
 
 async function authorizedFetch(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    baseUrl: string = API_BASE_URL,
 ): Promise<Response> {
     let session = await retrieveUserSession();
     let headers = {
@@ -13,7 +14,7 @@ async function authorizedFetch(
             ? { Authorization: `Bearer ${session.accessToken}` }
             : {}),
     };
-    let f = await fetch(`${API_BASE_URL}${endpoint}`, {
+    let f = await fetch(`${baseUrl}${endpoint}`, {
         ...options,
         headers,
     });
@@ -26,8 +27,10 @@ let refreshPromise: Promise<string> | null = null;
 export async function authRequest(
     endpoint: string,
     options: RequestInit = {},
+    config: { baseUrl?: string } = {},
 ): Promise<any> {
-    let response = await authorizedFetch(endpoint, options);
+    const baseUrl = config.baseUrl ?? API_BASE_URL;
+    let response = await authorizedFetch(endpoint, options, baseUrl);
 
     if (response.status !== 401) {
         return response.json();
@@ -46,7 +49,7 @@ export async function authRequest(
         const newAccessToken = await refreshPromise;
         // Retry original request with new token
         const retryResponse = await fetch(
-            `${API_BASE_URL}${endpoint}`,
+            `${baseUrl}${endpoint}`,
             {
                 ...options,
                 headers: {

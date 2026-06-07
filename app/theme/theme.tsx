@@ -5,7 +5,7 @@ export const LightTheme = {
   titleText: '#0f172a',
   subtext: '#5c6a7d',
   innerText: '#FFFFFF',
-  primary: '#0073ffff',
+  primary: '#0073ff',
   accent: '#F97316',
   secondary: '#cfddee',
   card: '#F5F5F5',
