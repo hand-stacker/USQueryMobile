@@ -1,4 +1,3 @@
-import { getBillCache } from "@/app/bill/billDataCache";
 import Markdown from "@/app/components/Markdown";
 import NavReturn from "@/app/components/NavReturn";
 import { retrieveUserSession } from "@/app/encrypted-storage/functions";
@@ -18,10 +17,7 @@ const EXAMPLE_QUESTIONS = [
   "What does this bill actually do?",
   "Who would be most affected by this bill?",
   "What problem is this bill trying to solve?",
-  "How much would this cost taxpayers?",
   "What are the arguments for and against this bill?",
-  "Has anything like this passed before?",
-  "Which groups support or oppose this bill?",
   "When would this take effect if passed?",
   "What changes would this make to existing law?",
   "How does this bill affect everyday Americans?",
@@ -82,40 +78,6 @@ export default function BillChatScreen({ navigation, route }: Props) {
 
   const loadTierAndUsage = useCallback(async () => {
     setTierLoading(true);
-
-    // ── Fast path: bill page pre-fetched this data already ───────────────────
-    const cached = getBillCache(bill_id);
-    if (cached) {
-      setIsLoggedIn(cached.isLoggedIn);
-      const tierVal = cached.tier;
-      setTier(tierVal);
-
-      if (cached.chatUsage?.display) setUsage(cached.chatUsage);
-
-      if (!cached.isLoggedIn || tierVal === 0) {
-        if (tierVal === 0) setChatDisabled(true);
-        setTierLoading(false);
-        return;
-      }
-
-      // Restore chat history from cache
-      if (cached.chatHistory?.sessionId) {
-        setSessionId(cached.chatHistory.sessionId);
-        if (cached.chatHistory.messages.length > 0) {
-          setMessages(cached.chatHistory.messages.map((m, i) => ({
-            id: `hist_${i}`,
-            role: m.role as "user" | "assistant",
-            text: m.content,
-          })));
-          setTimeout(() => flatRef.current?.scrollToEnd({ animated: false }), 400);
-        }
-      }
-
-      setTierLoading(false);
-      return;
-    }
-
-    // ── Slow path: cache miss, fetch everything ourselves ─────────────────────
     try {
       const session = await retrieveUserSession();
       if (!session?.accessToken) { setIsLoggedIn(false); setTier(0); return; }
@@ -160,7 +122,7 @@ export default function BillChatScreen({ navigation, route }: Props) {
     } finally {
       setTierLoading(false);
     }
-  }, [billIdNum, navigation, bill_id]);
+  }, [billIdNum, navigation]);
 
   useEffect(() => { loadTierAndUsage(); }, [loadTierAndUsage]);
 
