@@ -143,6 +143,7 @@ export default function Login({ navigation }: LoginProps) {
   }, []);
 
   const [userDetails, setUserDetails] = useState<any>(null);
+  const [planLimits, setPlanLimits] = useState<{ predictions: number | null; chat: number | null } | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
 
@@ -165,8 +166,17 @@ export default function Login({ navigation }: LoginProps) {
     const fetchDetails = async () => {
       if (userSession === null) return;
       try {
-        const result = await authRequest("subscription/status/");
-        setUserDetails(result);
+        const [status, plans] = await Promise.all([
+          authRequest("subscription/status/"),
+          authRequest("subscription/plans/").catch(() => null),
+        ]);
+        setUserDetails(status);
+        if (plans?.tiers && status?.tier != null) {
+          const tierEntry = plans.tiers.find((t: any) => t.id === status.tier);
+          if (tierEntry) {
+            setPlanLimits({ predictions: tierEntry.predictions_per_day, chat: tierEntry.chat_messages_per_day });
+          }
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -179,8 +189,20 @@ export default function Login({ navigation }: LoginProps) {
   if (userSession != null) {
     const tier: number = userDetails?.tier ?? 0;
     const hasPaidPlan = tier > 0;
-    const predictionsText = tier === 0 ? null : tier === 1 ? "3/day" : "Unlimited";
-    const chatText       = tier === 0 ? null : tier === 1 ? "3/day" : "Unlimited";
+    const predictionsText: string | null = (() => {
+      if (tier === 0) return null;
+      if (!planLimits) return tier === 1 ? "10/day" : "Unlimited";
+      if (planLimits.predictions === 0) return null;
+      if (planLimits.predictions === null) return "Unlimited";
+      return `${planLimits.predictions}/day`;
+    })();
+    const chatText: string | null = (() => {
+      if (tier === 0) return null;
+      if (!planLimits) return tier === 1 ? "10/day" : "7.5M tokens/mo";
+      if (planLimits.chat === 0) return null;
+      if (planLimits.chat === null) return tier >= 2 ? "7.5M tokens/mo" : "Unlimited";
+      return `${planLimits.chat}/day`;
+    })();
     const fmtDate = (iso: string) =>
       new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 

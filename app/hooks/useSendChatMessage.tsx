@@ -22,7 +22,7 @@ export interface ChatMutationResult {
 export function useSendChatMessage(billId: number) {
   const [sending, setSending] = useState(false);
 
-  const send = useCallback(async (message: string, sessionId: string | null): Promise<ChatMutationResult> => {
+  const send = useCallback(async (message: string, sessionId: string | null, hyperMode = false): Promise<ChatMutationResult> => {
     setSending(true);
     try {
       const session = await retrieveUserSession();
@@ -34,7 +34,7 @@ export function useSendChatMessage(billId: number) {
           sessionId,
           accessToken: session?.accessToken ?? null,
           refreshToken: session?.refreshToken ?? null,
-          hyperMode: false,
+          hyperMode,
         },
       });
 

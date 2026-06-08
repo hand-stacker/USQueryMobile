@@ -3,7 +3,8 @@ import ActionList from "@/app/components/ActionList";
 import NavReturn from "@/app/components/NavReturn";
 import useGetBill from "@/app/hooks/useGetBill";
 import { ThemeContext } from "@/app/theme/themeContext";
-import React, { useCallback, useContext, useMemo } from "react";
+import { prefetchBillData } from "@/app/bill/billDataCache";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AIFeaturesCarousel from "../components/AIFeaturesCarousel";
@@ -34,6 +35,18 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
   const styles = createStyles(theme, width > height);
   const { bill_id } = route.params;
   const { bill, loading, error } = useGetBill(bill_id);
+
+  // Fire all AI-feature API calls in the background as soon as the bill page
+  // mounts. Child screens (Vote Predictions, AI Chat) read from the cache so
+  // they render immediately instead of waiting for their own fetches.
+  const [prefetchReady, setPrefetchReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    prefetchBillData(bill_id).then(() => {
+      if (!cancelled) setPrefetchReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [bill_id]);
   const billNum = useMemo(() => Number(bill_id), [bill_id]);
 
   const originDate = useMemo(() => formatDate(bill?.originDate), [bill?.originDate]);
@@ -103,10 +116,12 @@ export default function BillInfo({ navigation, route }: BillInfoProps) {
         bill_id={bill_id}
         bill_passed={bill?.status ?? false}
         bill_title={title}
+        status_code={statusCode}
         navigation={navigation}
+        prefetchReady={prefetchReady}
       />
     </>
-  ), [sponsor, cosponsors, subjects, policyArea, relatedBills, bill?.status, bill_id, title]);
+  ), [sponsor, cosponsors, subjects, policyArea, relatedBills, bill?.status, bill_id, title, statusCode, prefetchReady]);
 
   const handleGoBack = useCallback(() => {
     if (navigation?.goBack) navigation.goBack();

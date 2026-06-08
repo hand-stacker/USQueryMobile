@@ -1,3 +1,4 @@
+import { getBillCache } from "@/app/bill/billDataCache";
 import Markdown from "@/app/components/Markdown";
 import NavReturn from "@/app/components/NavReturn";
 import { retrieveUserSession } from "@/app/encrypted-storage/functions";
@@ -10,6 +11,8 @@ import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable,
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const BILL_QUERY_BASE_URL = "https://www.usquery.com";
+const GRAPHQL_URL = "https://www.usquery.com/api/v1.0/graphql/";
+const GET_HISTORY_QUERY = `query GetChatHistory($billId: Int!, $accessToken: String!) { getChatHistory(billId: $billId, accessToken: $accessToken) { sessionId messages { role content } error } }`;
 
 const EXAMPLE_QUESTIONS = [
   "What does this bill actually do?",
@@ -65,6 +68,7 @@ export default function BillChatScreen({ navigation, route }: Props) {
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageState>({ display: "none", val: null });
   const [showSources, setShowSources] = useState<string | null>(null);
+  const [hyperMode, setHyperMode] = useState(false);
 
   const examplePlaceholder = useMemo(
     () => EXAMPLE_QUESTIONS[Math.floor(Math.random() * EXAMPLE_QUESTIONS.length)],
@@ -78,6 +82,40 @@ export default function BillChatScreen({ navigation, route }: Props) {
 
   const loadTierAndUsage = useCallback(async () => {
     setTierLoading(true);
+
+    // ── Fast path: bill page pre-fetched this data already ───────────────────
+    const cached = getBillCache(bill_id);
+    if (cached) {
+      setIsLoggedIn(cached.isLoggedIn);
+      const tierVal = cached.tier;
+      setTier(tierVal);
+
+      if (cached.chatUsage?.display) setUsage(cached.chatUsage);
+
+      if (!cached.isLoggedIn || tierVal === 0) {
+        if (tierVal === 0) setChatDisabled(true);
+        setTierLoading(false);
+        return;
+      }
+
+      // Restore chat history from cache
+      if (cached.chatHistory?.sessionId) {
+        setSessionId(cached.chatHistory.sessionId);
+        if (cached.chatHistory.messages.length > 0) {
+          setMessages(cached.chatHistory.messages.map((m, i) => ({
+            id: `hist_${i}`,
+            role: m.role as "user" | "assistant",
+            text: m.content,
+          })));
+          setTimeout(() => flatRef.current?.scrollToEnd({ animated: false }), 400);
+        }
+      }
+
+      setTierLoading(false);
+      return;
+    }
+
+    // ── Slow path: cache miss, fetch everything ourselves ─────────────────────
     try {
       const session = await retrieveUserSession();
       if (!session?.accessToken) { setIsLoggedIn(false); setTier(0); return; }
@@ -87,15 +125,42 @@ export default function BillChatScreen({ navigation, route }: Props) {
         authRequest("/bill-query/chat/usage/", {}, { baseUrl: BILL_QUERY_BASE_URL })
           .catch(() => ({ display: "none", val: null })),
       ]);
-      setTier(status.tier ?? 0);
+      const tierVal = status.tier ?? 0;
+      setTier(tierVal);
       if (usageData?.display) setUsage(usageData);
-      if (status.tier === 0) setChatDisabled(true);
+      if (tierVal === 0) { setChatDisabled(true); return; }
+
+      // Restore prior chat history for this bill
+      try {
+        const resp = await fetch(GRAPHQL_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.accessToken}` },
+          body: JSON.stringify({
+            query: GET_HISTORY_QUERY,
+            variables: { billId: billIdNum, accessToken: session.accessToken },
+          }),
+        });
+        const json = await resp.json();
+        const hist = json?.data?.getChatHistory;
+        if (hist?.error === "Authentication required." || hist?.error === "Invalid or expired token.") { navigation.navigate("Login"); return; }
+        if (hist?.sessionId) {
+          setSessionId(hist.sessionId);
+          if (hist.messages?.length > 0) {
+            setMessages(hist.messages.map((m: any, i: number) => ({
+              id: `hist_${i}`,
+              role: m.role as "user" | "assistant",
+              text: m.content,
+            })));
+            setTimeout(() => flatRef.current?.scrollToEnd({ animated: false }), 400);
+          }
+        }
+      } catch { /* history load failure is non-fatal */ }
     } catch {
       setIsLoggedIn(false); setTier(0); setChatDisabled(true);
     } finally {
       setTierLoading(false);
     }
-  }, []);
+  }, [billIdNum, navigation, bill_id]);
 
   useEffect(() => { loadTierAndUsage(); }, [loadTierAndUsage]);
 
@@ -113,7 +178,7 @@ export default function BillChatScreen({ navigation, route }: Props) {
     scrollToEnd();
 
     try {
-      const result = await send(text, sessionId);
+      const result = await send(text, sessionId, hyperMode);
 
       if (result.sessionId && !sessionId) {
         setSessionId(result.sessionId);
@@ -156,6 +221,9 @@ export default function BillChatScreen({ navigation, route }: Props) {
       setChatDisabled(true);
       setLimitMessage("Monthly token limit reached. Resets at the start of next month.");
       setUsage(prev => ({ ...prev, val: 1.0 }));
+    } else if (error === "Verify your email.") {
+      setChatDisabled(true);
+      setLimitMessage("Please verify your email address before using the AI chatbot.");
     } else if (error === "Authentication required." || error === "Invalid or expired token.") {
       navigation.navigate("Login");
     }
@@ -166,6 +234,7 @@ export default function BillChatScreen({ navigation, route }: Props) {
       case "UPGRADE_REQUIRED": return "This feature requires a Plus or Premium plan. Upgrade to chat with the AI.";
       case "RATE_LIMITED": return "You've reached your daily message limit. Come back tomorrow!";
       case "MONTHLY_LIMIT_REACHED": return "Monthly token limit reached. Resets next month.";
+      case "Verify your email.": return "Please verify your email address before using the AI chatbot.";
       case "Authentication required.": return "Please log in to use the AI chatbot.";
       case "Invalid or expired token.": return "Your session expired. Please log in again.";
       case "AI_OVERLOADED": return "The AI is overloaded right now. Please try again in a moment.";
@@ -242,6 +311,23 @@ export default function BillChatScreen({ navigation, route }: Props) {
                 <ActivityIndicator size="small" color={theme.primary} />
                 <Text style={styles.typingText}>Thinking…</Text>
               </View>
+            </View>
+          )}
+
+          {/* Hyper mode toggle */}
+          {!chatDisabled && (
+            <View style={styles.hyperToggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.hyperToggleLabel}>Hyper Mode</Text>
+                <Text style={styles.hyperToggleSub}>More detailed, slower responses</Text>
+              </View>
+              <Pressable
+                style={[styles.hyperSwitch, hyperMode && styles.hyperSwitchOn]}
+                onPress={() => setHyperMode(h => !h)}
+                disabled={sending}
+              >
+                <View style={[styles.hyperThumb, hyperMode && styles.hyperThumbOn]} />
+              </Pressable>
             </View>
           )}
 
@@ -455,4 +541,11 @@ const createStyles = (theme: any, isLandscape = false) =>
     input: { flex: 1, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, color: theme.text, fontSize: 14, maxHeight: 120, lineHeight: 20, fontWeight: "400" },
     sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.primary, alignItems: "center", justifyContent: "center", flexShrink: 0 },
     sendBtnDisabled: { backgroundColor: theme.secondary, opacity: 0.6 },
+    hyperToggleRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 4, paddingVertical: 8, borderTopWidth: 1, borderTopColor: theme.border, backgroundColor: theme.background },
+    hyperToggleLabel: { fontSize: 12, fontWeight: "600", color: theme.text },
+    hyperToggleSub: { fontSize: 10, color: theme.subtext, marginTop: 1, fontWeight: "400" },
+    hyperSwitch: { width: 44, height: 26, borderRadius: 13, backgroundColor: theme.secondary, borderWidth: 1, borderColor: theme.border, justifyContent: "center", paddingHorizontal: 2 },
+    hyperSwitchOn: { backgroundColor: COLOR_PURPLE, borderColor: COLOR_PURPLE },
+    hyperThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: theme.subtext, alignSelf: "flex-start" },
+    hyperThumbOn: { backgroundColor: "#fff", alignSelf: "flex-end" },
   });

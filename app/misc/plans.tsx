@@ -176,15 +176,23 @@ export default function PlansScreen({ navigation }: PlansProps) {
     }
   };
 
-  const predictionsLabel = (val: number | null) =>
-    val === null
+  const predictionsLabel = (val: number | null, tierId?: number) =>
+    tierId === 1
+      ? { label: '10 vote predictions/day', included: true }
+      : tierId !== undefined && tierId >= 2
+      ? { label: 'Unlimited vote predictions', included: true }
+      : val === null
       ? { label: 'Unlimited vote predictions', included: true }
       : val === 0
       ? { label: 'Vote predictions', included: false }
       : { label: `${val} vote predictions/day`, included: true };
 
-  const chatLabel = (val: number | null) =>
-    val === null
+  const chatLabel = (val: number | null, tierId?: number) =>
+    tierId === 1
+      ? { label: '10 AI chats/day', included: true }
+      : tierId !== undefined && tierId >= 2
+      ? { label: '7.5M tokens/month AI chats', included: true }
+      : val === null
       ? { label: 'Unlimited AI chats', included: true }
       : val === 0
       ? { label: 'AI chatbot', included: false }
@@ -349,8 +357,8 @@ export default function PlansScreen({ navigation }: PlansProps) {
             <View style={styles.featureList}>
               <FeatureRow label={`${tier.starred_members_limit} starred members`} included theme={theme} />
               <FeatureRow label={`${tier.starred_bills_limit} starred bills`} included theme={theme} />
-              <FeatureRow {...predictionsLabel(tier.predictions_per_day)} theme={theme} />
-              <FeatureRow {...chatLabel(tier.chat_messages_per_day)} theme={theme} />
+              <FeatureRow {...predictionsLabel(tier.predictions_per_day, tier.id)} theme={theme} />
+              <FeatureRow {...chatLabel(tier.chat_messages_per_day, tier.id)} theme={theme} />
             </View>
 
             {renderCardActions(tier)}

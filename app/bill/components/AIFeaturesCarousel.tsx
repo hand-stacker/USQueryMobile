@@ -1,43 +1,56 @@
 import { ThemeContext } from "@/app/theme/themeContext";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface Props {
   bill_id: string;
   bill_passed: boolean;
   bill_title: string;
+  status_code: number;
   navigation: any;
+  /** Disables tap until the bill-page prefetch completes. Defaults to true. */
+  prefetchReady?: boolean;
 }
 
-export default function AIFeaturesCarousel({ bill_id, bill_passed, bill_title, navigation }: Props) {
+export default function AIFeaturesCarousel({ bill_id, bill_passed, bill_title, status_code, navigation, prefetchReady = true }: Props) {
   const { theme } = useContext(ThemeContext);
   const s = styles(theme);
   const [page, setPage] = useState(0);
   const fade = useRef(new Animated.Value(1)).current;
 
-  const features = [
-    {
-      key: "predictions",
-      label: "Vote Predictions",
-      description: "AI-powered floor vote forecast · Monte-Carlo simulation",
-      iconName: "flash-outline" as const, //Ionicons wouldn't accept a normal string
-      iconColor: "#d29922",
-      iconBg: "#d2992222",
-      iconBorder: "#d2992255",
-      onPress: () => navigation.navigate("Vote_Predictions", { bill_id, bill_passed }),
-    },
-    {
-      key: "chat",
-      label: "Ask AI",
-      description: "Chat with AI about this bill's impact and details",
-      iconName: "chatbubble-ellipses-outline" as const,
-      iconColor: theme.primary,
-      iconBg: theme.primary + "22",
-      iconBorder: theme.primary + "55",
-      onPress: () => navigation.navigate("Bill_Chat", { bill_id, bill_title }),
-    },
-  ];
+  const showPredictions = useMemo(() => {
+    const billCongress = parseInt(String(bill_id).slice(0, 3), 10);
+    const year = new Date().getFullYear();
+    const currentCongress = Math.floor((year - 1789) / 2) + 1;
+    return !isNaN(billCongress) && billCongress === currentCongress && status_code < 42;
+  }, [bill_id, status_code]);
+
+  const features = useMemo(() => {
+    const all = [
+      showPredictions ? {
+        key: "predictions",
+        label: "Vote Predictions",
+        description: "AI-powered floor vote forecast · Monte-Carlo simulation",
+        iconName: "flash-outline" as const,
+        iconColor: "#d29922",
+        iconBg: "#d2992222",
+        iconBorder: "#d2992255",
+        onPress: () => navigation.navigate("Vote_Predictions", { bill_id, bill_passed }),
+      } : null,
+      {
+        key: "chat",
+        label: "Ask AI",
+        description: "Chat with AI about this bill's impact and details",
+        iconName: "chatbubble-ellipses-outline" as const,
+        iconColor: theme.primary,
+        iconBg: theme.primary + "22",
+        iconBorder: theme.primary + "55",
+        onPress: () => navigation.navigate("Bill_Chat", { bill_id, bill_title }),
+      },
+    ];
+    return all.filter(Boolean) as NonNullable<(typeof all)[number]>[];
+  }, [showPredictions, bill_id, bill_passed, bill_title, theme.primary, navigation]);
 
   const count = features.length;
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -76,7 +89,7 @@ export default function AIFeaturesCarousel({ bill_id, bill_passed, bill_title, n
     })
   ).current;
 
-  const f = features[page];
+  const f = features[Math.min(page, count - 1)];
 
   return (
     <View style={s.wrapper}>
@@ -88,26 +101,33 @@ export default function AIFeaturesCarousel({ bill_id, bill_passed, bill_title, n
       <View style={s.card} {...pan.panHandlers}>
         <Animated.View style={{ opacity: fade }}>
           <Pressable
-            style={({ pressed }) => [s.featureRow, { opacity: pressed ? 0.72 : 1 }]}
-            onPress={f.onPress}
+            style={({ pressed }) => [s.featureRow, { opacity: !prefetchReady ? 0.55 : pressed ? 0.72 : 1 }]}
+            onPress={prefetchReady ? f.onPress : undefined}
+            disabled={!prefetchReady}
           >
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14}}>
               <View style={[s.iconContainer, { backgroundColor: f.iconBg, borderColor: f.iconBorder }]}>
-                <Ionicons name={f.iconName} size={22} color={f.iconColor} />
+                {prefetchReady
+                  ? <Ionicons name={f.iconName} size={22} color={f.iconColor} />
+                  : <ActivityIndicator size="small" color={f.iconColor} />}
               </View>
             </View>
             <View style={s.textBlock}>
               <Text style={s.featureLabel}>{f.label}</Text>
-              <Text style={s.featureDescription}>{f.description}</Text>
+              <Text style={s.featureDescription}>
+                {prefetchReady ? f.description : "Loading…"}
+              </Text>
             </View>
           </Pressable>
         </Animated.View>
 
-        <View style={s.dots}>
-          {features.map((_, i) => (
-            <View key={i} style={[s.dot, i === page && s.dotActive]} />
-          ))}
-        </View>
+        {count > 1 && (
+          <View style={s.dots}>
+            {features.map((_, i) => (
+              <View key={i} style={[s.dot, i === page && s.dotActive]} />
+            ))}
+          </View>
+        )}
       </View>
     </View>
   );

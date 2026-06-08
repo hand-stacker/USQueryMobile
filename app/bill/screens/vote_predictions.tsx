@@ -1,3 +1,4 @@
+import { getBillCache } from "@/app/bill/billDataCache";
 import NavReturn from "@/app/components/NavReturn";
 import { retrieveUserSession } from "@/app/encrypted-storage/functions";
 import { authRequest } from "@/app/hooks/authRequest";
@@ -31,7 +32,6 @@ const HOUSE_THRESHOLD = 218;
 const SENATE_THRESHOLD = 51;
 const PLUS_DAILY = 10;
 
-// Amber/green/orange prediction colors (not theme-dependent)
 const COLOR_GREEN = "#2ea87e";
 const COLOR_ORANGE = "#e8833a";
 const COLOR_AMBER = "#d29922";
@@ -39,6 +39,9 @@ const COLOR_RED = "#f85149";
 const COLOR_BLUE = "#388bfd";
 const COLOR_PURPLE = "#a371f7";
 const PARTY_COLORS: Record<string, string> = { D: COLOR_BLUE, R: COLOR_RED, I: COLOR_PURPLE };
+
+// Stable empty array — avoids creating a new reference on each render
+const EMPTY_MEMBERS: MemberEntry[] = [];
 
 function probColor(p: number): string {
   const clamped = Math.max(0, Math.min(1, p));
@@ -79,7 +82,6 @@ interface MemberEntry { name: string; party: string; state: string; district: nu
 interface PredData { house_dist: Record<string, number>; senate_dist: Record<string, number>; credits_remaining: number | null }
 interface MembersData { members_house: MemberEntry[]; members_senate: MemberEntry[]; credits_remaining: number | null }
 
-
 interface Props { navigation: any; route: any }
 
 export default function VotePredictionsScreen({ navigation, route }: Props) {
@@ -90,10 +92,18 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
 
   const { bill_id, bill_passed } = route.params as { bill_id: string; bill_passed: boolean };
 
+  const isCurrentCongress = useMemo(() => {
+    const billCongress = parseInt(String(bill_id).slice(0, 3), 10);
+    const year = new Date().getFullYear();
+    const currentCongress = Math.floor((year - 1789) / 2) + 1;
+    return !isNaN(billCongress) && billCongress === currentCongress;
+  }, [bill_id]);
+
   const [loading, setLoading] = useState(true);
   const [tier, setTier] = useState<number>(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [budget, setBudget] = useState(PLUS_DAILY);
+  const [budgetLimit, setBudgetLimit] = useState(PLUS_DAILY);
   const [phase, setPhase] = useState<"empty" | "generating" | "ready">("empty");
   const [predData, setPredData] = useState<PredData | null>(null);
   const [membersData, setMembersData] = useState<MembersData | null>(null);
@@ -107,36 +117,97 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
 
   const loadScreen = useCallback(async () => {
     setLoading(true);
+
+    // ── Fast path: bill page pre-fetched this data already ───────────────────
+    const cached = getBillCache(bill_id);
+    if (cached) {
+      setIsLoggedIn(cached.isLoggedIn);
+      setTier(cached.tier);
+
+      if (cached.predUsage) {
+        setBudget(cached.predUsage.val);
+        setBudgetLimit(cached.predUsage.limit);
+      }
+
+      if (cached.predDist.exists && cached.predDist.house_dist && cached.predDist.senate_dist) {
+        setPredData({
+          house_dist: cached.predDist.house_dist,
+          senate_dist: cached.predDist.senate_dist,
+          credits_remaining: cached.predDist.credits_remaining,
+        });
+        if (cached.predDist.credits_remaining != null) setBudget(cached.predDist.credits_remaining);
+        setPhase("ready");
+        setLoading(false);
+
+        // Per-member predictions are never pre-fetched — load in background.
+        if (cached.isLoggedIn) {
+          authRequest(
+            `/bill-query/prediction/members/${bill_id}/?generate=false`,
+            { method: "POST" },
+            { baseUrl: BILL_QUERY_BASE_URL }
+          )
+            .then(memberData => {
+              if (memberData?.members_house && (cached.predDist.member_reveal_unlocked || cached.tier >= 2)) {
+                setMembersData(memberData);
+                if (memberData.credits_remaining != null) setBudget(memberData.credits_remaining);
+                setMemberPhase("unlocked");
+              }
+            })
+            .catch(() => {});
+        }
+        return;
+      }
+
+      // No existing prediction — show the empty/generate state immediately.
+      setPhase("empty");
+      setLoading(false);
+      return;
+    }
+
+    // ── Slow path: cache miss, fetch everything ourselves ─────────────────────
+    // Phase 1: status + pred dist + usage all fire concurrently → show charts.
+    // Phase 2: member data fires in background after charts are shown.
     try {
       const session = await retrieveUserSession();
       const isAuthenticated = !!session?.accessToken;
       setIsLoggedIn(isAuthenticated);
 
-      const [statusResult, predResult] = await Promise.allSettled([
+      const [statusResult, predResult, usageResult] = await Promise.allSettled([
         isAuthenticated ? authRequest("subscription/status/") : Promise.resolve(null),
-        authRequest(`/bill-query/prediction/generate/${bill_id}/`, {}, { baseUrl: BILL_QUERY_BASE_URL }),
+        authRequest(`/bill-query/prediction/generate/${bill_id}/?generate=false`, { method: "POST" }, { baseUrl: BILL_QUERY_BASE_URL }),
+        isAuthenticated ? authRequest("/bill-query/prediction/usage/", {}, { baseUrl: BILL_QUERY_BASE_URL }) : Promise.resolve(null),
       ]);
 
       let tierVal = 0;
       if (statusResult.status === "fulfilled" && statusResult.value) {
         tierVal = statusResult.value.tier ?? 0;
         setTier(tierVal);
-        setBudget(statusResult.value.daily_prediction_credits ?? PLUS_DAILY);
       }
 
-      if (predResult.status === "fulfilled" && predResult.value?.house_dist && predResult.value?.senate_dist) {
+      if (usageResult.status === "fulfilled" && usageResult.value?.display === "count" && usageResult.value?.val != null) {
+        setBudget(usageResult.value.val);
+        if (usageResult.value.limit != null) setBudgetLimit(usageResult.value.limit);
+      }
+
+      if (predResult.status === "fulfilled" && predResult.value?.exists && predResult.value?.house_dist && predResult.value?.senate_dist) {
         const data = predResult.value;
         setPredData({ house_dist: data.house_dist, senate_dist: data.senate_dist, credits_remaining: data.credits_remaining ?? null });
-        if (data.member_reveal_unlocked || tierVal >= 2) {
-          try {
-            const memData = await authRequest(`/bill-query/prediction/members/${bill_id}/`, { method: "POST" }, { baseUrl: BILL_QUERY_BASE_URL });
-            if (memData?.success) {
-              setMembersData(memData);
-              setMemberPhase("unlocked");
-            }
-          } catch { /* member load failure is non-fatal */ }
-        }
+        if (data.credits_remaining != null) setBudget(data.credits_remaining);
         setPhase("ready");
+        setLoading(false);
+
+        if (isAuthenticated) {
+          authRequest(`/bill-query/prediction/members/${bill_id}/?generate=false`, { method: "POST" }, { baseUrl: BILL_QUERY_BASE_URL })
+            .then(memberData => {
+              if (memberData?.members_house && (data.member_reveal_unlocked || tierVal >= 2)) {
+                setMembersData(memberData);
+                if (memberData.credits_remaining != null) setBudget(memberData.credits_remaining);
+                setMemberPhase("unlocked");
+              }
+            })
+            .catch(() => {});
+        }
+        return;
       }
     } catch {
       setIsLoggedIn(false); setTier(0);
@@ -154,7 +225,8 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
       const data = await authRequest(`/bill-query/prediction/generate/${bill_id}/`, { method: "POST" }, { baseUrl: BILL_QUERY_BASE_URL });
       if (data?.error) {
         const errCode = data.error;
-        if (errCode === "upgrade_required") setErrorMsg("Upgrade your plan to generate predictions.");
+        if (errCode === "authentication_required") { navigation.navigate("Login"); return; }
+        else if (errCode === "upgrade_required") setErrorMsg("Upgrade your plan to generate predictions.");
         else if (errCode === "bill_passed") setErrorMsg("Predictions unavailable — this bill has already passed.");
         else if (errCode === "not_eligible") setErrorMsg("Predictions are only available for the current Congress.");
         else if (errCode === "daily_limit") setErrorMsg("You've used all your prediction credits for today.");
@@ -164,9 +236,8 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
       setPredData({ house_dist: data.house_dist, senate_dist: data.senate_dist, credits_remaining: data.credits_remaining });
       if (data.credits_remaining !== null) setBudget(data.credits_remaining);
 
-      // Fetch member data (free after generate since member_reveal_unlocked: true)
       const memData = await authRequest(`/bill-query/prediction/members/${bill_id}/`, { method: "POST" }, { baseUrl: BILL_QUERY_BASE_URL });
-      if (memData?.success) {
+      if (memData?.members_house) {
         setMembersData(memData);
         setMemberPhase("unlocked");
       } else {
@@ -176,14 +247,14 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
     } catch {
       setErrorMsg("Network error. Please check your connection and try again."); setPhase("empty");
     }
-  }, [bill_id]);
+  }, [bill_id, navigation]);
 
   const handleReveal = useCallback(async () => {
     if (budget <= 0) return;
     setMemberPhase("revealing");
     try {
       const data = await authRequest(`/bill-query/prediction/members/${bill_id}/`, { method: "POST" }, { baseUrl: BILL_QUERY_BASE_URL });
-      if (data?.success) {
+      if (data?.members_house) {
         setMembersData(data);
         if (data.credits_remaining !== null) setBudget(data.credits_remaining);
         setMemberPhase("unlocked");
@@ -215,14 +286,40 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
     () => computeStats(predData?.senate_dist ?? {}, SENATE_THRESHOLD),
     [predData]
   );
-  const chamberMembers = activeChamber === "house" ? (membersData?.members_house ?? []) : (membersData?.members_senate ?? []);
 
-  const filteredMembers = useMemo(() => {
-    return chamberMembers.filter(m =>
+  const houseMembers = useMemo(() => membersData?.members_house ?? [], [membersData]);
+  const senateMembers = useMemo(() => membersData?.members_senate ?? [], [membersData]);
+
+  const filteredHouseMembers = useMemo(() =>
+    houseMembers.filter(m =>
       (partyFilter === "all" || m.party === partyFilter) &&
       (memberSearch === "" || m.name.toLowerCase().includes(memberSearch.toLowerCase()) || m.state.toLowerCase().includes(memberSearch.toLowerCase()))
-    );
-  }, [chamberMembers, partyFilter, memberSearch]);
+    ), [houseMembers, partyFilter, memberSearch]);
+
+  const filteredSenateMembers = useMemo(() =>
+    senateMembers.filter(m =>
+      (partyFilter === "all" || m.party === partyFilter) &&
+      (memberSearch === "" || m.name.toLowerCase().includes(memberSearch.toLowerCase()) || m.state.toLowerCase().includes(memberSearch.toLowerCase()))
+    ), [senateMembers, partyFilter, memberSearch]);
+
+  // Single active filtered list — only this chamber's rows exist in the native view tree
+  const activeFilteredMembers = useMemo(
+    () => activeChamber === "house" ? filteredHouseMembers : filteredSenateMembers,
+    [activeChamber, filteredHouseMembers, filteredSenateMembers]
+  );
+  const activeMemberCount = activeChamber === "house" ? houseMembers.length : senateMembers.length;
+
+  const renderMemberItem = useCallback(
+    ({ item, index }: { item: MemberEntry; index: number }) => (
+      <MemberRow member={item} rank={index + 1} theme={theme} styles={styles} />
+    ),
+    [theme, styles]
+  );
+
+  const keyExtractor = useCallback(
+    (item: MemberEntry, index: number) => `${item.name}-${index}`,
+    []
+  );
 
   if (loading) {
     return (
@@ -235,58 +332,197 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <NavReturn onPress={() => navigation.goBack()} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Header card */}
-        <View style={styles.headerCard}>
-          <View style={styles.headerRow}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={styles.headerTitle}>Vote Predictions</Text>
-              <View style={styles.betaBadge}><Text style={styles.betaText}>Beta</Text></View>
-            </View>
-            <Text style={styles.billId}>Bill {bill_id}</Text>
-          </View>
-        </View>
-
-        {/* Bill passed banner */}
-        {bill_passed && (
-          <View style={[styles.noticeBanner, { borderColor: COLOR_AMBER + "66" }]}>
-            <Ionicons name="checkmark-circle-outline" size={16} color={COLOR_AMBER} style={{ marginRight: 8 }} />
-            <Text style={[styles.noticeText, { color: COLOR_AMBER, flex: 1 }]}>This bill has already passed. Predictions may not be available.</Text>
-          </View>
-        )}
-
-        {/* Error banner */}
-        {errorMsg && (
-          <View style={styles.errorBanner}>
-            <Ionicons name="warning-outline" size={16} color={COLOR_ORANGE} style={{ marginRight: 8 }} />
-            <Text style={[styles.noticeText, { color: COLOR_ORANGE, flex: 1 }]}>{errorMsg}</Text>
-          </View>
-        )}
-
-        {phase === "empty" && <EmptyState tier={tier} isLoggedIn={isLoggedIn} budget={budget} billPassed={bill_passed} onGenerate={handleGenerate} navigation={navigation} theme={theme} styles={styles} />}
-        {phase === "generating" && <GeneratingState theme={theme} styles={styles} />}
-        {phase === "ready" && predData && (
-          <ReadyState
-            houseStats={houseStats} senateStats={senateStats} activeChamber={activeChamber}
-            toggleAnim={toggleAnim} onSwitchChamber={switchChamber}
-            tier={tier} budget={budget} memberPhase={memberPhase} onReveal={handleReveal}
-            filteredMembers={filteredMembers} totalMemberCount={chamberMembers.length}
+      {/*
+        FlatList as the outer scroll: only ~20 member rows exist in the native view
+        tree at any time (virtualised). Switching chambers just swaps the `data`
+        array — FlatList diffs and renders only the newly-visible rows, so the
+        2-3 s freeze caused by layout-ing 435 rows is eliminated.
+      */}
+      <FlatList
+        data={phase === "ready" && memberPhase === "unlocked" ? activeFilteredMembers : EMPTY_MEMBERS}
+        renderItem={renderMemberItem}
+        keyExtractor={keyExtractor}
+        ListHeaderComponent={
+          <PageHeader
+            theme={theme} styles={styles}
+            bill_id={bill_id} bill_passed={bill_passed}
+            errorMsg={errorMsg}
+            phase={phase}
+            activeChamber={activeChamber}
+            toggleAnim={toggleAnim}
+            onSwitchChamber={switchChamber}
+            houseStats={houseStats} senateStats={senateStats}
+            memberPhase={memberPhase}
+            activeMemberCount={activeMemberCount}
+            filteredMemberCount={activeFilteredMembers.length}
             memberSearch={memberSearch} setMemberSearch={setMemberSearch}
             partyFilter={partyFilter} setPartyFilter={setPartyFilter}
-            navigation={navigation} theme={theme} styles={styles}
+            tier={tier} isLoggedIn={isLoggedIn} budget={budget} budgetLimit={budgetLimit}
+            isCurrentCongress={isCurrentCongress} onGenerate={handleGenerate}
+            navigation={navigation}
           />
-        )}
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
+        }
+        ListFooterComponent={
+          phase === "ready" && memberPhase !== "unlocked" ? (
+            <LockedMembers
+              tier={tier} budget={budget} budgetLimit={budgetLimit} memberPhase={memberPhase}
+              onReveal={handleReveal} navigation={navigation} theme={theme} styles={styles}
+            />
+          ) : (
+            <View style={{ height: 40 }} />
+          )
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={20}
+        maxToRenderPerBatch={20}
+        windowSize={5}
+        removeClippedSubviews={true}
+      />
     </SafeAreaView>
   );
 }
 
+// ── Page Header (everything above the virtualised member rows) ────────────────
+// React.memo ensures this only re-renders when relevant props actually change.
+const PageHeader = React.memo(function PageHeader({
+  theme, styles,
+  bill_id, bill_passed,
+  errorMsg,
+  phase,
+  activeChamber, toggleAnim, onSwitchChamber,
+  houseStats, senateStats,
+  memberPhase,
+  activeMemberCount, filteredMemberCount,
+  memberSearch, setMemberSearch,
+  partyFilter, setPartyFilter,
+  tier, isLoggedIn, budget, budgetLimit,
+  isCurrentCongress, onGenerate,
+  navigation,
+}: any) {
+  const stats = activeChamber === "house" ? houseStats : senateStats;
+  const threshold = activeChamber === "house" ? HOUSE_THRESHOLD : SENATE_THRESHOLD;
+  const chamberlabel = activeChamber === "house" ? "House of Representatives" : "Senate";
+  const partyOpts: [string, string][] = [["all", "All"], ["D", "Dem"], ["R", "Rep"]];
+
+  return (
+    <>
+      {/* Header card */}
+      <View style={styles.headerCard}>
+        <View style={styles.headerRow}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={styles.headerTitle}>Vote Predictions</Text>
+            <View style={styles.betaBadge}><Text style={styles.betaText}>Beta</Text></View>
+          </View>
+          <Text style={styles.billId}>Bill {bill_id}</Text>
+        </View>
+      </View>
+
+      {bill_passed && (
+        <View style={[styles.noticeBanner, { borderColor: COLOR_AMBER + "66" }]}>
+          <Ionicons name="checkmark-circle-outline" size={16} color={COLOR_AMBER} style={{ marginRight: 8 }} />
+          <Text style={[styles.noticeText, { color: COLOR_AMBER, flex: 1 }]}>This bill has already passed. Predictions may not be available.</Text>
+        </View>
+      )}
+
+      {errorMsg && (
+        <View style={styles.errorBanner}>
+          <Ionicons name="warning-outline" size={16} color={COLOR_ORANGE} style={{ marginRight: 8 }} />
+          <Text style={[styles.noticeText, { color: COLOR_ORANGE, flex: 1 }]}>{errorMsg}</Text>
+        </View>
+      )}
+
+      {phase === "empty" && (
+        <EmptyState tier={tier} isLoggedIn={isLoggedIn} budget={budget} budgetLimit={budgetLimit}
+          billPassed={bill_passed} isCurrentCongress={isCurrentCongress}
+          onGenerate={onGenerate} navigation={navigation} theme={theme} styles={styles}
+        />
+      )}
+      {phase === "generating" && <GeneratingState theme={theme} styles={styles} />}
+
+      {phase === "ready" && (
+        <>
+          <ChamberToggle activeChamber={activeChamber} toggleAnim={toggleAnim} onSwitch={onSwitchChamber} theme={theme} styles={styles} />
+          <PassageSummary stats={stats} threshold={threshold} theme={theme} styles={styles} />
+
+          {/* Histograms: display:none is fine here — they have few nodes */}
+          <View style={{ display: (activeChamber === "house" ? "flex" : "none") as "flex" | "none" }}>
+            <HistogramView entries={houseStats.entries} threshold={HOUSE_THRESHOLD} stats={houseStats} activeChamber="house" theme={theme} styles={styles} />
+          </View>
+          <View style={{ display: (activeChamber === "senate" ? "flex" : "none") as "flex" | "none" }}>
+            <HistogramView entries={senateStats.entries} threshold={SENATE_THRESHOLD} stats={senateStats} activeChamber="senate" theme={theme} styles={styles} />
+          </View>
+
+          <View style={[styles.divider, { marginVertical: 20 }]} />
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+            <Text style={styles.sectionLabel}>Per-Member Predictions</Text>
+            {tier >= 2 && (
+              <View style={styles.premiumBadge}><Text style={[styles.premiumBadgeText, { color: COLOR_PURPLE }]}>Premium · Unlimited</Text></View>
+            )}
+          </View>
+          {memberPhase === "unlocked" && (
+            <Text style={{ fontSize: 10, color: theme.subtext, marginBottom: 10, letterSpacing: 0.3, fontWeight: "400" }}>Sorted by P(votes Yes), high → low</Text>
+          )}
+          <Text style={{ fontSize: 10, color: theme.subtext, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "400" }}>{chamberlabel}</Text>
+
+          {/* Search + filter controls — only visible when member list is unlocked */}
+          {memberPhase === "unlocked" && (
+            <View style={styles.memberControlsContainer}>
+              <TextInput
+                style={styles.memberSearch}
+                value={memberSearch}
+                onChangeText={setMemberSearch}
+                placeholder="Search name or state…"
+                placeholderTextColor={theme.subtext}
+              />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                {partyOpts.map(([k, l]) => {
+                  const isOn = partyFilter === k;
+                  const c = k === "D" ? COLOR_BLUE : k === "R" ? COLOR_RED : theme.subtext;
+                  return (
+                    <Pressable key={k} onPress={() => setPartyFilter(k)}
+                      style={[styles.partyChip, { backgroundColor: isOn ? c + "22" : "transparent", borderColor: isOn ? c + "77" : theme.border }]}>
+                      <Text style={[styles.partyChipText, { color: isOn ? c : theme.subtext }]}>{l}</Text>
+                    </Pressable>
+                  );
+                })}
+                <Text style={{ fontSize: 10, color: theme.subtext, marginLeft: "auto", fontWeight: "400" }}>{filteredMemberCount} members</Text>
+              </View>
+              <View style={{ flexDirection: "row", paddingHorizontal: 4, marginBottom: 6 }}>
+                <Text style={[styles.colHeader, { width: 24 }]}>#</Text>
+                <Text style={[styles.colHeader, { flex: 1 }]}>Member</Text>
+                <Text style={[styles.colHeader]}>P(Votes Yes)</Text>
+              </View>
+            </View>
+          )}
+
+          {memberPhase === "unlocked" && filteredMemberCount === 0 && (
+            <Text style={{ color: theme.subtext, textAlign: "center", padding: 24, fontSize: 13, fontWeight: "400" }}>No members match.</Text>
+          )}
+        </>
+      )}
+    </>
+  );
+});
+
 // ── Empty State ──────────────────────────────────────────────────────────────
-function EmptyState({ tier, isLoggedIn, budget, billPassed, onGenerate, navigation, theme, styles }: any) {
+function EmptyState({ tier, isLoggedIn, budget, budgetLimit, billPassed, isCurrentCongress, onGenerate, navigation, theme, styles }: any) {
   const noCredits = tier === 1 && budget <= 0;
-  const disabled = noCredits || billPassed;
+  const disabled = noCredits || billPassed || !isCurrentCongress;
+
+  if (!isCurrentCongress) {
+    return (
+      <View style={styles.emptyContainer}>
+        <EmptyLead />
+        <View style={styles.amberNotice}>
+          <Ionicons name="time-outline" size={14} color={COLOR_AMBER} style={{ marginRight: 8, marginTop: 1 }} />
+          <Text style={styles.amberNoticeText}>Predictions are only available for the current Congress.</Text>
+        </View>
+      </View>
+    );
+  }
 
   if (!isLoggedIn) {
     return (
@@ -335,7 +571,7 @@ function EmptyState({ tier, isLoggedIn, budget, billPassed, onGenerate, navigati
         <Text style={[styles.btnPrimaryText, disabled && { color: theme.subtext }]}>Request a prediction</Text>
       </Pressable>
       {tier === 1 ? (
-        <CreditMeter budget={budget} />
+        <CreditMeter budget={budget} budgetLimit={budgetLimit} />
       ) : (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14 }}>
           <View style={styles.premiumBadge}><Text style={[styles.premiumBadgeText, { color: COLOR_PURPLE }]}>Premium</Text></View>
@@ -359,18 +595,18 @@ function EmptyLead() {
   );
 }
 
-function CreditMeter({ budget }: { budget: number }) {
+function CreditMeter({ budget, budgetLimit }: { budget: number; budgetLimit: number }) {
   const { theme } = useContext(ThemeContext);
-  const used = PLUS_DAILY - budget;
+  const used = budgetLimit - budget;
   const fill = budget <= 0 ? COLOR_RED : budget <= 3 ? COLOR_AMBER : COLOR_GREEN;
   return (
     <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: theme.border }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
         <Text style={{ fontSize: 10, color: theme.subtext, letterSpacing: 0.5, textTransform: "uppercase", fontWeight: "400" }}>Daily Prediction Credits</Text>
-        <Text style={{ fontSize: 11, color: fill, fontWeight: "600" }}>{budget} of {PLUS_DAILY} left</Text>
+        <Text style={{ fontSize: 11, color: fill, fontWeight: "600" }}>{budget} of {budgetLimit} left</Text>
       </View>
       <View style={{ flexDirection: "row", gap: 3 }}>
-        {Array.from({ length: PLUS_DAILY }).map((_, i) => (
+        {Array.from({ length: budgetLimit }).map((_, i) => (
           <View key={i} style={{ flex: 1, height: 5, borderRadius: 99, backgroundColor: i < used ? theme.secondary : fill }} />
         ))}
       </View>
@@ -392,60 +628,8 @@ function GeneratingState({ theme, styles }: any) {
   );
 }
 
-// ── Ready State ──────────────────────────────────────────────────────────────
-function ReadyState({
-  houseStats, senateStats, activeChamber, toggleAnim, onSwitchChamber,
-  tier, budget, memberPhase, onReveal,
-  filteredMembers, totalMemberCount, memberSearch, setMemberSearch, partyFilter, setPartyFilter,
-  navigation, theme, styles,
-}: any) {
-  const stats = activeChamber === "house" ? houseStats : senateStats;
-  const threshold = activeChamber === "house" ? HOUSE_THRESHOLD : SENATE_THRESHOLD;
-  const chamberlabel = activeChamber === "house" ? "House of Representatives" : "Senate";
-
-  return (
-    <>
-      <ChamberToggle activeChamber={activeChamber} toggleAnim={toggleAnim} onSwitch={onSwitchChamber} theme={theme} styles={styles} />
-      <PassageSummary stats={stats} threshold={threshold} theme={theme} styles={styles} />
-      {/* Both histograms stay mounted; only the active one is visible — no recompute on switch */}
-      <View style={{ display: (activeChamber === "house" ? "flex" : "none") as "flex" | "none" }}>
-        <HistogramView entries={houseStats.entries} threshold={HOUSE_THRESHOLD} stats={houseStats} activeChamber="house" theme={theme} styles={styles} />
-      </View>
-      <View style={{ display: (activeChamber === "senate" ? "flex" : "none") as "flex" | "none" }}>
-        <HistogramView entries={senateStats.entries} threshold={SENATE_THRESHOLD} stats={senateStats} activeChamber="senate" theme={theme} styles={styles} />
-      </View>
-      <View style={[styles.divider, { marginVertical: 20 }]} />
-
-      {/* Member section header */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <Text style={styles.sectionLabel}>Per-Member Predictions</Text>
-        {(tier >= 2) && (
-          <View style={styles.premiumBadge}><Text style={[styles.premiumBadgeText, { color: COLOR_PURPLE }]}>Premium · Unlimited</Text></View>
-        )}
-      </View>
-      {memberPhase === "unlocked" && (
-        <Text style={{ fontSize: 10, color: theme.subtext, marginBottom: 10, letterSpacing: 0.3, fontWeight: "400" }}>Sorted by P(votes Yes), high → low</Text>
-      )}
-      <Text style={{ fontSize: 10, color: theme.subtext, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "400" }}>{chamberlabel}</Text>
-
-      {memberPhase === "unlocked" ? (
-        <MemberList
-          members={filteredMembers} total={totalMemberCount}
-          search={memberSearch} onSearch={setMemberSearch}
-          party={partyFilter} onParty={setPartyFilter}
-          theme={theme} styles={styles}
-        />
-      ) : (
-        <LockedMembers
-          tier={tier} budget={budget} memberPhase={memberPhase}
-          onReveal={onReveal} navigation={navigation} theme={theme} styles={styles}
-        />
-      )}
-    </>
-  );
-}
-
-function ChamberToggle({ activeChamber, toggleAnim, onSwitch, theme, styles }: any) {
+// ── Chamber Toggle ───────────────────────────────────────────────────────────
+const ChamberToggle = React.memo(function ChamberToggle({ activeChamber, toggleAnim, onSwitch, theme, styles }: any) {
   const thumbLeft = toggleAnim.interpolate({ inputRange: [0, 1], outputRange: ["2%", "52%"] });
   return (
     <View style={styles.chamberToggleContainer}>
@@ -459,9 +643,10 @@ function ChamberToggle({ activeChamber, toggleAnim, onSwitch, theme, styles }: a
       ))}
     </View>
   );
-}
+});
 
-function PassageSummary({ stats, threshold, theme, styles }: any) {
+// ── Passage Summary ──────────────────────────────────────────────────────────
+const PassageSummary = React.memo(function PassageSummary({ stats, threshold, theme, styles }: any) {
   const { passProb, median, p5, p95 } = stats;
   const passing = passProb >= 0.5;
   const col = probColor(passProb);
@@ -492,15 +677,15 @@ function PassageSummary({ stats, threshold, theme, styles }: any) {
       </View>
     </View>
   );
-}
+});
 
+// ── Histogram ────────────────────────────────────────────────────────────────
 const HIST_HEIGHT = 130;
 
-function HistogramView({ entries, threshold, stats, activeChamber, theme, styles }: any) {
+const HistogramView = React.memo(function HistogramView({ entries, threshold, stats, activeChamber, theme, styles }: any) {
   const [hovered, setHovered] = useState<number | null>(null);
   const { total, maxCount } = stats;
   const chamberLabel = activeChamber === "house" ? "Predicted House Floor Vote · Yes Count" : "Predicted Senate Floor Vote · Yes Count";
-  const range = (stats.max - stats.min) || 1;
 
   return (
     <View style={styles.histContainer}>
@@ -520,7 +705,7 @@ function HistogramView({ entries, threshold, stats, activeChamber, theme, styles
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={{ flexDirection: "row", alignItems: "flex-end", height: HIST_HEIGHT, gap: 1, minWidth: Math.max(entries.length * 8, 280) }}>
-          {entries.map((bar: DistEntry, i: number) => {
+          {entries.map((bar: DistEntry) => {
             const barH = maxCount > 0 ? (bar.count / maxCount) * HIST_HEIGHT : 2;
             const isPass = bar.vote >= threshold;
             const isActive = hovered === bar.vote;
@@ -546,7 +731,6 @@ function HistogramView({ entries, threshold, stats, activeChamber, theme, styles
         </View>
       </ScrollView>
 
-      {/* X-axis labels */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4, paddingHorizontal: 2 }}>
         <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: "400" }}>{stats.min}</Text>
         {stats.max !== stats.min && (
@@ -561,53 +745,10 @@ function HistogramView({ entries, threshold, stats, activeChamber, theme, styles
       </View>
     </View>
   );
-}
+});
 
-// ── Member List ──────────────────────────────────────────────────────────────
-function MemberList({ members, total, search, onSearch, party, onParty, theme, styles }: any) {
-  const partyOpts: [string, string][] = [["all", "All"], ["D", "Dem"], ["R", "Rep"]];
-  return (
-    <View style={styles.memberListContainer}>
-      <TextInput
-        style={styles.memberSearch}
-        value={search}
-        onChangeText={onSearch}
-        placeholder="Search name or state…"
-        placeholderTextColor={theme.subtext}
-      />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-        {partyOpts.map(([k, l]) => {
-          const isOn = party === k;
-          const c = k === "D" ? COLOR_BLUE : k === "R" ? COLOR_RED : theme.subtext;
-          return (
-            <Pressable key={k} onPress={() => onParty(k)}
-              style={[styles.partyChip, { backgroundColor: isOn ? c + "22" : "transparent", borderColor: isOn ? c + "77" : theme.border }]}>
-              <Text style={[styles.partyChipText, { color: isOn ? c : theme.subtext }]}>{l}</Text>
-            </Pressable>
-          );
-        })}
-        <Text style={{ fontSize: 10, color: theme.subtext, marginLeft: "auto", fontWeight: "400" }}>{members.length} members</Text>
-      </View>
-
-      {/* Column headers */}
-      <View style={{ flexDirection: "row", paddingHorizontal: 4, marginBottom: 6 }}>
-        <Text style={[styles.colHeader, { width: 24 }]}>#</Text>
-        <Text style={[styles.colHeader, { flex: 1 }]}>Member</Text>
-        <Text style={[styles.colHeader]}>P(Votes Yes)</Text>
-      </View>
-
-      {members.length === 0 ? (
-        <Text style={{ color: theme.subtext, textAlign: "center", padding: 24, fontSize: 13, fontWeight: "400" }}>No members match.</Text>
-      ) : (
-        members.map((m: MemberEntry, i: number) => (
-          <MemberRow key={`${m.name}-${i}`} member={m} rank={i + 1} theme={theme} styles={styles} />
-        ))
-      )}
-    </View>
-  );
-}
-
-function MemberRow({ member, rank, theme, styles }: { member: MemberEntry; rank: number; theme: any; styles: any }) {
+// ── Member Row ───────────────────────────────────────────────────────────────
+const MemberRow = React.memo(function MemberRow({ member, rank, theme, styles }: { member: MemberEntry; rank: number; theme: any; styles: any }) {
   const col = probColor(member.prob);
   const partyColor = PARTY_COLORS[member.party] ?? theme.subtext;
   const seat = member.district != null ? `${member.party} · ${member.state}-${member.district}` : `${member.party} · ${member.state}`;
@@ -627,28 +768,26 @@ function MemberRow({ member, rank, theme, styles }: { member: MemberEntry; rank:
       </View>
     </View>
   );
-}
+});
 
 // ── Locked Members ───────────────────────────────────────────────────────────
 const PLACEHOLDER_MEMBERS = Array.from({ length: 5 }, (_, i) => ({
   name: "Representative Name", party: "D", state: "NY", district: i + 1, prob: 0.5,
 }));
 
-function LockedMembers({ tier, budget, memberPhase, onReveal, navigation, theme, styles }: any) {
+function LockedMembers({ tier, budget, budgetLimit, memberPhase, onReveal, navigation, theme, styles }: any) {
   const isRevealing = memberPhase === "revealing";
   const noCredits = tier === 1 && budget <= 0;
   const lockColor = tier === 1 ? COLOR_BLUE : COLOR_AMBER;
 
   return (
     <View>
-      {/* Dimmed placeholder rows */}
       <View style={{ opacity: 0.15, pointerEvents: "none" }}>
         {PLACEHOLDER_MEMBERS.map((m, i) => (
           <MemberRow key={i} member={m as MemberEntry} rank={i + 1} theme={theme} styles={styles} />
         ))}
       </View>
 
-      {/* Lock overlay */}
       <View style={[styles.lockOverlay, { backgroundColor: theme.background + "ee" }]}>
         <View style={[styles.lockIconCircle, { borderColor: lockColor + "55" }]}>
           <Ionicons name="lock-closed" size={20} color={lockColor} />
@@ -669,7 +808,7 @@ function LockedMembers({ tier, budget, memberPhase, onReveal, navigation, theme,
               )}
             </Pressable>
             <Text style={{ fontSize: 10.5, color: noCredits ? COLOR_RED : theme.subtext, marginTop: 6, textAlign: "center", fontWeight: "400" }}>
-              {noCredits ? "Daily limit reached — resets at midnight ET." : `${budget} of ${PLUS_DAILY} credits left today`}
+              {noCredits ? "Daily limit reached — resets at midnight ET." : `${budget} of ${budgetLimit} credits left today`}
             </Text>
             <Text style={{ fontSize: 10.5, color: theme.subtext, marginTop: 4, textAlign: "center", lineHeight: 16, fontWeight: "400" }}>
               Once revealed, accessible for 24 hours without additional credits.
@@ -745,12 +884,12 @@ const createStyles = (theme: any, isLandscape = false) =>
     tooltip: { position: "absolute", bottom: "110%", left: "50%", transform: [{ translateX: -30 }], backgroundColor: "#000", borderWidth: 1, borderColor: theme.border, borderRadius: 7, padding: 6, minWidth: 60, zIndex: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.5, shadowRadius: 18 },
     tooltipText: { fontSize: 10.5, color: theme.text, textAlign: "center", fontWeight: "400" },
     tooltipSub: { fontSize: 9.5, textAlign: "center", fontWeight: "400" },
-    memberListContainer: { backgroundColor: theme.card, borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: theme.border, marginBottom: 12 },
+    memberControlsContainer: { backgroundColor: theme.card, borderRadius: 12, borderWidth: 1, borderColor: theme.border, marginBottom: 2 },
     memberSearch: { margin: 10, padding: 10, borderRadius: 10, backgroundColor: theme.secondary, color: theme.text, fontSize: 13, borderWidth: 1, borderColor: theme.border, fontWeight: "400" },
     partyChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, borderWidth: 1, marginBottom: 4 },
     partyChipText: { fontSize: 11.5, fontWeight: "500" },
     colHeader: { fontSize: 8.5, color: theme.subtext, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: "400" },
-    memberRow: { padding: 12, borderBottomWidth: 1, borderBottomColor: theme.border },
+    memberRow: { padding: 12, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card },
     memberRank: { fontSize: 11, color: theme.subtext, minWidth: 20, fontWeight: "400" },
     memberName: { fontSize: 14, fontWeight: "500", color: theme.text },
     memberProb: { fontSize: 13.5, fontWeight: "500" },
