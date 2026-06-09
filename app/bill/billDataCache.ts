@@ -24,6 +24,7 @@ export interface BillPrefetchData {
     senate_dist: Record<string, number> | null;
     credits_remaining: number | null;
     member_reveal_unlocked: boolean;
+    generated_at?: string | null;
   };
   chatHistory: {
     sessionId: string;
@@ -65,6 +66,10 @@ export function getBillCache(billId: string): BillPrefetchData | null {
     return null;
   }
   return entry;
+}
+
+export function clearBillCache(billId: string): void {
+  _cache.delete(billId);
 }
 
 // ── Fetch logic ──────────────────────────────────────────────────────────────
@@ -123,6 +128,7 @@ async function doFetch(billId: string): Promise<BillPrefetchData> {
           senate_dist: pdv.senate_dist,
           credits_remaining: pdv.credits_remaining ?? null,
           member_reveal_unlocked: pdv.member_reveal_unlocked ?? false,
+          generated_at: pdv.generated_at ?? null,
         }
       : EMPTY_PRED_DIST;
 
