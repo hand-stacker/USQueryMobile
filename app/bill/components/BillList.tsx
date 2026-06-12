@@ -8,21 +8,25 @@ interface Props {
   navigator: any;
   onEndReached?: () => void;
   loadingMore?: boolean;
+  highlight?: number[];
 }
 
-const BillList = ({data, navigator, onEndReached, loadingMore}:Props)=> {
+const BillList = ({data, navigator, onEndReached, loadingMore, highlight = []}:Props)=> {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
   const renderItem = useCallback(({ item }: any) => {
     const node = item.node ?? item;
+    const isHighlighted = highlight.length > 0 && highlight.includes(Number(node.id));
     return (
       <BillInfographic key={node.id}
       navigator={navigator}
       billId={node.id}
       billNum={node.billNum ?? node.id}
       billSummary={node.summary ?? node.billSummary?? 'No summary available.'}
-      billTitle={node.title ?? node.billTitle}/>);
-}, [navigator]);
+      billTitle={node.title ?? node.billTitle}
+      highlighted={isHighlighted}
+      />);
+}, [navigator, highlight]);
 
   return (
     <FlatList

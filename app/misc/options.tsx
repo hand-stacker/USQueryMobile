@@ -59,6 +59,9 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
           >
             <Text style={styles.buttonText}>Account</Text>
           </Pressable>
+          <Pressable style={styles.button} onPress={async () => navigation.navigate('Plans') }>
+            <Text style={styles.buttonText}>View Plans</Text>
+          </Pressable>
           <Pressable style={styles.button} onPress={() => setOpen(true)}>
             <Text style={styles.buttonText}>Select Favorite Subjects</Text>
           </Pressable>
@@ -67,6 +70,9 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
           </Pressable>
           <Pressable style={styles.button} onPress={toggleTheme}>
             <Text style={styles.buttonText}>Switch to {theme.name === 'light' ? 'dark' : 'light'} theme</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={async () => navigation.navigate('Feedback') }>
+            <Text style={styles.buttonText}>Feedback</Text>
           </Pressable>
           <Pressable style={styles.button} onPress={async () => navigation.navigate('Privacy_Policy') }>
             <Text style={styles.buttonText}>Privacy Policy</Text>

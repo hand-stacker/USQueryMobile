@@ -113,6 +113,7 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
   const [membersData, setMembersData] = useState<MembersData | null>(null);
   const [memberPhase, setMemberPhase] = useState<"locked" | "revealing" | "unlocked">("locked");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState<{ reason: string; detail: string } | null>(null);
   const [activeChamber, setActiveChamber] = useState<"house" | "senate">("house");
   const [memberSearch, setMemberSearch] = useState("");
   const [partyFilter, setPartyFilter] = useState<"all" | "D" | "R">("all");
@@ -224,12 +225,19 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
 
   const handleGenerate = useCallback(async () => {
     setErrorMsg(null);
+    setUnavailable(null);
     setPhase("generating");
     try {
       const data = await authRequest(`/bill-query/prediction/generate/${bill_id}/`, { method: "POST" }, { baseUrl: BILL_QUERY_BASE_URL });
       if (data?.error) {
         const errCode = data.error;
         if (errCode === "authentication_required") { navigation.navigate("Login"); return; }
+        else if (errCode === "prediction_unavailable") {
+          setUnavailable({
+            reason: data.reason ?? "",
+            detail: data.detail ?? "A prediction cannot be made for this bill right now. Please try again later.",
+          });
+        }
         else if (errCode === "upgrade_required") setErrorMsg("Upgrade your plan to generate predictions.");
         else if (errCode === "bill_passed") setErrorMsg("Predictions unavailable — this bill has already passed.");
         else if (errCode === "not_eligible") setErrorMsg("Predictions are only available for the current Congress.");
@@ -350,6 +358,7 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
             theme={theme} styles={styles}
             bill_id={bill_id} bill_passed={bill_passed}
             errorMsg={errorMsg}
+            unavailable={unavailable}
             phase={phase}
             activeChamber={activeChamber}
             toggleAnim={toggleAnim}
@@ -393,6 +402,7 @@ const PageHeader = React.memo(function PageHeader({
   theme, styles,
   bill_id, bill_passed,
   errorMsg,
+  unavailable,
   phase,
   activeChamber, toggleAnim, onSwitchChamber,
   houseStats, senateStats,
@@ -435,6 +445,8 @@ const PageHeader = React.memo(function PageHeader({
           <Text style={styles.noticeTextOrange}>{errorMsg}</Text>
         </View>
       )}
+
+      {unavailable && <UnavailableNotice unavailable={unavailable} theme={theme} styles={styles} />}
 
       {phase === "empty" && (
         <EmptyState
@@ -589,6 +601,29 @@ function EmptyState({ tier, isLoggedIn, budget, budgetLimit, billPassed, isCurre
           <Text style={styles.premiumDesc}>Unlimited predictions & full access.</Text>
         </View>
       )}
+    </View>
+  );
+}
+
+// ── Prediction Unavailable Notice ─────────────────────────────────────────────
+const UNAVAILABLE_META: Record<string, { title: string; icon: string }> = {
+  missing_text: { title: "Bill Text Not Yet Available", icon: "document-text-outline" },
+  missing_subjects: { title: "Bill Subjects Not Yet Available", icon: "pricetags-outline" },
+  missing_text_and_subjects: { title: "Bill Data Not Yet Available", icon: "hourglass-outline" },
+};
+
+function UnavailableNotice({ unavailable, theme, styles }: any) {
+  const meta = UNAVAILABLE_META[unavailable.reason] ?? { title: "Prediction Unavailable", icon: "alert-circle-outline" };
+  return (
+    <View style={[styles.card, styles.unavailableCard]}>
+      <View style={styles.unavailableIconCircle}>
+        <Ionicons name={meta.icon as any} size={20} color={COLOR_AMBER} />
+      </View>
+      <Text style={styles.unavailableTitle}>{meta.title}</Text>
+      <Text style={styles.unavailableDetail}>{unavailable.detail}</Text>
+      <Text style={styles.unavailableNote}>
+        Check back later — this data is added as Congress publishes it.
+      </Text>
     </View>
   );
 }
@@ -993,6 +1028,47 @@ const createStyles = (theme: any, isLandscape = false) =>
       lineHeight: 18,
       color: COLOR_ORANGE,
       flex: 1,
+    },
+
+    // ── Prediction unavailable notice
+    unavailableCard: {
+      alignItems: "center",
+      borderColor: COLOR_AMBER + "44",
+      paddingVertical: 22,
+    },
+    unavailableIconCircle: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      borderWidth: 1,
+      borderColor: COLOR_AMBER + "55",
+      backgroundColor: COLOR_AMBER + "1c",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 10,
+    },
+    unavailableTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: theme.titleText,
+      marginBottom: 8,
+      textAlign: "center",
+    },
+    unavailableDetail: {
+      fontSize: 12.5,
+      fontWeight: "400",
+      color: theme.subtext,
+      lineHeight: 20,
+      textAlign: "center",
+      maxWidth: 280,
+    },
+    unavailableNote: {
+      fontSize: 10.5,
+      fontWeight: "400",
+      color: COLOR_AMBER,
+      marginTop: 10,
+      textAlign: "center",
+      lineHeight: 16,
     },
 
     // ── Empty state

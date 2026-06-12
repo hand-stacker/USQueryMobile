@@ -20,15 +20,18 @@ const arraysEqual = (a?: number[], b?: number[]) => {
   return true;
 };
 
-export default function BillSearchResults( {navigation} : any) {
+export default function BillSearchResults( {navigation, route} : any) {
   const { theme } = useContext(ThemeContext);
   const { width, height } = useWindowDimensions();
   const styles = createStyles(theme, width > height);
   const subject_list_store = useSubjectListStore(s => s.subject_list);
   const subject_list = useMemo(() => (subject_list_store && subject_list_store.length > 0) ? subject_list_store : [], [subject_list_store]);
-  const [modalVisible, setModalVisible] = useState(subject_list.length === 0);
-  const [sortType, setSortType] = useState("datedesc");
-  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list , truncate: true, sort: sortType }));
+  const routeParams = route?.params ?? {};
+  const [highlight] = useState<number[]>(routeParams.highlight ?? []);
+  const fromNotif = !!(routeParams.bill_type || routeParams.highlight?.length);
+  const [modalVisible, setModalVisible] = useState(subject_list.length === 0 && !fromNotif);
+  const [sortType, setSortType] = useState(routeParams.sort ?? "datedesc");
+  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: routeParams.bill_type ?? undefined, first: 30, congress_num: 119, subject_list: subject_list, truncate: true, sort: routeParams.sort ?? "datedesc" }));
   const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
   const navigatedWithinStackRef = useRef(false);
   const { bills, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentBills(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.truncate, searchVars.sort);
@@ -141,7 +144,7 @@ export default function BillSearchResults( {navigation} : any) {
           onSearch={handleSearch}
           subjects={subjects}
         />
-        <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} />
+        <BillList data={edges} navigator={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} highlight={highlight} />
       </View>
     </SafeAreaView>
   );

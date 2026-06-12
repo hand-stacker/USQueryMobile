@@ -33,7 +33,12 @@ export async function authRequest(
     let response = await authorizedFetch(endpoint, options, baseUrl);
 
     if (response.status !== 401) {
-        return response.json();
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch {
+            throw new Error(`Server error (${response.status})`);
+        }
     }
 
     // 401 → try refresh
@@ -60,11 +65,12 @@ export async function authRequest(
             }
         );
 
-        if (!retryResponse.ok) {
-            throw new Error("Retry failed");
+        const retryText = await retryResponse.text();
+        try {
+            return JSON.parse(retryText);
+        } catch {
+            throw new Error(`Server error (${retryResponse.status})`);
         }
-
-        return retryResponse.json();
     } catch (error) {
         // Refresh failed → logout; let caller handle UI/alerts
         await removeUserSession();

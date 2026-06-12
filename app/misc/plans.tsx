@@ -1,17 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useContext, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { retrieveUserSession } from '../encrypted-storage/functions';
 import { authRequest } from '../hooks/authRequest';
@@ -64,7 +54,6 @@ export default function PlansScreen({ navigation }: PlansProps) {
       const session = await retrieveUserSession();
       const loggedIn = !!session?.accessToken;
       setIsLoggedIn(loggedIn);
-
       const plans: PlansData = await authRequest('subscription/plans/');
       setPlansData(plans);
       if (loggedIn) {
@@ -177,23 +166,17 @@ export default function PlansScreen({ navigation }: PlansProps) {
   };
 
   const predictionsLabel = (val: number | null, tierId?: number) =>
-    tierId === 1
-      ? { label: '10 vote predictions/day', included: true }
-      : tierId !== undefined && tierId >= 2
-      ? { label: 'Unlimited vote predictions', included: true }
-      : val === null
-      ? { label: 'Unlimited vote predictions', included: true }
+    tierId !== undefined && (tierId == 2 || tierId == 3) ?
+      { label: 'Unlimited vote predictions', included: true }
       : val === 0
       ? { label: 'Vote predictions', included: false }
       : { label: `${val} vote predictions/day`, included: true };
+      
 
   const chatLabel = (val: number | null, tierId?: number) =>
-    tierId === 1
-      ? { label: '10 AI chats/day', included: true }
-      : tierId !== undefined && tierId >= 2
-      ? { label: '7.5M tokens/month AI chats', included: true }
-      : val === null
-      ? { label: 'Unlimited AI chats', included: true }
+
+    tierId !== undefined && (tierId == 2 || tierId == 3) ?
+      { label: '5M tokens/month AI chats', included: true }
       : val === 0
       ? { label: 'AI chatbot', included: false }
       : { label: `${val} AI chats/day`, included: true };
@@ -204,6 +187,7 @@ export default function PlansScreen({ navigation }: PlansProps) {
     const isUpgrade = isLoggedIn && tier.id > currentTier;
     const isDowngrade = isLoggedIn && tier.id < currentTier;
     const canSubscribe = plansData?.subscriptions_enabled && plansData?.stripe_configured;
+    const canManage = canSubscribe;
     const cancelPending = subStatus?.cancel_at_period_end ?? false;
 
     if (isCurrent) {
@@ -213,7 +197,7 @@ export default function PlansScreen({ navigation }: PlansProps) {
             <Ionicons name="checkmark-circle" size={16} color={theme.primary} style={{ marginRight: 6 }} />
             <Text style={styles.currentBadgeText}>Current Plan</Text>
           </View>
-          {tier.id > 0 && (
+          {tier.id > 0 && canManage && (
             <>
               {cancelPending ? (
                 <Pressable
@@ -255,7 +239,7 @@ export default function PlansScreen({ navigation }: PlansProps) {
       );
     }
 
-    if (isDowngrade) {
+    if (isDowngrade && canManage) {
       return (
         <Pressable
           style={[styles.btn, styles.btnSecondary, portalLoading && { opacity: 0.75 }]}

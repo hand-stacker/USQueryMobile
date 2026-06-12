@@ -1,14 +1,9 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Linking, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { STORE_URL } from '../../constants/storeLinks';
 import { useAppSettingsStore } from '../store/appSettingsStore';
 import { ThemeContext } from '../theme/themeContext';
-
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.jerem13.USQ_Mobile_App';
-// TODO: replace with real App Store ID once listing is created
-const APP_STORE_URL = 'https://apps.apple.com/app/id_PLACEHOLDER';
-
-const REVIEW_URL = Platform.OS === 'android' ? PLAY_STORE_URL : APP_STORE_URL;
 
 export default function ReviewModal() {
   const { theme } = useContext(ThemeContext);
@@ -40,7 +35,7 @@ export default function ReviewModal() {
   const handleReview = async () => {
     setReviewStatus('reviewed');
     setVisible(false);
-    await Linking.openURL(REVIEW_URL);
+    await Linking.openURL(STORE_URL);
   };
 
   const handleLater = () => {

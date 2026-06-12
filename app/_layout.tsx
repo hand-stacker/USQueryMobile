@@ -22,7 +22,9 @@ import MemberInfo from "./member/screens/[membershipId]";
 import DisclaimerModal from './misc/DisclaimerModal';
 import PrivacyPolicyModal from './misc/PrivacyPolicyModal';
 import ReviewModal from './misc/ReviewModal';
+import UpdateAvailableModal from './misc/UpdateAvailableModal';
 import WelcomeFavoritesModal from './misc/WelcomeFavoritesModal';
+import WhatsNewModal from './misc/WhatsNewModal';
 import VoteInfo from "./vote/screens/[vote_id]";
 import VoteFYP from "./vote/screens/vote_fyp";
 
@@ -38,6 +40,7 @@ import './globals.css';
 import SearchedMembers from "./member/screens/searched_members";
 import StarredMembers from "./member/screens/starred_members";
 import CheckoutSuccess from "./misc/checkout_success";
+import FeedbackScreen from "./misc/feedback";
 import NotificationSettings from "./misc/notification_settings";
 import OptionsPage from "./misc/options";
 import PlansScreen from "./misc/plans";
@@ -82,6 +85,7 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Reset_Password" component={ResetPassword} options={{ headerShown: false }}/>
       <Stack.Screen name="Notification_Settings" component={NotificationSettings} options={{ headerShown: false }}/>
       <Stack.Screen name="Privacy_Policy" component={PrivacyPolicy} options={{ headerShown: false }}/>
+      <Stack.Screen name="Feedback" component={FeedbackScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Plans" component={PlansScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Checkout_Success" component={CheckoutSuccess} options={{ headerShown: false }}/>
     </Stack.Navigator>
@@ -194,7 +198,15 @@ export default function RootLayout() {
     const sub =
       Notifications.addNotificationResponseReceivedListener(response => {
         const data = response.notification.request.content.data;
-        if (data?.screen === "Bill_FYP") {
+        if (data?.screen === 'Bill_Search') {
+          const typeMap: Record<string, string> = { House: '!H', Senate: '!S' };
+          const bill_type = typeMap[(data.filters as any)?.type] ?? '!';
+          navigate('Searched_Bills', {
+            sort: data.sort ?? 'datedesc',
+            bill_type,
+            highlight: data.highlight ?? [],
+          });
+        } else if (data?.screen === "Bill_FYP") {
           navigate("Bill_FYP", { sort: data.sort ?? "datedesc" });
         } else if (data?.bill_id) {
           navigate("Bill_info", { bill_id: data.bill_id });
@@ -234,6 +246,8 @@ function AppNavigation() {
         <PrivacyPolicyModal />
         <DisclaimerModal />
         <ReviewModal />
+        <WhatsNewModal />
+        <UpdateAvailableModal />
       </NavigationContainer>
       </SafeAreaProvider>
     </NavigationIndependentTree>

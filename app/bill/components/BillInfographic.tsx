@@ -12,13 +12,14 @@ type BillInfographicProps={
   billTitle:string;
   billNum:string;
   billSummary:string;
+  highlighted?: boolean;
 }
 
 function navToBill(navigation: any, billId: any) {
   navigation.navigate("Bill_info", {bill_id: billId});
 }
 
-export default function BillInfographic({navigator, billId, billTitle, billNum, billSummary }:BillInfographicProps) {
+export default function BillInfographic({navigator, billId, billTitle, billNum, billSummary, highlighted = false}:BillInfographicProps) {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
   const maxHeight = scaleFont(200);
@@ -59,7 +60,7 @@ export default function BillInfographic({navigator, billId, billTitle, billNum, 
     navToBill(navigator, billId);
   }, [navigator, billId]);
   return (
-    <AccentCard accentColor={theme.primary} style={{ padding: 0, marginBottom: 0 }}>
+    <AccentCard accentColor={highlighted ? theme.accent : theme.primary} style={{ padding: 0, marginBottom: 0 }}>
       <Pressable onPress={handlePress} onLongPress={handleLongPress}>
         <Animated.View style={[styles.animatedContent, {height: animatedHeight}]}>
           <View style={styles.headerRow}>
