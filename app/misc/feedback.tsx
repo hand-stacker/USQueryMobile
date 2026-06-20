@@ -87,6 +87,7 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   },
   sectionBody: {
     fontSize: 13,
+    fontWeight: '400',
     lineHeight: 20,
     color: theme.subtext,
     textAlign: 'center',
@@ -114,6 +115,7 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   },
   note: {
     fontSize: 11,
+    fontWeight: '400',
     color: theme.subtext,
     marginTop: 10,
     textAlign: 'center',

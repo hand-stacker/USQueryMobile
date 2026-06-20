@@ -113,6 +113,7 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   disclaimerText: {
     color: theme.subtext,
     fontSize: 12,
+    fontWeight: '400',
     lineHeight: 18,
     textAlign: 'center',
   },

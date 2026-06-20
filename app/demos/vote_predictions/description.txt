@@ -1,1 +1,1 @@
-See AI-powered forecasts of how Congress will vote on active bills, backed by Monte-Carlo simulation. Open any active bill and tap Vote Predictions.
+See AI-powered forecasts of how Congress will vote on active bills. Open any active bill and tap Vote Predictions.

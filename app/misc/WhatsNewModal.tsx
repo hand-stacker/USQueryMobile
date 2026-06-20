@@ -1,3 +1,5 @@
+import { nativeApplicationVersion } from 'expo-application';
+import Constants from 'expo-constants';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   Image,
@@ -11,8 +13,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { nativeApplicationVersion } from 'expo-application';
-import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CloseButton from '../components/CloseButton';
 import { DEMO_FEATURES } from '../demos';
@@ -58,7 +58,6 @@ export default function WhatsNewModal() {
       // nativeApplicationVersion is the binary's baked-in version, used as fallback.
       const current = Constants.expoConfig?.version ?? nativeApplicationVersion;
       if (!current) return; // not available (e.g. web)
-
       const isNewVersion = !lastSeenVersion || compareVersions(lastSeenVersion, current) < 0;
       if (!isNewVersion || DEMO_FEATURES.length === 0) return;
 
@@ -70,13 +69,19 @@ export default function WhatsNewModal() {
       setDescriptions(texts);
       setVersion(current);
       setVisible(true);
-      setLastSeenVersion(current);
     })();
   }, [hydrated]);
 
   if (!visible) return null;
 
-  const close = () => setVisible(false);
+  // Persist the seen version only once the user dismisses the modal, so an
+  // interrupted launch (app backgrounded/killed before close) re-shows it.
+  const close = () => {
+    if (version) setLastSeenVersion(version);
+    setVisible(false);
+    // Read from the store (not the stale closure var) to confirm the write.
+    console.log('[WhatsNewModal] stored lastSeenVersion:', useAppVersionStore.getState().lastSeenVersion);
+  };
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (pageWidth <= 0) return;
@@ -90,7 +95,7 @@ export default function WhatsNewModal() {
         <View style={styles.container}>
           <View style={styles.header}>
             <View style={styles.headerText}>
-              <Text style={styles.title}>What&apos;s New</Text>
+              <Text style={styles.title}>What's New</Text>
               {version && (
                 <View style={styles.versionChip}>
                   <Text style={styles.versionChipText}>v{version}</Text>
@@ -240,6 +245,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   featureDescription: {
     fontSize: 14,
+    fontWeight: '400',
     lineHeight: 20,
     color: theme.subtext,
     textAlign: 'center',

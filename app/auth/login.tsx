@@ -5,6 +5,7 @@ import AppleSignInButton from "../components/AppleSignInButton";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
+import { openStripeUrl } from "../hooks/openStripeUrl";
 import { useAppleSignIn } from "../hooks/useAppleSignIn";
 import { useGoogleSignIn } from "../hooks/useGoogleSignIn";
 import { useLogin } from "../hooks/useLogin";
@@ -152,7 +153,9 @@ export default function Login({ navigation }: LoginProps) {
     try {
       const result = await authRequest("subscription/portal/", { method: "POST" });
       if (result.portal_url) {
-        Linking.openURL(result.portal_url).catch(() => {});
+        // In-app browser that returns to the app via the deep link rather than
+        // stranding the user on the logged-out web manage page.
+        await openStripeUrl(result.portal_url);
       } else {
         Alert.alert("Error", result.error ?? "Could not open billing portal.");
       }

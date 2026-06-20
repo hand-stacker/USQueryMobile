@@ -1,12 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useContext, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { retrieveUserSession } from '../encrypted-storage/functions';
 import { authRequest } from '../hooks/authRequest';
+import { openStripeUrl } from '../hooks/openStripeUrl';
 import { ThemeContext } from '../theme/themeContext';
 
+
+// Tier ids are not in upgrade order. The real ladder is
+// free < plus < plus pro < premium < special, so map each id to its rank and
+// compare ranks (not ids) when deciding upgrade vs. downgrade.
+const TIER_RANK: Record<number, number> = {
+  0: 0, // Free
+  1: 1, // Plus
+  4: 2, // Plus Pro
+  2: 3, // Premium
+  3: 4, // Special (placeholder, not shown on the plans page)
+};
+const rankOf = (tierId: number) => TIER_RANK[tierId] ?? tierId;
 
 interface PlansProps {
   navigation: any;
@@ -33,6 +46,10 @@ interface SubStatus {
   tier: number;
   tier_name: string;
   cancel_at_period_end: boolean;
+  // Tier the user switches to at period_end (a scheduled downgrade), 0 if a
+  // cancellation supersedes a downgrade (drops to Free), or null for none.
+  change_at_period_end: number | null;
+  change_at_period_end_name: string | null;
   period_end: string | null;
 }
 
@@ -45,7 +62,8 @@ export default function PlansScreen({ navigation }: PlansProps) {
   const [subStatus, setSubStatus] = useState<SubStatus | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  // null = idle, -1 = cancel in flight, -2 = reactivate in flight, N = upgrading tier N
+  // null = idle, -1 = cancel in flight, -2 = reactivate in flight,
+  // -4 = cancelling a scheduled downgrade in flight, N = upgrading tier N
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
@@ -81,7 +99,11 @@ export default function PlansScreen({ navigation }: PlansProps) {
     try {
       const result = await authRequest('subscription/portal/', { method: 'POST' });
       if (result.portal_url) {
-        await Linking.openURL(result.portal_url);
+        // Opens in an in-app browser that returns to the app via the deep link.
+        await openStripeUrl(result.portal_url);
+        // The user may have updated their card or cancelled inside the portal —
+        // refresh so the screen reflects any change.
+        await loadData();
       } else {
         Alert.alert('Error', result.error ?? 'Could not open billing portal.');
       }
@@ -92,7 +114,16 @@ export default function PlansScreen({ navigation }: PlansProps) {
     }
   };
 
-  const handleUpgrade = async (tierId: number) => {
+  const formatEffectiveDate = (val?: string | null) => {
+    if (!val) return null;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  // Commits a tier change. Handles all create-checkout/ response shapes:
+  // new-signup checkout_url, modified upgrade/downgrade, and 402 payment_failed.
+  const runCheckout = async (tierId: number) => {
     setActionLoading(tierId);
     try {
       const result = await authRequest('subscription/create-checkout/', {
@@ -101,13 +132,37 @@ export default function PlansScreen({ navigation }: PlansProps) {
       });
 
       if (result.checkout_url) {
-        await Linking.openURL(result.checkout_url);
-        navigation.navigate('Checkout_Success');
+        // New-subscriber hosted checkout. Opens in an in-app browser that
+        // bounces back to the app; Stripe's success_url carries ?status=success
+        // and cancel_url ?status=cancel via the deep link.
+        const returnedUrl = await openStripeUrl(result.checkout_url);
+        if (returnedUrl && !returnedUrl.includes('status=cancel')) {
+          navigation.navigate('Checkout_Success');
+        } else {
+          // Cancelled, dismissed, or system-browser fallback — just refresh.
+          // The webhook is the source of truth and will finalize regardless.
+          await loadData();
+        }
+      } else if (result.change_cancelled || result.resumed) {
+        // Re-selected the current tier: a pending downgrade was cancelled or a
+        // pending cancellation resumed. This is an in-place change, not a new
+        // purchase — refresh the screen rather than show the success page.
+        Alert.alert('Done', result.message ?? 'Your subscription was updated.');
+        await loadData();
       } else if (result.modified) {
         navigation.navigate('Checkout_Success', {
           instant: true,
           message: result.message,
         });
+      } else if (result.payment_failed) {
+        Alert.alert(
+          'Payment Failed',
+          result.error ?? 'Your card could not be charged. Update your payment method and try again.',
+          [
+            { text: 'Not Now', style: 'cancel' },
+            { text: 'Update Card', onPress: openPortal },
+          ]
+        );
       } else {
         Alert.alert('Error', result.error ?? 'Something went wrong. Please try again.');
       }
@@ -115,6 +170,64 @@ export default function PlansScreen({ navigation }: PlansProps) {
       Alert.alert('Error', err?.message ?? 'Could not complete the action. Please try again.');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // Previews a tier change, shows a confirm dialog with the exact charge /
+  // effective date, then commits via runCheckout. New subscribers (no active
+  // sub) skip straight to hosted checkout.
+  const changePlan = async (tierId: number) => {
+    setActionLoading(tierId);
+    let preview: any;
+    try {
+      preview = await authRequest('subscription/preview-change/', {
+        method: 'POST',
+        body: JSON.stringify({ tier: tierId }),
+      });
+    } catch (err: any) {
+      Alert.alert('Error', err?.message ?? 'Could not load plan change details. Please try again.');
+      setActionLoading(null);
+      return;
+    }
+    setActionLoading(null);
+
+    // No active subscription → nothing to prorate, go straight to checkout.
+    if (preview.requires_checkout) {
+      runCheckout(tierId);
+      return;
+    }
+    if (preview.error) {
+      Alert.alert('Error', preview.error);
+      return;
+    }
+
+    const tierName = preview.new_tier_name ?? 'this plan';
+
+    if (preview.is_upgrade) {
+      const charge = Number(preview.immediate_charge ?? 0).toFixed(2);
+      const credit = Number(preview.credit_applied ?? 0);
+      const creditLine = credit > 0 ? ` (after a $${credit.toFixed(2)} credit for unused time)` : '';
+      const recurring = preview.recurring_price ? ` Then renews at ${preview.recurring_price}.` : '';
+      Alert.alert(
+        `Upgrade to ${tierName}`,
+        `You'll be charged $${charge} today${creditLine}.${recurring} Your billing date resets to today.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Confirm & Pay', onPress: () => runCheckout(tierId) },
+        ]
+      );
+    } else {
+      const when = formatEffectiveDate(preview.effective_date);
+      const recurring = preview.recurring_price ? ` It then renews at ${preview.recurring_price}.` : '';
+      Alert.alert(
+        `Switch to ${tierName}`,
+        `Your plan switches to ${tierName}${when ? ` on ${when}` : ' at your next billing date'}. ` +
+          `You keep your current features until then — no charge today.${recurring}`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Confirm', onPress: () => runCheckout(tierId) },
+        ]
+      );
     }
   };
 
@@ -165,6 +278,29 @@ export default function PlansScreen({ navigation }: PlansProps) {
     }
   };
 
+  // Cancels a pending deferred downgrade by re-selecting the current tier.
+  // create-checkout/ responds with { change_cancelled: true } in this case.
+  const handleCancelScheduledChange = async () => {
+    const tierId = subStatus?.tier ?? 0;
+    setActionLoading(-4);
+    try {
+      const result = await authRequest('subscription/create-checkout/', {
+        method: 'POST',
+        body: JSON.stringify({ tier: tierId }),
+      });
+      if (result.change_cancelled || result.modified) {
+        Alert.alert('Done', result.message ?? 'Your scheduled plan change was cancelled.');
+        await loadData();
+      } else {
+        Alert.alert('Error', result.error ?? 'Could not cancel the scheduled change.');
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err?.message ?? 'Could not cancel the scheduled change.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const predictionsLabel = (val: number | null, tierId?: number) =>
     tierId !== undefined && (tierId == 2 || tierId == 3) ?
       { label: 'Unlimited vote predictions', included: true }
@@ -184,11 +320,20 @@ export default function PlansScreen({ navigation }: PlansProps) {
   const renderCardActions = (tier: Tier) => {
     const currentTier = subStatus?.tier ?? 0;
     const isCurrent = isLoggedIn && currentTier === tier.id;
-    const isUpgrade = isLoggedIn && tier.id > currentTier;
-    const isDowngrade = isLoggedIn && tier.id < currentTier;
+    const isUpgrade = isLoggedIn && rankOf(tier.id) > rankOf(currentTier);
+    const isDowngrade = isLoggedIn && rankOf(tier.id) < rankOf(currentTier);
     const canSubscribe = plansData?.subscriptions_enabled && plansData?.stripe_configured;
     const canManage = canSubscribe;
     const cancelPending = subStatus?.cancel_at_period_end ?? false;
+    // This card is the target of a pending deferred downgrade.
+    const isScheduledTarget =
+      isLoggedIn && !cancelPending && subStatus?.change_at_period_end === tier.id;
+    // A deferred downgrade is scheduled away from the current (higher) tier.
+    const hasScheduledDowngrade =
+      isLoggedIn &&
+      !cancelPending &&
+      (subStatus?.change_at_period_end ?? 0) > 0 &&
+      rankOf(subStatus!.change_at_period_end!) < rankOf(currentTier);
 
     if (isCurrent) {
       return (
@@ -199,6 +344,19 @@ export default function PlansScreen({ navigation }: PlansProps) {
           </View>
           {tier.id > 0 && canManage && (
             <>
+              {hasScheduledDowngrade && (
+                <Pressable
+                  style={[styles.btn, styles.btnPrimary, { marginTop: 10 }]}
+                  onPress={handleCancelScheduledChange}
+                  disabled={actionLoading === -4}
+                >
+                  {actionLoading === -4 ? (
+                    <ActivityIndicator color={theme.innerText} />
+                  ) : (
+                    <Text style={[styles.btnText, { color: theme.innerText }]}>Switch back to {tier.name}</Text>
+                  )}
+                </Pressable>
+              )}
               {cancelPending ? (
                 <Pressable
                   style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
@@ -240,15 +398,29 @@ export default function PlansScreen({ navigation }: PlansProps) {
     }
 
     if (isDowngrade && canManage) {
+      // Reverting to Free is a cancellation, not a plan change — the backend
+      // rejects tier 0 on preview/checkout ("invalid tier"). Route the Free
+      // card to handleCancel (which uses the -1 action slot) instead.
+      const isFree = tier.id === 0;
+      // A pending cancellation already drops to Free at period end, so the
+      // Free card is effectively the scheduled downgrade target in that case.
+      if (isScheduledTarget || (isFree && cancelPending)) {
+        return (
+          <View style={[styles.btn, styles.btnDisabled]}>
+            <Text style={[styles.btnText, { color: theme.subtext }]}>Scheduled</Text>
+          </View>
+        );
+      }
+      const slot = isFree ? -1 : tier.id;
       return (
         <Pressable
-          style={[styles.btn, styles.btnSecondary, portalLoading && { opacity: 0.75 }]}
-          onPress={openPortal}
-          disabled={portalLoading}
+          style={[styles.btn, styles.btnSecondary, actionLoading === slot && { opacity: 0.75 }]}
+          onPress={() => (isFree ? handleCancel() : changePlan(tier.id))}
+          disabled={actionLoading === slot}
         >
-          {portalLoading
+          {actionLoading === slot
             ? <ActivityIndicator color={theme.text} />
-            : <Text style={[styles.btnText, { color: theme.text }]}>Switch via Portal</Text>}
+            : <Text style={[styles.btnText, { color: theme.text }]}>Switch to {tier.name}</Text>}
         </Pressable>
       );
     }
@@ -273,7 +445,7 @@ export default function PlansScreen({ navigation }: PlansProps) {
       return (
         <Pressable
           style={[styles.btn, styles.btnPrimary, actionLoading === tier.id && { opacity: 0.75 }]}
-          onPress={() => handleUpgrade(tier.id)}
+          onPress={() => changePlan(tier.id)}
           disabled={actionLoading === tier.id}
         >
           {actionLoading === tier.id ? (
@@ -325,6 +497,38 @@ export default function PlansScreen({ navigation }: PlansProps) {
             </Text>
           </View>
         )}
+
+        {/* Pending deferred downgrade (only when not also cancelling). The user
+            keeps their current tier until period_end, then switches down. */}
+        {isLoggedIn &&
+          !subStatus?.cancel_at_period_end &&
+          (subStatus?.change_at_period_end ?? 0) > 0 && (
+            <View style={styles.warningBanner}>
+              <Ionicons name="time-outline" size={16} color="#F59E0B" style={{ marginRight: 8 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.bannerText, { color: '#F59E0B' }]}>
+                  Your plan switches to {subStatus?.change_at_period_end_name}
+                  {formatEffectiveDate(subStatus?.period_end)
+                    ? ` on ${formatEffectiveDate(subStatus?.period_end)}`
+                    : ' at your next billing date'}
+                  . You keep {subStatus?.tier_name} until then.
+                </Text>
+                <Pressable
+                  style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
+                  onPress={handleCancelScheduledChange}
+                  disabled={actionLoading === -4}
+                >
+                  {actionLoading === -4 ? (
+                    <ActivityIndicator color={theme.primary} />
+                  ) : (
+                    <Text style={[styles.btnText, { color: theme.primary }]}>
+                      Keep {subStatus?.tier_name}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          )}
 
         {plansData?.tiers.map((tier) => (
           <View key={tier.id} style={[styles.card, tier.id === 1 && styles.cardHighlight]}>
@@ -379,7 +583,7 @@ function FeatureRow({ label, included, theme }: { label: string; included: boole
         color={included ? '#2ea87e' : theme.subtext}
         style={{ marginRight: 10 }}
       />
-      <Text style={{ color: included ? theme.text : theme.subtext, fontSize: 14, flex: 1 }}>{label}</Text>
+      <Text style={{ color: included ? theme.text : theme.subtext, fontSize: 14, fontWeight: '400', flex: 1 }}>{label}</Text>
     </View>
   );
 }
@@ -401,6 +605,7 @@ const createStyles = (theme: any, isLandscape = false) =>
     subtitle: {
       color: theme.subtext,
       fontSize: 15,
+      fontWeight: '400',
       marginBottom: 20,
     },
     infoBanner: {
@@ -423,6 +628,7 @@ const createStyles = (theme: any, isLandscape = false) =>
     },
     bannerText: {
       fontSize: 13,
+      fontWeight: '400',
       color: theme.text,
       lineHeight: 18,
     },
@@ -470,6 +676,7 @@ const createStyles = (theme: any, isLandscape = false) =>
     tierPricePeriod: {
       color: theme.subtext,
       fontSize: 13,
+      fontWeight: '400',
       marginBottom: 16,
     },
     featureList: {
@@ -516,12 +723,14 @@ const createStyles = (theme: any, isLandscape = false) =>
     aboutText: {
       color: theme.text,
       fontSize: 13,
+      fontWeight: '400',
       lineHeight: 20,
       marginBottom: 12,
     },
     finePrint: {
       color: theme.subtext,
       fontSize: 11,
+      fontWeight: '400',
       textAlign: 'center',
     },
   });

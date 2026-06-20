@@ -9,7 +9,6 @@ import imageLight from './vote_predictions_li.jpg';
 const VotePredictionsButton = ({ onDone }: { onDone: () => void }) => (
   <DemoFeatureButton
     label="Browse Bills"
-    icon="flash-outline"
     onPress={() => {
       onDone();
       navigate('Bill_FYP');

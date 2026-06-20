@@ -9,7 +9,6 @@ import imageLight from './floor_notifications_li.jpg';
 const FloorNotificationsButton = ({ onDone }: { onDone: () => void }) => (
   <DemoFeatureButton
     label="Open Notification Settings"
-    icon="notifications-outline"
     onPress={() => {
       onDone();
       navigate('Notification_Settings');

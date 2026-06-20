@@ -408,6 +408,7 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   },
   sectionSubtitle: {
     fontSize: 13,
+    fontWeight: '400',
     color: theme.subtext,
     marginTop: 4,
     marginBottom: 8,
@@ -438,6 +439,7 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
   },
   prefSubtitle: {
     fontSize: 13,
+    fontWeight: '400',
     color: theme.subtext,
     marginTop: 2,
   },

@@ -5,12 +5,11 @@ import { ThemeContext } from '../theme/themeContext';
 
 interface Props {
   label: string;
-  icon?: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
 }
 
 /** Tinted CTA button used inside the What's New carousel to jump to a feature. */
-export default function DemoFeatureButton({ label, icon, onPress }: Props) {
+export default function DemoFeatureButton({ label, onPress }: Props) {
   const { theme } = useContext(ThemeContext);
   const s = styles(theme);
 
@@ -22,11 +21,12 @@ export default function DemoFeatureButton({ label, icon, onPress }: Props) {
         accessibilityRole="button"
         accessibilityLabel={label}
       >
-        {icon && <Ionicons name={icon} size={18} color={theme.primary} />}
-        <Text style={s.label} numberOfLines={1}>
-          {label}
-        </Text>
-        <Ionicons name="chevron-forward" size={16} color={theme.primary} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <Text style={s.label} numberOfLines={1}>
+            {label}
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={theme.primary} />
+        </View>
       </Pressable>
     </View>
   );

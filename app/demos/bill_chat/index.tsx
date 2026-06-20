@@ -9,7 +9,6 @@ import description from './description.txt';
 const BillChatButton = ({ onDone }: { onDone: () => void }) => (
   <DemoFeatureButton
     label="Browse Bills"
-    icon="chatbubble-ellipses-outline"
     onPress={() => {
       onDone();
       navigate('Bill_FYP');
