@@ -208,7 +208,13 @@ export default function NotificationSettings() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Negative margin + matching content padding keeps card side-shadows
+          from being clipped at the scroll view's edges. */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+      >
         <Text style={styles.title}>Notification Settings</Text>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 }}>
@@ -377,6 +383,12 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
     paddingHorizontal: '18%',
     paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
+  },
+  scroll: {
+    marginHorizontal: -12,
+  },
+  scrollContent: {
+    paddingHorizontal: 12,
   },
   label: {
     fontSize: 16,

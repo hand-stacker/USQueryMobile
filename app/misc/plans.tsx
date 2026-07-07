@@ -470,7 +470,9 @@ export default function PlansScreen({ navigation }: PlansProps) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+      {/* Negative margin + matching content padding keeps card side-shadows
+          from being clipped at the scroll view's edges. */}
+      <ScrollView showsVerticalScrollIndicator={false} style={{ marginHorizontal: -12 }} contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: 12 }}>
         <Text style={styles.title}>Plans & Pricing</Text>
         <Text style={styles.subtitle}>Unlock predictions, starred content, and more.</Text>
 

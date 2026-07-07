@@ -41,12 +41,7 @@ export default function OverflowList({ data, renderItem, keyExtractor, title }: 
         <Text style={styles.viewAllText}>View full list</Text>
       </Pressable>
 
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setModalVisible(false)}
-      >
+      <Modal visible={modalVisible} animationType="fade" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <Pressable style={{ flex: 1 }} onPress={() => setModalVisible(false)} />
           <View style={styles.modalSheet}>

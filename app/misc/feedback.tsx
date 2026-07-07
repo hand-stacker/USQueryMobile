@@ -20,7 +20,13 @@ export default function FeedbackScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Negative margin + matching content padding keeps the card's side
+          shadows from being clipped at the scroll view's edges. */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+      >
         <Text style={styles.title}>Feedback</Text>
 
         <View style={styles.section}>
@@ -50,6 +56,12 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
     paddingHorizontal: '18%',
     paddingTop: isLandscape ? '6%' : '24%',
     backgroundColor: theme.background,
+  },
+  scroll: {
+    marginHorizontal: -12,
+  },
+  scrollContent: {
+    paddingHorizontal: 12,
   },
   title: {
     fontSize: 24,

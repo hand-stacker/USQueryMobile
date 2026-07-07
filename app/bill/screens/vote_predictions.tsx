@@ -386,6 +386,7 @@ export default function VotePredictionsScreen({ navigation, route }: Props) {
           )
         }
         showsVerticalScrollIndicator={false}
+        style={styles.list}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         initialNumToRender={20}
@@ -930,8 +931,14 @@ const createStyles = (theme: any, isLandscape = false) =>
       justifyContent: "center",
       alignItems: "center",
     },
+    // Widen the list and pad its content back by the same amount so card
+    // side-shadows aren't clipped at the scroll view's edges.
+    list: {
+      marginHorizontal: -12,
+    },
     scrollContent: {
       paddingBottom: 20,
+      paddingHorizontal: 12,
     },
     listFooter: {
       height: 40,

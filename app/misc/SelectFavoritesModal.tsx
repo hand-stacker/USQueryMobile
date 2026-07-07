@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { ActivityIndicator, Modal, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CloseButton from '../components/CloseButton';
 import MultiSelect from '../components/MultiSelect';
@@ -14,8 +14,7 @@ interface Props {
 
 export default function SelectFavoritesModal({ visible, onClose }: Props) {
   const { theme } = useContext(ThemeContext);
-  const { width, height } = useWindowDimensions();
-  const styles = createStyles(theme, width > height);
+  const styles = createStyles(theme);
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
   const favorites = useFavoritesStore(s => s.favorites);
   const hydrated = useFavoritesStore(s => s._hasHydrated);
@@ -28,51 +27,77 @@ export default function SelectFavoritesModal({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>Select Favorite Subjects</Text>
-          <CloseButton onPress={onClose} />
-        </View>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <SafeAreaView style={styles.overlay} edges={["top"]}>
+        <View style={styles.container}>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Select Favorite Subjects</Text>
+            <CloseButton onPress={onClose} />
+          </View>
 
-        {subjectsLoading ? (
-          <ActivityIndicator />
-        ) : subjectsError ? (
-          <Text>Error loading subjects</Text>
-        ) : !hydrated ? (
-          <ActivityIndicator />
-        ) : (
-          <MultiSelect
-            data={subjects}
-            value={favorites.map(String)}
-            placeholder="Choose subjects"
-            onChange={(next) => handleChange(next)}
-            maxContainerHeight={450}
-          />
-        )}
+          {subjectsLoading ? (
+            <ActivityIndicator />
+          ) : subjectsError ? (
+            <Text style={styles.errorText}>Error loading subjects</Text>
+          ) : !hydrated ? (
+            <ActivityIndicator />
+          ) : (
+            <>
+              <MultiSelect
+                data={subjects}
+                value={favorites.map(String)}
+                placeholder="Choose subjects"
+                onChange={(next) => handleChange(next)}
+                maxContainerHeight={450}
+              />
+              {favorites.length === 0 && (
+                <Text style={styles.emptyText}>Choose subjects from the list above</Text>
+              )}
+            </>
+          )}
+        </View>
       </SafeAreaView>
     </Modal>
   );
 }
 
-const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
-  container: {
+const createStyles = (theme: any) => StyleSheet.create({
+  overlay: {
     flex: 1,
-    paddingHorizontal: '18%',
-    paddingTop: isLandscape ? '6%' : '24%',
-    backgroundColor: theme.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.overlay,
   },
-  title: {
-    color: theme.text,
-    fontSize: 24,
-    fontWeight: "600",
-    marginBottom: 20,
-    maxWidth: "80%",
+  container: {
+    width: '90%',
+    backgroundColor: theme.background,
+    padding: 18,
+    borderRadius: 12,
+    elevation: 6,
+    shadowColor: theme.shadow,
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 12,
+  },
+  title: {
+    maxWidth: '80%',
+    color: theme.titleText,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  errorText: {
+    color: theme.text,
+  },
+  emptyText: {
+    color: theme.subtext,
+    fontSize: 14,
+    marginTop: 12,
+    textAlign: 'center',
   },
 });

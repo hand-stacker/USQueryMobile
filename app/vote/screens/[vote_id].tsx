@@ -102,6 +102,7 @@ export default function VoteInfo({ navigation, route }: VoteInfoProps) {
         data={filteredMembers}
         keyExtractor={(item: any, idx: number) => `${item?.id ?? idx}_${idx}`}
         renderItem={renderMember}
+        style={styles.list}
         contentContainerStyle={styles.listWrap}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         ListFooterComponent={() => <View style={{ height: 50 }} />}
@@ -199,7 +200,10 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
     backgroundColor: theme.background,
   },
   center: { justifyContent: 'center', alignItems: 'center' },
-  listWrap: { paddingTop: 6, paddingBottom: 50 },
+  // Widen the list and pad its content back by the same amount so card
+  // side-shadows aren't clipped at the scroll view's edges.
+  list: { marginHorizontal: -12 },
+  listWrap: { paddingTop: 6, paddingBottom: 50, paddingHorizontal: 12 },
 
   // Info card
   headerCard: {

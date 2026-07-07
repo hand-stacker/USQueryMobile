@@ -37,7 +37,7 @@ export default function MemberSearchModal({ visible, onClose, onSearch, initial}
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" onRequestClose={onClose}>
       <SafeAreaView style={styles.modalOverlay}>
         <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <NavReturn onPress={onClose} />

@@ -3,21 +3,12 @@ import useGetRecentVotes from "@/app/hooks/useGetRecentVotes";
 import useGetSubjects from "@/app/hooks/useGetSubjects";
 import { useSubjectListStore } from "@/app/store/subjectListStore";
 import { ThemeContext } from "@/app/theme/themeContext";
-import { useIsFocused } from '@react-navigation/native';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SortOptions from '../../components/SortOptions';
 import VoteList from '../components/VoteList';
 import VoteTopNav from '../components/VoteTopNav';
-
-const arraysEqual = (a?: number[], b?: number[]) => {
-  if (!a && !b) return true;
-  if (!a || !b) return false;
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
-};
 
 export default function VoteSearchResults( {navigation} : any) {
   const { theme } = useContext(ThemeContext);
@@ -28,26 +19,8 @@ export default function VoteSearchResults( {navigation} : any) {
   const [modalVisible, setModalVisible] = useState(subject_list.length === 0);
   const [sortType, setSortType] = useState("datedesc");
   const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list, sort: sortType }));
-  const lastUsedSubjectsRef = useRef<number[] | undefined>(undefined);
   const { votes, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentVotes(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.sort);
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
-
-  const isFocused = useIsFocused();
-
-  useEffect(() => {
-    if (!isFocused) return;
-    if (arraysEqual(lastUsedSubjectsRef.current, subject_list)) return;
-    lastUsedSubjectsRef.current = subject_list;
-    setSearchVars((prev: any) => {
-      const next = { ...prev, subject_list: subject_list, after: undefined };
-      try {
-        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, sort: next.sort });
-      } catch (err) {
-        console.error('Refetch on focus failed', err);
-      }
-      return next;
-    });
-  }, [isFocused, subject_list, sortType, refetch]);
 
   const edges = useMemo(() => {
     if (Array.isArray(votes)) return [];
@@ -67,7 +40,6 @@ export default function VoteSearchResults( {navigation} : any) {
       } catch (err) {
         console.error('Refetch on search failed', err);
       }
-      lastUsedSubjectsRef.current = next.subject_list;
       return next;
     });
   }, [subject_list, sortType, refetch]);

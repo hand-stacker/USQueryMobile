@@ -40,7 +40,7 @@ const Summary: React.FC<{ text?: string }> = ({ text }) => {
         </View>
       </Pressable>
 
-      <Modal visible={visible} animationType="slide" transparent onRequestClose={() => setVisible(false)}>
+      <Modal visible={visible} animationType="fade" transparent onRequestClose={() => setVisible(false)}>
         <View style={styles.modalOverlay}>
           <Pressable style={{ flex: 1 }} onPress={() => setVisible(false)} />
           <View style={styles.modalCard} >

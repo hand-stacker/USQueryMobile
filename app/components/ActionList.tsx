@@ -77,6 +77,7 @@ const ActionList = ({ data, summary_text, navigator, header, preTimeline }: Prop
       ListHeaderComponent={listHeader}
       ItemSeparatorComponent={ItemSeparator}
       ListFooterComponent={ListFooter}
+      style={styles.list}
       contentContainerStyle={styles.listContainer}
     />
   );
@@ -85,9 +86,16 @@ const ActionList = ({ data, summary_text, navigator, header, preTimeline }: Prop
 export default React.memo(ActionList);
 
 const createStyles = (theme: any) => StyleSheet.create({
+  // The list is widened by a negative horizontal margin and the content padded
+  // back by the same amount, so card side-shadows render inside the scroll
+  // view's clip bounds instead of being cut off at its edges.
+  list: {
+    marginHorizontal: -12,
+  },
   listContainer: {
     paddingTop: 12,
     paddingBottom: 24,
+    paddingHorizontal: 12,
   },
   itemHeader: {
     flexDirection: 'row',

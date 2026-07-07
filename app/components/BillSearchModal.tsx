@@ -68,7 +68,7 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" onRequestClose={onClose}>
       <SafeAreaView style={styles.modalOverlay}>
         <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <NavReturn onPress={onClose} />
