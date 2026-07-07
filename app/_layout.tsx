@@ -23,6 +23,7 @@ import DisclaimerModal from './misc/DisclaimerModal';
 import PrivacyPolicyModal from './misc/PrivacyPolicyModal';
 import ReviewModal from './misc/ReviewModal';
 import UpdateAvailableModal from './misc/UpdateAvailableModal';
+import UpsellModal from './misc/UpsellModal';
 import WelcomeFavoritesModal from './misc/WelcomeFavoritesModal';
 import WhatsNewModal from './misc/WhatsNewModal';
 import VoteInfo from "./vote/screens/[vote_id]";
@@ -248,6 +249,7 @@ function AppNavigation() {
         <ReviewModal />
         <WhatsNewModal />
         <UpdateAvailableModal />
+        <UpsellModal />
       </NavigationContainer>
       </SafeAreaProvider>
     </NavigationIndependentTree>
