@@ -70,7 +70,7 @@ const SLIDES: Slide[] = [
   {
     key: 'vote_predictions',
     title: 'AI Vote Predictions',
-    body: "See how likely Congress is to pass any active bill — and each member's odds of voting Yes.",
+    body: "See how likely Congress is to pass any active bill, and each member's odds of voting Yes.",
     image: { light: votePredLight, dark: votePredDark },
   },
   {
@@ -144,7 +144,8 @@ export default function UpsellModal() {
   const upgrade = () => {
     setSnoozedUntil(Date.now() + UPGRADE_SNOOZE_MS);
     setVisible(false);
-    navigate('Plans');
+    // Switch to the Settings (options) tab, then open Plans within its stack.
+    navigate('Settings', { screen: 'Plans' });
   };
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -155,70 +156,76 @@ export default function UpsellModal() {
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={dismiss}>
-      <SafeAreaView style={styles.overlay} edges={['top']}>
+      <SafeAreaView style={styles.overlay} edges={['top', 'bottom']}>
         <View style={styles.container}>
-          <View style={styles.header}>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>Unlock More</Text>
-              <View style={styles.planChip}>
-                <Text style={styles.planChipText}>Plus & Premium</Text>
-              </View>
-            </View>
-            <CloseButton onPress={dismiss} size={18} style={styles.closeButton} />
-          </View>
-
-          <View
-            style={styles.carousel}
-            onLayout={(e) => setPageWidth(e.nativeEvent.layout.width)}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            bounces={false}
           >
-            {pageWidth > 0 && (
-              <ScrollView
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={onScrollEnd}
-              >
-                {SLIDES.map((slide) => {
-                  const source = isDark ? slide.image.dark : slide.image.light;
-                  const asset = Image.resolveAssetSource(source);
-                  const ratio =
-                    asset && asset.width > 0 && asset.height > 0
-                      ? asset.width / asset.height
-                      : 3 / 4;
-                  const contentWidth = pageWidth - 8;
-                  const imageWidth = Math.min(contentWidth, imageAreaHeight * ratio);
-                  const imageHeight = imageWidth / ratio;
-                  return (
-                    <View key={slide.key} style={[styles.page, { width: pageWidth }]}>
-                      <View style={[styles.imageArea, { height: imageAreaHeight }]}>
-                        <Image
-                          source={source}
-                          style={[styles.image, { width: imageWidth, height: imageHeight }]}
-                        />
+            <View style={styles.header}>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>Unlock More</Text>
+                <View style={styles.planChip}>
+                  <Text style={styles.planChipText}>Plus & Premium</Text>
+                </View>
+              </View>
+              <CloseButton onPress={dismiss} size={18} style={styles.closeButton} />
+            </View>
+
+            <View
+              style={[styles.carousel, { minHeight: imageAreaHeight + 96 }]}
+              onLayout={(e) => setPageWidth(e.nativeEvent.layout.width)}
+            >
+              {pageWidth > 0 && (
+                <ScrollView
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={onScrollEnd}
+                >
+                  {SLIDES.map((slide) => {
+                    const source = isDark ? slide.image.dark : slide.image.light;
+                    const asset = Image.resolveAssetSource(source);
+                    const ratio =
+                      asset && asset.width > 0 && asset.height > 0
+                        ? asset.width / asset.height
+                        : 3 / 4;
+                    const contentWidth = pageWidth - 8;
+                    const imageWidth = Math.min(contentWidth, imageAreaHeight * ratio);
+                    const imageHeight = imageWidth / ratio;
+                    return (
+                      <View key={slide.key} style={[styles.page, { width: pageWidth }]}>
+                        <View style={[styles.imageArea, { height: imageAreaHeight }]}>
+                          <Image
+                            source={source}
+                            style={[styles.image, { width: imageWidth, height: imageHeight }]}
+                          />
+                        </View>
+                        <Text style={styles.featureTitle}>{slide.title}</Text>
+                        <Text style={styles.featureDescription}>{slide.body}</Text>
                       </View>
-                      <Text style={styles.featureTitle}>{slide.title}</Text>
-                      <Text style={styles.featureDescription}>{slide.body}</Text>
-                    </View>
-                  );
-                })}
-              </ScrollView>
-            )}
-          </View>
+                    );
+                  })}
+                </ScrollView>
+              )}
+            </View>
 
-          <View style={styles.dots}>
-            {SLIDES.map((_, i) => (
-              <View key={i} style={[styles.dot, i === page && styles.dotActive]} />
-            ))}
-          </View>
+            <View style={styles.dots}>
+              {SLIDES.map((_, i) => (
+                <View key={i} style={[styles.dot, i === page && styles.dotActive]} />
+              ))}
+            </View>
 
-          <Text style={styles.pitch}>Upgrade to unlock these features and more.</Text>
+            <Text style={styles.pitch}>Upgrade to unlock these features and more.</Text>
 
-          <Pressable style={styles.upgradeButton} onPress={upgrade}>
-            <Text style={styles.upgradeText}>Upgrade</Text>
-          </Pressable>
-          <Pressable style={styles.laterButton} onPress={dismiss}>
-            <Text style={styles.laterText}>Maybe Later</Text>
-          </Pressable>
+            <Pressable style={styles.upgradeButton} onPress={upgrade}>
+              <Text style={styles.upgradeText}>Upgrade</Text>
+            </Pressable>
+            <Pressable style={styles.laterButton} onPress={dismiss}>
+              <Text style={styles.laterText}>Maybe Later</Text>
+            </Pressable>
+          </ScrollView>
         </View>
       </SafeAreaView>
     </Modal>
@@ -244,6 +251,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     shadowOpacity: 0.18,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
+  },
+  scrollContent: {
+    // Lets the CTA breathe at the very bottom when the content scrolls.
+    paddingBottom: 2,
   },
   header: {
     flexDirection: 'row',
@@ -278,7 +289,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: 0,
   },
   carousel: {
-    flexShrink: 1,
+    // minHeight is applied inline from the responsive image-area height so the
+    // nested horizontal (paging) ScrollView always has a definite height and
+    // never collapses inside the outer vertical ScrollView.
+    width: '100%',
   },
   page: {
     alignItems: 'center',

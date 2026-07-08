@@ -3,8 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
-    NavigationContainer,
-    NavigationIndependentTree
+  NavigationContainer,
+  NavigationIndependentTree
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Notifications from "expo-notifications";
@@ -14,10 +14,10 @@ import { client } from "./api/apollo";
 import { navigate, navigationRef } from "./navigation/navigationRef";
 
 import BillInfo from "./bill/screens/[bill_id]";
-import BillFYP from "./bill/screens/bill_fyp";
 import BillChatScreen from "./bill/screens/bill_chat";
-import VotePredictionsScreen from "./bill/screens/vote_predictions";
+import BillFYP from "./bill/screens/bill_fyp";
 import StarredBills from "./bill/screens/starred_bills";
+import VotePredictionsScreen from "./bill/screens/vote_predictions";
 import MemberInfo from "./member/screens/[membershipId]";
 import DisclaimerModal from './misc/DisclaimerModal';
 import PrivacyPolicyModal from './misc/PrivacyPolicyModal';
@@ -181,7 +181,7 @@ function TabNavigator() {
         })}
         options={{
           headerShown: false,
-          tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 }]}>Settings</UnscalableText>
+          tabBarLabel: ({ color }) => <UnscalableText style={[{ color }, { fontSize: 12 , fontWeight:600}]}>Settings</UnscalableText>
         }}
       />
     </Tabs.Navigator>
