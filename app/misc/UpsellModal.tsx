@@ -29,7 +29,7 @@ import votePredLight from '../demos/vote_predictions/vote_predictions_li.jpg';
 // Detail pages that can trigger the upsell (deepest active route name).
 const QUALIFYING_ROUTES = ['Bill_info', 'Member_info', 'Vote_info'];
 // Chance the modal shows on a qualifying navigation when all conditions are met.
-const SHOW_PROBABILITY = 1;
+const SHOW_PROBABILITY = 0.33;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // After a dismiss, mute for a week; after tapping Upgrade, mute for a month
 // (they've already seen Plans; the tier check ends it entirely once they buy).
