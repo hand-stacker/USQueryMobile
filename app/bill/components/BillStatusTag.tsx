@@ -30,7 +30,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
   },
   dot: {
     width: 6,

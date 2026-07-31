@@ -25,14 +25,8 @@ const GET_RECENT_BILLS = gql`
     edges {
       node {
         id
-        isAiGenerated
-        originDate
-        latestAction
         title
-        subjects {
-          name
-        }
-        status
+        latestAction
         statusCode
       }
     }
@@ -46,10 +40,11 @@ const GET_RECENT_BILLS = gql`
   }
 `;
 
-export function useGetRecentBills(after?: string, bill_type?: string, first?: number, congress_num?: number, subject_list?: number[], truncate: boolean = false, sort: string = "") {
+export function useGetRecentBills(after?: string, bill_type?: string, first?: number, congress_num?: number, subject_list?: number[], truncate: boolean = false, sort: string = "", options?: { skip?: boolean }) {
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_RECENT_BILLS, {
     variables: { after, bill_type, first, congress_num, subject_list, truncate, sort },
     client,
+    skip: options?.skip,
   });
 
   if (error) {

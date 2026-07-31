@@ -30,6 +30,8 @@ function buildPipeline(
     if (sc === 50)            { items = [['blue', `${origin}: Awaiting`], ['blue', `${outer}: Awaiting`]]; }
     else if (sc >= 51 && sc <= 53) { items = [['blue', `${origin}: Considering`], ['blue', `${outer}: Considering`]]; }
     else if (sc === 54)       { items = [['green', `${origin}: Passed`], ['blue', `${outer}: Considering`]]; }
+    else if (sc === 55)       { items = [['blue', `${origin}: Considering`], ['green', `${outer}: Passed`]]; }
+    else if (sc === 58)       { items = [['red', 'Tabled'], ['red', 'Tabled']]; }
     else if (sc === 59)       { items = [['red', 'Expired'], ['red', 'Expired']]; }
     else                      { items = [['green', `${origin}: Passed`], ['green', `${outer}: Passed`]]; }
     parts.push({ kind: 'multi', title: 'Conference', items });
@@ -38,28 +40,34 @@ function buildPipeline(
     let oc: Color, ol: string;
     if      (sc < 10)              { oc = 'gray';  ol = '...'; }
     else if (sc === 10)            { oc = 'blue';  ol = 'In Committee'; }
+    else if (sc === 18)            { oc = 'red';   ol = 'Tabled in\nCommittee'; }
     else if (sc === 19)            { oc = 'red';   ol = 'Expired in\nCommittee'; }
     else if (sc === 20)            { oc = 'blue';  ol = 'Reported to\nFloor'; }
     else if (sc === 21)            { oc = 'green'; ol = 'Amended'; }
     else if (sc === 22)            { oc = 'green'; ol = 'Passed\nAmended'; }
     else if (sc === 25)            { oc = 'green'; ol = 'Passed'; }
+    else if (sc === 26)            { oc = 'red';   ol = 'Failed'; }
     else if (sc === 27 || sc === 29) { oc = 'green'; ol = 'Expired after\nPassage'; }
     else if (sc === 28)            { oc = 'red';   ol = 'Expired on\nFloor'; }
     else if (sc === 41)            { oc = 'blue';  ol = 'Received\nAmended'; }
-    else                           { oc = 'green'; ol = 'Passed'; }
+    else if (sc >= 30)             { oc = 'green'; ol = 'Passed'; }
+    else                           { oc = 'gray';  ol = '...'; }
     parts.push({ kind: 'step', title: origin, color: oc, label: ol });
-    parts.push({ kind: 'conn', done: (sc >= 21 && sc < 27) || sc >= 30 });
+    parts.push({ kind: 'conn', done: (sc >= 21 && sc <= 25) || sc >= 30 });
 
     let xc: Color, xl: string;
     if      (sc === 27 || sc === 28 || sc === 29) { xc = 'gray';  xl = '...'; }
     else if (sc === 21)            { xc = 'blue';  xl = 'Received\nAmended'; }
+    else if (sc === 22)            { xc = 'green'; xl = 'Passed'; }
     else if (sc < 30)              { xc = 'gray';  xl = '...'; }
     else if (sc === 30)            { xc = 'blue';  xl = 'In Committee'; }
+    else if (sc === 38)            { xc = 'red';   xl = 'Tabled in\nCommittee'; }
     else if (sc === 39)            { xc = 'red';   xl = 'Expired in\nCommittee'; }
     else if (sc === 40)            { xc = 'blue';  xl = 'Reported'; }
     else if (sc === 41)            { xc = 'green'; xl = 'Amended'; }
     else if (sc === 42)            { xc = 'green'; xl = 'Passed\nAmended'; }
     else if (sc === 45)            { xc = 'green'; xl = 'Passed'; }
+    else if (sc === 46)            { xc = 'red';   xl = 'Failed'; }
     else if (sc === 47 || sc === 49) { xc = 'green'; xl = 'Expired after\nPassage'; }
     else if (sc === 48)            { xc = 'red';   xl = 'Expired on\nFloor'; }
     else if (sc >= 60 || isVeto)   { xc = 'green'; xl = 'Passed'; }

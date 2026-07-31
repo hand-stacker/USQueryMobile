@@ -24,6 +24,7 @@ const BillList = ({data, navigator, onEndReached, loadingMore, highlight = []}:P
       billNum={node.billNum ?? node.id}
       statusCode={node.statusCode ?? 0}
       billTitle={node.title ?? node.billTitle}
+      latestAction={node.latestAction}
       highlighted={isHighlighted}
       />);
 }, [navigator, highlight]);

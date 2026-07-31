@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/themeContext";
 import scaleFont from "../utils/scaleFont";
@@ -12,6 +12,7 @@ interface SearchVars {
   first?: number | undefined;
   congress_num?: number | undefined;
   subject_list?: number[] | undefined;
+  keyword?: string | undefined;
 }
 
 interface Props {
@@ -29,6 +30,7 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
   const [selectedCongress, setSelectedCongress] = useState<number | undefined>(initial?.congress_num ?? 119);
   const [selectedBillType, setSelectedBillType] = useState<string | undefined>(initial?.bill_type ?? '!');
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>(initial?.subject_list ?? []);
+  const [keyword, setKeyword] = useState<string | undefined>(initial?.keyword ?? undefined);
 
   const typeToText = (type: string | undefined) => {
     switch(type) {
@@ -55,17 +57,25 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
         case 113: return '113 (2013-2015)';
         case 112: return '112 (2011-2013)';}}   
 
-  const onPressSearch = () => {
+  const trimmedKeyword = keyword?.trim() ?? '';
+  const canKeywordSearch = trimmedKeyword.length > 0;
+
+  const onPressSearch = (searchType: 'subject' | 'keyword') => {
+    // Keyword search requires a non-empty term.
+    if (searchType === 'keyword' && !canKeywordSearch) return;
     const variables: any = {
       after: null,
       bill_type: selectedBillType ?? undefined,
       first: 10,
       congress_num: selectedCongress ?? undefined,
       subject_list: selectedSubjects.length ? selectedSubjects.map(Number) : undefined,
+      keyword: searchType === 'keyword' ? trimmedKeyword : undefined,
+      searchType: searchType,
     };
     onSearch(variables);
     onClose();
   };
+  
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
@@ -93,6 +103,28 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
               </Pressable>
             ))}
           </ScrollView>
+          <Text style={styles.subtitle}>Search by Keyword</Text>
+          <View style={{marginBottom:16}}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter keywords..."
+              placeholderTextColor={theme.subtext}
+              value={keyword}
+              onChangeText={setKeyword}
+            />
+          </View>
+          <Pressable
+            style={[styles.searchButton, !canKeywordSearch && styles.searchButtonDisabled]}
+            onPress={() => onPressSearch('keyword')}
+            disabled={!canKeywordSearch}
+            android_ripple={{color:'#00000010'}}
+          >
+            <Text style={styles.searchButtonText}>Search</Text>
+          </Pressable>
+
+          <Text style={styles.subtitle}>Select Subjects</Text>
+          <Text style={{color:theme.subtext, fontSize:12, marginBottom:8}}>You can select multiple subjects to filter by.</Text>
+
           <MultiSelectComponent
             data={subjects}
             value={selectedSubjects.map(String)}
@@ -101,7 +133,7 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
             maxContainerHeight={scaleFont(200)}
           />
 
-          <Pressable style={styles.searchButton} onPress={onPressSearch} android_ripple={{color:'#00000010'}}>
+          <Pressable style={styles.searchButton} onPress={() => onPressSearch('subject')} android_ripple={{color:'#00000010'}}>
             <Text style={styles.searchButtonText}>Search</Text>
           </Pressable>
           </ScrollView>
@@ -183,10 +215,24 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  searchButtonDisabled: {
+    opacity: 0.5,
+  },
   searchButtonText: {
     textAlign: 'center',
     color: theme.innerText,
     fontWeight: '700',
     fontSize: 16,
+  },
+  input: {
+    color: theme.text,
+    backgroundColor: theme.card,
+    borderColor: theme.border,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontWeight: '500',
+    fontSize: 14,
   }
 });

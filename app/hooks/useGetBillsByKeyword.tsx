@@ -9,7 +9,7 @@ const GET_BILLS_BY_KEYWORD = gql`
     $bill_type: String,
     $congress_num: Int,
     $first: Int,
-    $keyword: String
+    $keyword: String!
     $sort: String = ""
     ) {
     getBillsByKeyword(
@@ -23,14 +23,8 @@ const GET_BILLS_BY_KEYWORD = gql`
     edges {
       node {
         id
-        isAiGenerated
-        originDate
-        latestAction
         title
-        subjects {
-          name
-        }
-        status
+        latestAction
         statusCode
       }
     }
@@ -44,10 +38,11 @@ const GET_BILLS_BY_KEYWORD = gql`
   }
 `;
 
-export function useGetBillsByKeyword(after?: string, bill_type?: string, first?: number, congress_num?: number, keyword?: string, sort?: string) {
+export function useGetBillsByKeyword(after?: string, bill_type?: string, first?: number, congress_num?: number, keyword?: string, sort?: string, options?: { skip?: boolean }) {
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_BILLS_BY_KEYWORD, {
     variables: { after, bill_type, first, congress_num, keyword, sort },
     client,
+    skip: options?.skip,
   });
 
   if (error) {
@@ -81,11 +76,11 @@ export function useGetBillsByKeyword(after?: string, bill_type?: string, first?:
           if (!fetchMoreResult) return prev;
           return {
             ...fetchMoreResult,
-            getRecommendedBills: {
-              ...fetchMoreResult.getRecommendedBills,
+            getBillsByKeyword: {
+              ...fetchMoreResult.getBillsByKeyword,
               edges: [
-                ...prev.getRecommendedBills.edges,
-                ...fetchMoreResult.getRecommendedBills.edges,
+                ...prev.getBillsByKeyword.edges,
+                ...fetchMoreResult.getBillsByKeyword.edges,
               ],
             },
           };
