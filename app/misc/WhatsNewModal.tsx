@@ -79,8 +79,6 @@ export default function WhatsNewModal() {
   const close = () => {
     if (version) setLastSeenVersion(version);
     setVisible(false);
-    // Read from the store (not the stale closure var) to confirm the write.
-    console.log('[WhatsNewModal] stored lastSeenVersion:', useAppVersionStore.getState().lastSeenVersion);
   };
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {

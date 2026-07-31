@@ -43,8 +43,7 @@ export default function OverflowList({ data, renderItem, keyExtractor, title }: 
 
       <Modal visible={modalVisible} animationType="fade" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <Pressable style={{ flex: 1 }} onPress={() => setModalVisible(false)} />
-          <View style={styles.modalSheet}>
+          <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{title}</Text>
               <CloseButton onPress={() => setModalVisible(false)} />
@@ -64,7 +63,7 @@ export default function OverflowList({ data, renderItem, keyExtractor, title }: 
                   })}
                 </View>
               )}
-              contentContainerStyle={{ padding: 16 }}
+              contentContainerStyle={{ paddingTop: 4 }}
             />
           </View>
         </View>
@@ -91,28 +90,32 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.overlay,
   },
-  modalSheet: {
-    backgroundColor: theme.card,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+  modalCard: {
+    width: '90%',
     maxHeight: '80%',
-    paddingBottom: 20,
+    backgroundColor: theme.background,
+    padding: 18,
+    borderRadius: 12,
+    elevation: 6,
+    shadowColor: theme.shadow,
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 13,
+    maxWidth: '80%',
+    color: theme.titleText,
+    fontSize: 18,
     fontWeight: '700',
-    color: theme.text,
-    letterSpacing: 0.8,
   },
 });

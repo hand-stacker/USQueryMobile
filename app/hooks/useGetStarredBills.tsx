@@ -22,11 +22,11 @@ const GET_STARRED_BILLS = gql`
         originDate
         latestAction
         title
-        summary
         subjects {
           name
         }
         status
+        statusCode
       }
     }
     pageInfo {

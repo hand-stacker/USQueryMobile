@@ -1,5 +1,6 @@
 import React, { useContext, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/themeContext";
 import CloseButton from "./CloseButton";
 
@@ -41,9 +42,8 @@ const Summary: React.FC<{ text?: string }> = ({ text }) => {
       </Pressable>
 
       <Modal visible={visible} animationType="fade" transparent onRequestClose={() => setVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <Pressable style={{ flex: 1 }} onPress={() => setVisible(false)} />
-          <View style={styles.modalCard} >
+        <SafeAreaView style={styles.modalOverlay} edges={["top"]}>
+          <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Full Summary</Text>
               <CloseButton onPress={() => setVisible(false)} />
@@ -52,7 +52,7 @@ const Summary: React.FC<{ text?: string }> = ({ text }) => {
               <Text style={styles.modalText}>{plain}</Text>
             </ScrollView>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -87,37 +87,36 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.overlay,
   },
   modalCard: {
-    backgroundColor: theme.card,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    width: '90%',
     maxHeight: '80%',
-    paddingBottom: 20,
+    backgroundColor: theme.background,
+    padding: 18,
+    borderRadius: 12,
+    elevation: 6,
+    shadowColor: theme.shadow,
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 13,
+    maxWidth: '80%',
+    color: theme.titleText,
+    fontSize: 18,
     fontWeight: '700',
-    color: theme.text,
-    letterSpacing: 0.8,
-  },
-  modalClose: {
-    fontSize: 14,
-    color: theme.subtext,
-    fontWeight: '500',
   },
   modalScroll: {
-    padding: 16,
+    paddingBottom: 4,
   },
   modalText: {
     fontSize: 15,

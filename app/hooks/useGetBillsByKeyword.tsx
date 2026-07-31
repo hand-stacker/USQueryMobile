@@ -10,6 +10,7 @@ const GET_BILLS_BY_KEYWORD = gql`
     $congress_num: Int,
     $first: Int,
     $keyword: String
+    $sort: String = ""
     ) {
     getBillsByKeyword(
         after: $after,
@@ -17,6 +18,7 @@ const GET_BILLS_BY_KEYWORD = gql`
         congressNum: $congress_num,
         first: $first,
         keyword: $keyword
+        sort: $sort
     ) {
     edges {
       node {
@@ -25,11 +27,11 @@ const GET_BILLS_BY_KEYWORD = gql`
         originDate
         latestAction
         title
-        summary
         subjects {
           name
         }
         status
+        statusCode
       }
     }
     pageInfo {
@@ -42,9 +44,9 @@ const GET_BILLS_BY_KEYWORD = gql`
   }
 `;
 
-export function useGetBillsByKeyword(after?: string, bill_type?: string, first?: number, congress_num?: number, keyword?: string) {
+export function useGetBillsByKeyword(after?: string, bill_type?: string, first?: number, congress_num?: number, keyword?: string, sort?: string) {
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_BILLS_BY_KEYWORD, {
-    variables: { after, bill_type, first, congress_num, keyword },
+    variables: { after, bill_type, first, congress_num, keyword, sort },
     client,
   });
 
@@ -73,6 +75,7 @@ export function useGetBillsByKeyword(after?: string, bill_type?: string, first?:
           first,
           congress_num,
           keyword,
+          sort,
         },
         updateQuery: (prev: any, { fetchMoreResult }: any) => {
           if (!fetchMoreResult) return prev;

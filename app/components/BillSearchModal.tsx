@@ -1,10 +1,10 @@
 import React, { useContext, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/themeContext";
 import scaleFont from "../utils/scaleFont";
+import CloseButton from "./CloseButton";
 import MultiSelectComponent from "./MultiSelect";
-import NavReturn from "./NavReturn";
 
 interface SearchVars {
   after?: string | null;
@@ -68,11 +68,14 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
   };
 
   return (
-    <Modal visible={visible} animationType="fade" onRequestClose={onClose}>
-      <SafeAreaView style={styles.modalOverlay}>
-        <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <NavReturn onPress={onClose} />
-          {desc && <Text style={styles.title}>{desc}</Text>}
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <SafeAreaView style={styles.modalOverlay} edges={["top"]}>
+        <View style={styles.form}>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>{desc ?? 'Search Bills'}</Text>
+            <CloseButton onPress={onClose} />
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <Text style={styles.subtitle}>Select Congress</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
             {[119,118,117,116,115,114,113,112].map((num)=> (
@@ -101,7 +104,8 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
           <Pressable style={styles.searchButton} onPress={onPressSearch} android_ripple={{color:'#00000010'}}>
             <Text style={styles.searchButtonText}>Search</Text>
           </Pressable>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </Modal>
   );
@@ -110,26 +114,33 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
 const createStyles = (theme: any) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: theme.background,
-    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.overlay,
   },
   form: {
-    backgroundColor: theme.card,
+    width: '90%',
+    maxHeight: '85%',
+    backgroundColor: theme.background,
     padding: 18,
-    borderRadius: 14,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    borderRadius: 12,
     elevation: 6,
-    marginBottom: 20,
-    gap: 2,
+    shadowColor: theme.shadow,
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: theme.text,
-    marginBottom: 6,
+    maxWidth: '80%',
+    color: theme.titleText,
+    fontSize: 18,
+    fontWeight: '700',
   },
   subtitle: {
     color: theme.subtext,

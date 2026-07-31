@@ -8,6 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { updateFloorPrefs } from "../api/notifFloorPreferencesUpdate";
 import { getNotifPreferences } from "../api/notifPreferencesGet";
 import { updatePrefs } from "../api/notifPreferencesUpdate";
+import CloseButton from "../components/CloseButton";
 import { registerForPushNotifications, unregisterForPushNotifications } from "../hooks/usePushNotif";
 import { ThemeContext } from "../theme/themeContext";
 
@@ -46,23 +47,28 @@ function HourPickerModal({
   const { theme } = useContext(ThemeContext);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}
-        onPress={onDismiss}
+      <View
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.overlay }}
       >
         <View
           style={{
-            backgroundColor: theme.card,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            padding: 20,
-            paddingBottom: 40,
+            width: '90%',
+            backgroundColor: theme.background,
+            padding: 18,
+            borderRadius: 12,
+            elevation: 6,
+            shadowColor: theme.shadow,
+            shadowOpacity: 0.18,
+            shadowOffset: { width: 0, height: 2 },
+            shadowRadius: 6,
           }}
-          onStartShouldSetResponder={() => true}
         >
-          <Text style={{ fontSize: 16, fontWeight: '600', color: theme.text, marginBottom: 12, textAlign: 'center' }}>
-            Select hour
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <Text style={{ maxWidth: '80%', color: theme.titleText, fontSize: 18, fontWeight: '700' }}>
+              Select hour
+            </Text>
+            <CloseButton onPress={onDismiss} />
+          </View>
           <FlatList
             data={HOURS}
             keyExtractor={(h) => String(h)}
@@ -95,7 +101,7 @@ function HourPickerModal({
             }}
           />
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }

@@ -22,7 +22,7 @@ const BillList = ({data, navigator, onEndReached, loadingMore, highlight = []}:P
       navigator={navigator}
       billId={node.id}
       billNum={node.billNum ?? node.id}
-      billSummary={node.summary ?? node.billSummary?? 'No summary available.'}
+      statusCode={node.statusCode ?? 0}
       billTitle={node.title ?? node.billTitle}
       highlighted={isHighlighted}
       />);
