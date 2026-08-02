@@ -19,11 +19,12 @@ import { navigate, navigationRef } from '../navigation/navigationRef';
 import { useUpsellStore } from '../store/upsellStore';
 import { ThemeContext } from '../theme/themeContext';
 
-// Reuse the What's New demo screenshots so the upsell stays visually consistent.
-import billChatDark from '../demos/bill_chat/bill_chat_dk.jpg';
-import billChatLight from '../demos/bill_chat/bill_chat_li.jpg';
-import votePredDark from '../demos/vote_predictions/vote_predictions_dk.jpg';
-import votePredLight from '../demos/vote_predictions/vote_predictions_li.jpg';
+// The upsell owns its own screenshots so it stays independent of the per-release
+// What's New demos in app/demos/ (which are swapped out each version).
+import billChatDark from './upsell_assets/bill_chat_dk.jpg';
+import billChatLight from './upsell_assets/bill_chat_li.jpg';
+import votePredDark from './upsell_assets/vote_predictions_dk.jpg';
+import votePredLight from './upsell_assets/vote_predictions_li.jpg';
 
 // ── Trigger configuration ──────────────────────────────────────────────────────
 // Detail pages that can trigger the upsell (deepest active route name).

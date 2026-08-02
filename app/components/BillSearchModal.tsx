@@ -1,5 +1,16 @@
 import React, { useContext, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/themeContext";
 import scaleFont from "../utils/scaleFont";
@@ -32,6 +43,12 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>(initial?.subject_list ?? []);
   const [keyword, setKeyword] = useState<string | undefined>(initial?.keyword ?? undefined);
 
+  // Swipeable keyword / subject search windows (user-driven, no auto-switch).
+  const [page, setPage] = useState(0);
+  const [pageWidth, setPageWidth] = useState(0);
+  const { height: windowHeight } = useWindowDimensions();
+  const pagerHeight = Math.min(280, Math.round(windowHeight * 0.32));
+
   const typeToText = (type: string | undefined) => {
     switch(type) {
         case '!': return 'All';
@@ -44,8 +61,8 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
         case 'hr': return 'HR';
         case 'hres': return 'H.Res.';
         case 'hconres': return 'H.Con.Res';
-        case 'hjres': return 'H.J.Res';}}   
-  
+        case 'hjres': return 'H.J.Res';}}
+
     const numToDate = (type: number | string) => {
     switch(type) {
         case 119: return '119 (2025-2027)';
@@ -55,7 +72,7 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
         case 115: return '115 (2017-2019)';
         case 114: return '114 (2015-2017)';
         case 113: return '113 (2013-2015)';
-        case 112: return '112 (2011-2013)';}}   
+        case 112: return '112 (2011-2013)';}}
 
   const trimmedKeyword = keyword?.trim() ?? '';
   const canKeywordSearch = trimmedKeyword.length > 0;
@@ -75,7 +92,13 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
     onSearch(variables);
     onClose();
   };
-  
+
+  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (pageWidth <= 0) return;
+    const next = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
+    setPage(Math.max(0, Math.min(next, 1)));
+  };
+
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
@@ -85,7 +108,9 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
             <Text style={styles.title}>{desc ?? 'Search Bills'}</Text>
             <CloseButton onPress={onClose} />
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+          {/* Shared filters apply to both search windows. Kept above the pager so
+              their horizontal chip scrollers don't fight the horizontal swipe. */}
           <Text style={styles.subtitle}>Select Congress</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
             {[119,118,117,116,115,114,113,112].map((num)=> (
@@ -103,40 +128,72 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
               </Pressable>
             ))}
           </ScrollView>
-          <Text style={styles.subtitle}>Search by Keyword</Text>
-          <View style={{marginBottom:16}}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter keywords..."
-              placeholderTextColor={theme.subtext}
-              value={keyword}
-              onChangeText={setKeyword}
-            />
-          </View>
-          <Pressable
-            style={[styles.searchButton, !canKeywordSearch && styles.searchButtonDisabled]}
-            onPress={() => onPressSearch('keyword')}
-            disabled={!canKeywordSearch}
-            android_ripple={{color:'#00000010'}}
+
+          <View
+            style={[styles.pager, { height: pagerHeight }]}
+            onLayout={(e) => setPageWidth(e.nativeEvent.layout.width)}
           >
-            <Text style={styles.searchButtonText}>Search</Text>
-          </Pressable>
+            {pageWidth > 0 && (
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                onMomentumScrollEnd={onScrollEnd}
+              >
+                {/* Window 1 — Keyword search */}
+                <View style={[styles.page, { width: pageWidth }]}>
+                  <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                    <Text style={styles.subtitle}>Search by Keyword</Text>
+                    <View style={{marginBottom:16}}>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter keywords..."
+                        placeholderTextColor={theme.subtext}
+                        value={keyword}
+                        onChangeText={setKeyword}
+                      />
+                    </View>
+                    <Pressable
+                      style={[styles.searchButton, !canKeywordSearch && styles.searchButtonDisabled]}
+                      onPress={() => onPressSearch('keyword')}
+                      disabled={!canKeywordSearch}
+                      android_ripple={{color:'#00000010'}}
+                    >
+                      <Text style={styles.searchButtonText}>Search</Text>
+                    </Pressable>
+                  </ScrollView>
+                </View>
 
-          <Text style={styles.subtitle}>Select Subjects</Text>
-          <Text style={{color:theme.subtext, fontSize:12, marginBottom:8}}>You can select multiple subjects to filter by.</Text>
+                {/* Window 2 — Subject search */}
+                <View style={[styles.page, { width: pageWidth }]}>
+                  <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                    <Text style={styles.subtitle}>Select Subjects</Text>
+                    <Text style={{color:theme.subtext, fontSize:12, marginBottom:8}}>You can select multiple subjects to filter by.</Text>
 
-          <MultiSelectComponent
-            data={subjects}
-            value={selectedSubjects.map(String)}
-            placeholder="Select Subjects"
-            onChange={(vals: string[]) => setSelectedSubjects(vals.map(Number))}
-            maxContainerHeight={scaleFont(200)}
-          />
+                    <MultiSelectComponent
+                      data={subjects}
+                      value={selectedSubjects.map(String)}
+                      placeholder="Select Subjects"
+                      onChange={(vals: string[]) => setSelectedSubjects(vals.map(Number))}
+                      maxContainerHeight={scaleFont(200)}
+                    />
 
-          <Pressable style={styles.searchButton} onPress={() => onPressSearch('subject')} android_ripple={{color:'#00000010'}}>
-            <Text style={styles.searchButtonText}>Search</Text>
-          </Pressable>
-          </ScrollView>
+                    <Pressable style={styles.searchButton} onPress={() => onPressSearch('subject')} android_ripple={{color:'#00000010'}}>
+                      <Text style={styles.searchButtonText}>Search</Text>
+                    </Pressable>
+                  </ScrollView>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+
+          <View style={styles.dots}>
+            {[0,1].map((i)=> (
+              <View key={i} style={[styles.dot, i===page && styles.dotActive]} />
+            ))}
+          </View>
+          <Text style={styles.hint}>Swipe for different search functions</Text>
         </View>
       </SafeAreaView>
     </Modal>
@@ -152,6 +209,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   form: {
     width: '90%',
+    maxWidth: 480,
     maxHeight: '85%',
     backgroundColor: theme.background,
     padding: 18,
@@ -204,8 +262,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  pager: {
+    marginTop: 8,
+  },
+  page: {
+    paddingHorizontal: 2,
+  },
   searchButton: {
-    marginBottom: 30,
+    marginTop: 8,
+    marginBottom: 8,
     width: '100%',
     maxWidth: 480,
     alignSelf: 'center',
@@ -234,5 +299,28 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: 10,
     fontWeight: '500',
     fontSize: 14,
-  }
+  },
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 12,
+    gap: 6,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.border,
+  },
+  dotActive: {
+    width: 16,
+    backgroundColor: theme.primary,
+  },
+  hint: {
+    textAlign: 'center',
+    color: theme.subtext,
+    fontSize: 12,
+    marginTop: 8,
+  },
 });

@@ -3,10 +3,10 @@ import { navigate } from '../../navigation/navigationRef';
 import DemoFeatureButton from '../DemoFeatureButton';
 import type { DemoFeature } from '../types';
 import description from './description.txt';
-import imageDark from './vote_predictions_dk.jpg';
-import imageLight from './vote_predictions_li.jpg';
+import imageDark from './bill_visuals_dk.jpg';
+import imageLight from './bill_visuals_li.jpg';
 
-const VotePredictionsButton = ({ onDone }: { onDone: () => void }) => (
+const BillVisualsButton = ({ onDone }: { onDone: () => void }) => (
   <DemoFeatureButton
     label="Browse Bills"
     onPress={() => {
@@ -16,13 +16,13 @@ const VotePredictionsButton = ({ onDone }: { onDone: () => void }) => (
   />
 );
 
-export const votePredictionsFeature: DemoFeature = {
-  key: 'vote_predictions',
-  title: 'Vote Predictions',
+export const billVisualsFeature: DemoFeature = {
+  key: 'bill_visuals',
+  title: 'Refreshed Bill Cards',
   image: {
     light: imageLight,
     dark: imageDark,
   },
   description,
-  Button: VotePredictionsButton,
+  Button: BillVisualsButton,
 };

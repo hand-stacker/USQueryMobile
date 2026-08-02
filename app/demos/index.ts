@@ -14,13 +14,11 @@
  * is in DEMO_FEATURES whenever the stored last-seen version is older than the
  * version returned by the app-version API.
  */
-import { billChatFeature } from './bill_chat';
-import { floorNotificationsFeature } from './floor_notifications';
-import { votePredictionsFeature } from './vote_predictions';
+import { billVisualsFeature } from './bill_visuals';
+import { keywordSearchFeature } from './keyword_search';
 import type { DemoFeature } from './types';
 
 export const DEMO_FEATURES: DemoFeature[] = [
-  votePredictionsFeature,
-  billChatFeature,
-  floorNotificationsFeature,
+  keywordSearchFeature,
+  billVisualsFeature,
 ];
