@@ -3,30 +3,39 @@ import { useQuery } from "@apollo/client/react";
 import { useRef, useState } from "react";
 import { client } from "../api/apollo";
 
-const GET_RECENT_VOTES = gql`
-  query GetVotes(
+// NOTE: bill_type is a *chamber* filter here, not a bill-type filter:
+// '!' = both, 'h' = House, anything else = Senate. Same as getRecentVotes.
+// VoteConnection has no `error` member — requesting one fails validation.
+// Never request yeas/nays/pres/novt from a list query; they expand to hundreds
+// of membership records per vote.
+const GET_VOTES_BY_KEYWORD = gql`
+  query GetVotesByKeyword(
     $after: String,
     $bill_type: String,
     $congress_num: Int,
     $first: Int,
-    $subject_list: [Int!]
+    $keyword: String!
     $sort: String = ""
     ) {
-    getRecentVotes(
+    getVotesByKeyword(
         after: $after,
         billType: $bill_type,
         congressNum: $congress_num,
         first: $first,
-        subjectList: $subject_list
+        keyword: $keyword
         sort: $sort
     ) {
     edges {
+      cursor
       node {
-        dateTime
         id
+        title
+        question
+        dateTime
         result
         bill {
           id
+          title
         }
       }
     }
@@ -40,17 +49,18 @@ const GET_RECENT_VOTES = gql`
   }
 `;
 
-export function useGetRecentVotes(after?: string, bill_type?: string, first?: number, congress_num?: number, subject_list?: number[], sort: string = "", options?: { skip?: boolean }) {
-  const { data, loading, error, refetch, fetchMore } = useQuery(GET_RECENT_VOTES, {
-    variables: { after, bill_type, first, congress_num, subject_list, sort },
+export function useGetVotesByKeyword(after?: string, bill_type?: string, first?: number, congress_num?: number, keyword?: string, sort?: string, options?: { skip?: boolean }) {
+  const { data, loading, error, refetch, fetchMore } = useQuery(GET_VOTES_BY_KEYWORD, {
+    variables: { after, bill_type, first, congress_num, keyword, sort },
     client,
     skip: options?.skip,
   });
 
   if (error) {
-    console.error("useGetRecentVotes error:", error);
+    console.error("useGetVotesByKeyword error:", error);
   }
-  const votes = data?.getRecentVotes ?? { edges: [], pageInfo: { endCursor: null, hasNextPage: false } };
+
+  const votes = data?.getVotesByKeyword ?? { edges: [], pageInfo: { endCursor: null, hasNextPage: false } };
   const pageInfo = votes.pageInfo ?? { endCursor: null, hasNextPage: false };
 
   const [loadingMore, setLoadingMore] = useState(false);
@@ -58,11 +68,10 @@ export function useGetRecentVotes(after?: string, bill_type?: string, first?: nu
   const DEBOUNCE_MS = 700;
 
   const loadMore = async () => {
-    if (loadingMore || !pageInfo.hasNextPage) return;
+    if (loadingMore || !pageInfo?.hasNextPage) return;
     const now = Date.now();
-    if (lastLoadRef.current && now - lastLoadRef.current < DEBOUNCE_MS) {
-      return;
-    }
+    if (lastLoadRef.current && now - lastLoadRef.current < DEBOUNCE_MS) return;
+    lastLoadRef.current = now;
     setLoadingMore(true);
     try {
       await fetchMore({
@@ -71,18 +80,18 @@ export function useGetRecentVotes(after?: string, bill_type?: string, first?: nu
           bill_type,
           first,
           congress_num,
-          subject_list,
+          keyword,
           sort,
         },
-        updateQuery: (prev : any, { fetchMoreResult }: any) => {
+        updateQuery: (prev: any, { fetchMoreResult }: any) => {
           if (!fetchMoreResult) return prev;
           return {
             ...fetchMoreResult,
-            getRecentVotes: {
-              ...fetchMoreResult.getRecentVotes,
+            getVotesByKeyword: {
+              ...fetchMoreResult.getVotesByKeyword,
               edges: [
-                ...prev.getRecentVotes.edges, 
-                ...fetchMoreResult.getRecentVotes.edges
+                ...prev.getVotesByKeyword.edges,
+                ...fetchMoreResult.getVotesByKeyword.edges,
               ],
             },
           };
@@ -92,7 +101,7 @@ export function useGetRecentVotes(after?: string, bill_type?: string, first?: nu
       console.error('loadMore error', err);
     } finally {
       setLoadingMore(false);
-      lastLoadRef.current = now;
+      lastLoadRef.current = Date.now();
     }
   };
 
@@ -108,4 +117,4 @@ export function useGetRecentVotes(after?: string, bill_type?: string, first?: nu
   };
 }
 
-export default useGetRecentVotes;
+export default useGetVotesByKeyword;

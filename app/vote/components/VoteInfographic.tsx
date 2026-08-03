@@ -35,14 +35,20 @@ const VoteInfographic = memo(function VoteInfographic({ node, personal, navigati
     <Pressable onPress={() => navigation.navigate("Vote_info", {vote_id: node.id, allowBillNav: true})}>
       <AccentCard accentColor={accentColor} style={{ marginVertical: 4, overflow: 'hidden' }}>
         <Text style={styles.date}>{formatDateTime(node.dateTime)}</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.headerRow}
-        >
-          <Text style={styles.label}>Bill: </Text>
-          <BillBadge navigation={navigation} billNum={Number(billId)} />
-        </ScrollView>
+        {billId != null ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.headerRow}
+          >
+            <Text style={styles.label}>Bill: </Text>
+            <BillBadge navigation={navigation} billNum={Number(billId)} />
+          </ScrollView>
+        ) : (
+          // Procedural votes, cloture motions and nominations carry no bill —
+          // their own title is the only text they have.
+          <Text style={styles.title} numberOfLines={3}>{node.title ?? node.question ?? 'Vote'}</Text>
+        )}
         <View style={styles.resultRow}>
           <ResultBadge result={resultText} />
         </View>
@@ -74,6 +80,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   resultRow: {
     marginVertical: 8,
+  },
+  title: {
+    fontSize: 16,
+    color: theme.text,
+    fontWeight: '700',
   },
   label: {
     fontSize: 18,

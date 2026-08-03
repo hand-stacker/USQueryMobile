@@ -33,9 +33,21 @@ interface Props {
   initial?: SearchVars;
   subjects: any[];
   desc?: string;
+  // Votes reuse this modal, but their billType argument selects the chamber that
+  // held the vote ('!' both / 'h' House / anything else Senate) rather than a bill type.
+  typeMode?: 'bill' | 'chamber';
 }
 
-export default function BillSearchModal({ visible, onClose, onSearch, initial, subjects, desc}: Props) {
+// Chamber options for vote search — the values the vote queries actually understand.
+const CHAMBER_TYPES = [
+  { value: '!', label: 'All' },
+  { value: 'h', label: 'House' },
+  { value: 's', label: 'Senate' },
+];
+
+const BILL_TYPES = ['!','!H','!S','s','sres','sconres','sjres','hr','hres','hconres','hjres'];
+
+export default function BillSearchModal({ visible, onClose, onSearch, initial, subjects, desc, typeMode = 'bill'}: Props) {
   const { theme } = useContext(ThemeContext);
   const styles = createStyles(theme);
   const [selectedCongress, setSelectedCongress] = useState<number | undefined>(initial?.congress_num ?? 119);
@@ -120,13 +132,19 @@ export default function BillSearchModal({ visible, onClose, onSearch, initial, s
             ))}
           </ScrollView>
 
-          <Text style={styles.subtitle}>Select Bill Type</Text>
+          <Text style={styles.subtitle}>{typeMode === 'chamber' ? 'Select Chamber' : 'Select Bill Type'}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:8}}>
-            {['!','!H','!S','s','sres','sconres','sjres','hr','hres','hconres','hjres'].map((bt)=> (
-              <Pressable key={bt} onPress={()=> setSelectedBillType(prev => prev===bt? '!': bt)} style={[styles.chip, selectedBillType===bt && styles.chipSelected]}>
-                <Text style={[styles.chipText, selectedBillType===bt && styles.chipTextSelected]}>{typeToText(bt)}</Text>
-              </Pressable>
-            ))}
+            {typeMode === 'chamber'
+              ? CHAMBER_TYPES.map(({ value, label })=> (
+                  <Pressable key={value} onPress={()=> setSelectedBillType(prev => prev===value? '!': value)} style={[styles.chip, selectedBillType===value && styles.chipSelected]}>
+                    <Text style={[styles.chipText, selectedBillType===value && styles.chipTextSelected]}>{label}</Text>
+                  </Pressable>
+                ))
+              : BILL_TYPES.map((bt)=> (
+                  <Pressable key={bt} onPress={()=> setSelectedBillType(prev => prev===bt? '!': bt)} style={[styles.chip, selectedBillType===bt && styles.chipSelected]}>
+                    <Text style={[styles.chipText, selectedBillType===bt && styles.chipTextSelected]}>{typeToText(bt)}</Text>
+                  </Pressable>
+                ))}
           </ScrollView>
 
           <View

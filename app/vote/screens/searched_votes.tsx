@@ -1,6 +1,6 @@
 import BillSearchModal from "@/app/components/BillSearchModal";
-import useGetRecentVotes from "@/app/hooks/useGetRecentVotes";
 import useGetSubjects from "@/app/hooks/useGetSubjects";
+import { useVoteSearch } from "@/app/hooks/useVoteSearch";
 import { useSubjectListStore } from "@/app/store/subjectListStore";
 import { ThemeContext } from "@/app/theme/themeContext";
 import React, { useCallback, useContext, useMemo, useState } from "react";
@@ -18,8 +18,8 @@ export default function VoteSearchResults( {navigation} : any) {
   const subject_list = useMemo(() => (subject_list_store && subject_list_store.length > 0) ? subject_list_store : [], [subject_list_store]);
   const [modalVisible, setModalVisible] = useState(subject_list.length === 0);
   const [sortType, setSortType] = useState("datedesc");
-  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list, sort: sortType }));
-  const { votes, hasNextPage, loading, loadingMore, error, refetch, loadMore } = useGetRecentVotes(searchVars.after, searchVars.bill_type, searchVars.first, searchVars.congress_num, searchVars.subject_list, searchVars.sort);
+  const [searchVars, setSearchVars] = useState<any>(() => ({ after: undefined, bill_type: undefined, first: 30, congress_num: 119, subject_list: subject_list, sort: sortType, keyword: undefined, searchType: 'subject' }));
+  const { votes, hasNextPage, loading, loadingMore, error, loadMore } = useVoteSearch({ vars: searchVars, searchType: searchVars.searchType ?? 'subject' });
   const { subjects, loading: subjectsLoading, error: subjectsError } = useGetSubjects();
 
   const edges = useMemo(() => {
@@ -31,33 +31,20 @@ export default function VoteSearchResults( {navigation} : any) {
   const handleCloseModal = useCallback(() => setModalVisible(false), []);
   const handleSearch = useCallback((vars: any) => {
     setSearchVars((prev: any) => {
-      const merged = { ...prev, ...vars };
+      const merged = { ...prev, ...vars, after: undefined };
       const effective = (merged.subject_list && merged.subject_list.length > 0) ? merged.subject_list : [];
       const next = { ...merged, subject_list: effective };
       useSubjectListStore.getState().setSubjectList(effective);
-      try {
-        refetch({ after: next.after, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, sort: next.sort });
-      } catch (err) {
-        console.error('Refetch on search failed', err);
-      }
       return next;
     });
-  }, [subject_list, sortType, refetch]);
+  }, []);
 
   const handleEndReached = useCallback(() => { if (hasNextPage) loadMore(); }, [hasNextPage, loadMore]);
 
   const handleSortChange = useCallback((sort: string) => {
     setSortType(sort);
-    setSearchVars((prev: any) => {
-      const next = { ...prev, sort, after: undefined };
-      try {
-        refetch({ after: undefined, bill_type: next.bill_type, first: next.first, congress_num: next.congress_num, subject_list: next.subject_list, sort });
-      } catch (err) {
-        console.error('Refetch on sort change failed', err);
-      }
-      return next;
-    });
-  }, [refetch]);
+    setSearchVars((prev: any) => ({ ...prev, sort, after: undefined }));
+  }, []);
 
   if ((loading && edges.length === 0) || subjectsLoading) return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -94,7 +81,8 @@ export default function VoteSearchResults( {navigation} : any) {
           initial={searchVars}
           onSearch={handleSearch}
           subjects={subjects}
-          desc="Search for votes by congress, type, and subject."
+          desc="Search for votes by keyword, or by congress, chamber, and subject."
+          typeMode="chamber"
         />
         <VoteList data={edges} navigation={navigation} loadingMore={loadingMore} onEndReached={handleEndReached} personal={false} />
       </View>
