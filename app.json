@@ -59,7 +59,11 @@
           "enableBackgroundRemoteNotifications": false
         }
       ],
-      "expo-iap"
+      "expo-iap",
+      [
+      "@react-native-google-signin/google-signin",
+        { "iosUrlScheme": "com.googleusercontent.apps.440682963132-4q5ibnarcl5g9tn849f5c93k5f39f1m3" }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

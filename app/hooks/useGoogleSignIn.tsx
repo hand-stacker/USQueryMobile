@@ -1,6 +1,6 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useEffect, useState } from "react";
-import { GOOGLE_CLIENT_ID } from "../../constants/auth";
+import { configureGoogleSignIn } from "../../constants/auth";
 
 type OAuthData = {
   access: string;
@@ -20,10 +20,7 @@ export function useGoogleSignIn() {
   const [ok, setOk] = useState<boolean>(false);
 
   useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: GOOGLE_CLIENT_ID,
-      offlineAccess: true,
-    });
+    configureGoogleSignIn();
   }, []);
 
   const signIn = async () => {

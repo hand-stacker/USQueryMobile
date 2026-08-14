@@ -1,6 +1,5 @@
 import { ApolloProvider } from "@apollo/client/react";
 import { Ionicons } from '@expo/vector-icons';
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
   NavigationContainer,
@@ -48,7 +47,7 @@ import OptionsPage from "./misc/options";
 import PlansScreen from "./misc/plans";
 import VoteSearchResults from "./vote/screens/searched_votes";
 
-import { GOOGLE_CLIENT_ID } from "../constants/auth";
+import { configureGoogleSignIn } from "../constants/auth";
 
 const Tabs = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -219,10 +218,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: GOOGLE_CLIENT_ID,
-      offlineAccess: true,
-    });
+    configureGoogleSignIn();
   }, []);
 
   if (!fontsLoaded) return null;
