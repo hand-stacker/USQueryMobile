@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useContext, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, } from 'react-native';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { APPLE_EULA_URL, USE_STOREKIT } from '../../constants/iap';
 import { retrieveUserSession } from '../encrypted-storage/functions';
 import { authRequest } from '../hooks/authRequest';
+import { useIapContext } from '../hooks/iapContext';
 import { openStripeUrl } from '../hooks/openStripeUrl';
 import { ThemeContext } from '../theme/themeContext';
 
@@ -91,10 +93,24 @@ export default function PlansScreen({ navigation }: PlansProps) {
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
+  // On iOS every purchase goes through StoreKit (App Store Review guideline
+  // 3.1.1); Stripe Checkout and the billing portal are Android/web only.
+  const iap = useIapContext();
+
+  // The backend grants the tier when it verifies an App Store transaction, so
+  // pull the fresh status once that happens.
+  useEffect(() => {
+    if (iap.entitlementVersion > 0) loadData();
+  }, [iap.entitlementVersion, loadData]);
+
   // -3 = portal URL fetch in flight
   const [portalLoading, setPortalLoading] = useState(false);
 
   const openPortal = async () => {
+    if (USE_STOREKIT) {
+      await iap.openManageSubscriptions();
+      return;
+    }
     setPortalLoading(true);
     try {
       const result = await authRequest('subscription/portal/', { method: 'POST' });
@@ -177,6 +193,12 @@ export default function PlansScreen({ navigation }: PlansProps) {
   // effective date, then commits via runCheckout. New subscribers (no active
   // sub) skip straight to hosted checkout.
   const changePlan = async (tierId: number) => {
+    // StoreKit owns pricing, proration and confirmation on iOS — hand off to the
+    // App Store sheet instead of previewing a Stripe charge.
+    if (USE_STOREKIT) {
+      await iap.purchase(tierId);
+      return;
+    }
     setActionLoading(tierId);
     let preview: any;
     try {
@@ -232,6 +254,19 @@ export default function PlansScreen({ navigation }: PlansProps) {
   };
 
   const handleCancel = () => {
+    // An App Store subscription can only be cancelled from the App Store's own
+    // settings; our backend has no authority to end it.
+    if (USE_STOREKIT) {
+      Alert.alert(
+        'Cancel Subscription',
+        'Subscriptions bought through the App Store are cancelled in your Apple ID settings. You keep access until the end of the current billing period.',
+        [
+          { text: 'Not Now', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => iap.openManageSubscriptions() },
+        ]
+      );
+      return;
+    }
     Alert.alert(
       'Cancel Subscription',
       'Your plan stays active until the end of the current billing period. After that your account reverts to Free.',
@@ -322,8 +357,21 @@ export default function PlansScreen({ navigation }: PlansProps) {
     const isCurrent = isLoggedIn && currentTier === tier.id;
     const isUpgrade = isLoggedIn && rankOf(tier.id) > rankOf(currentTier);
     const isDowngrade = isLoggedIn && rankOf(tier.id) < rankOf(currentTier);
-    const canSubscribe = plansData?.subscriptions_enabled && plansData?.stripe_configured;
-    const canManage = canSubscribe;
+    // On iOS "can we sell this?" means StoreKit is connected and the product
+    // loaded; Stripe's configuration is irrelevant there.
+    const canSubscribe =
+      plansData?.subscriptions_enabled &&
+      (USE_STOREKIT ? iap.ready && !!iap.productsByTier[tier.id] : plansData?.stripe_configured);
+    // An existing subscriber must always be able to reach App Store management,
+    // even while new sales are switched off.
+    const canManage = USE_STOREKIT
+      ? true
+      : plansData?.subscriptions_enabled && plansData?.stripe_configured;
+    // StoreKit is still connecting / fetching products — not the same as the
+    // product being unavailable, so don't say "Coming Soon" yet.
+    const storeLoading = USE_STOREKIT && !iap.ready;
+    // StoreKit tracks its own in-flight tier; Stripe uses the actionLoading slot.
+    const isBusy = USE_STOREKIT ? iap.purchasingTier === tier.id : actionLoading === tier.id;
     const cancelPending = subStatus?.cancel_at_period_end ?? false;
     // This card is the target of a pending deferred downgrade.
     const isScheduledTarget =
@@ -344,7 +392,9 @@ export default function PlansScreen({ navigation }: PlansProps) {
           </View>
           {tier.id > 0 && canManage && (
             <>
-              {hasScheduledDowngrade && (
+              {/* Deferred downgrades are a Stripe construct; on iOS the pending
+                  change lives in the App Store's subscription settings. */}
+              {hasScheduledDowngrade && !USE_STOREKIT && (
                 <Pressable
                   style={[styles.btn, styles.btnPrimary, { marginTop: 10 }]}
                   onPress={handleCancelScheduledChange}
@@ -360,10 +410,12 @@ export default function PlansScreen({ navigation }: PlansProps) {
               {cancelPending ? (
                 <Pressable
                   style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
-                  onPress={handleReactivate}
-                  disabled={actionLoading === -2}
+                  // Re-enabling auto-renew on an App Store subscription is done
+                  // in Apple's settings, not through our backend.
+                  onPress={USE_STOREKIT ? iap.openManageSubscriptions : handleReactivate}
+                  disabled={!USE_STOREKIT && actionLoading === -2}
                 >
-                  {actionLoading === -2 ? (
+                  {!USE_STOREKIT && actionLoading === -2 ? (
                     <ActivityIndicator color={theme.primary} />
                   ) : (
                     <Text style={[styles.btnText, { color: theme.primary }]}>Reactivate Subscription</Text>
@@ -389,7 +441,9 @@ export default function PlansScreen({ navigation }: PlansProps) {
               >
                 {portalLoading
                   ? <ActivityIndicator color={theme.text} />
-                  : <Text style={[styles.btnText, { color: theme.text }]}>Manage via Portal</Text>}
+                  : <Text style={[styles.btnText, { color: theme.text }]}>
+                      {USE_STOREKIT ? 'Manage in App Store' : 'Manage via Portal'}
+                    </Text>}
               </Pressable>
             </>
           )}
@@ -412,15 +466,18 @@ export default function PlansScreen({ navigation }: PlansProps) {
         );
       }
       const slot = isFree ? -1 : tier.id;
+      const downgradeBusy = isFree ? !USE_STOREKIT && actionLoading === slot : isBusy;
       return (
         <Pressable
-          style={[styles.btn, styles.btnSecondary, actionLoading === slot && { opacity: 0.75 }]}
+          style={[styles.btn, styles.btnSecondary, downgradeBusy && { opacity: 0.75 }]}
           onPress={() => (isFree ? handleCancel() : changePlan(tier.id))}
-          disabled={actionLoading === slot}
+          disabled={downgradeBusy}
         >
-          {actionLoading === slot
+          {downgradeBusy
             ? <ActivityIndicator color={theme.text} />
-            : <Text style={[styles.btnText, { color: theme.text }]}>Switch to {tier.name}</Text>}
+            : <Text style={[styles.btnText, { color: theme.text }]}>
+                {isFree && USE_STOREKIT ? 'Cancel in App Store' : `Switch to ${tier.name}`}
+              </Text>}
         </Pressable>
       );
     }
@@ -438,17 +495,19 @@ export default function PlansScreen({ navigation }: PlansProps) {
       if (!canSubscribe) {
         return (
           <View style={[styles.btn, styles.btnDisabled]}>
-            <Text style={[styles.btnText, { color: theme.subtext }]}>Coming Soon</Text>
+            {storeLoading
+              ? <ActivityIndicator color={theme.subtext} />
+              : <Text style={[styles.btnText, { color: theme.subtext }]}>Coming Soon</Text>}
           </View>
         );
       }
       return (
         <Pressable
-          style={[styles.btn, styles.btnPrimary, actionLoading === tier.id && { opacity: 0.75 }]}
+          style={[styles.btn, styles.btnPrimary, isBusy && { opacity: 0.75 }]}
           onPress={() => changePlan(tier.id)}
-          disabled={actionLoading === tier.id}
+          disabled={isBusy}
         >
-          {actionLoading === tier.id ? (
+          {isBusy ? (
             <ActivityIndicator color={theme.innerText} />
           ) : (
             <Text style={[styles.btnText, { color: theme.innerText }]}>Upgrade to {tier.name}</Text>
@@ -515,12 +574,14 @@ export default function PlansScreen({ navigation }: PlansProps) {
                     : ' at your next billing date'}
                   . You keep {subStatus?.tier_name} until then.
                 </Text>
+                {/* Reverting a scheduled change is a Stripe operation; on iOS
+                    it belongs to the App Store subscription settings. */}
                 <Pressable
                   style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
-                  onPress={handleCancelScheduledChange}
-                  disabled={actionLoading === -4}
+                  onPress={USE_STOREKIT ? iap.openManageSubscriptions : handleCancelScheduledChange}
+                  disabled={!USE_STOREKIT && actionLoading === -4}
                 >
-                  {actionLoading === -4 ? (
+                  {!USE_STOREKIT && actionLoading === -4 ? (
                     <ActivityIndicator color={theme.primary} />
                   ) : (
                     <Text style={[styles.btnText, { color: theme.primary }]}>
@@ -532,7 +593,11 @@ export default function PlansScreen({ navigation }: PlansProps) {
             </View>
           )}
 
-        {plansData?.tiers.map((tier) => (
+        {plansData?.tiers.map((tier) => {
+          // Apple requires the price shown to be the one StoreKit reports for
+          // the user's storefront, not a price we hardcode server-side.
+          const storeProduct = USE_STOREKIT ? iap.productsByTier[tier.id] : undefined;
+          return (
           <View key={tier.id} style={[styles.card, tier.id === 1 && styles.cardHighlight]}>
             {tier.id === 1 && (
               <View style={styles.popularBadge}>
@@ -541,7 +606,7 @@ export default function PlansScreen({ navigation }: PlansProps) {
             )}
 
             <Text style={styles.tierName}>{tier.name}</Text>
-            <Text style={styles.tierPrice}>{tier.price}</Text>
+            <Text style={styles.tierPrice}>{storeProduct?.displayPrice ?? tier.price}</Text>
             <Text style={styles.tierPricePeriod}>{tier.price_period}</Text>
 
             <View style={styles.featureList}>
@@ -553,7 +618,22 @@ export default function PlansScreen({ navigation }: PlansProps) {
 
             {renderCardActions(tier)}
           </View>
-        ))}
+          );
+        })}
+
+        {/* Guideline 3.1.1 requires a way to restore previously bought
+            subscriptions on a new device or after a reinstall. */}
+        {USE_STOREKIT && (
+          <Pressable
+            style={[styles.btn, styles.btnOutline, { marginBottom: 16 }, iap.restoring && { opacity: 0.75 }]}
+            onPress={() => iap.restore()}
+            disabled={iap.restoring}
+          >
+            {iap.restoring
+              ? <ActivityIndicator color={theme.primary} />
+              : <Text style={[styles.btnText, { color: theme.primary }]}>Restore Purchases</Text>}
+          </Pressable>
+        )}
 
         <View style={[styles.card, { marginBottom: 0 }]}>
           <Text style={styles.aboutTitle}>About the Limits</Text>
@@ -567,9 +647,31 @@ export default function PlansScreen({ navigation }: PlansProps) {
             <Text style={{ fontWeight: '600' }}>AI Chatbot</Text>
             {' — Ask questions about bills and their potential impact, grounded in real congressional data.'}
           </Text>
-          <Text style={styles.finePrint}>
-            Prices in USD · Billed monthly · Cancel anytime · Payments processed securely by Stripe
-          </Text>
+          {USE_STOREKIT ? (
+            <>
+              {/* Guideline 3.1.2 disclosures for auto-renewable subscriptions. */}
+              <Text style={styles.finePrint}>
+                Subscriptions renew monthly until cancelled. Payment is charged to your Apple ID at
+                confirmation of purchase. The subscription renews automatically unless auto-renew is
+                turned off at least 24 hours before the end of the current period; your account is
+                charged for renewal within 24 hours of the end of the period. You can manage or
+                cancel your subscription in your Apple ID account settings.
+              </Text>
+              <View style={styles.legalRow}>
+                <Pressable onPress={() => Linking.openURL(APPLE_EULA_URL).catch(() => {})}>
+                  <Text style={styles.legalLink}>Terms of Use (EULA)</Text>
+                </Pressable>
+                <Text style={styles.finePrint}> · </Text>
+                <Pressable onPress={() => navigation.navigate('Privacy_Policy')}>
+                  <Text style={styles.legalLink}>Privacy Policy</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.finePrint}>
+              Prices in USD · Billed monthly · Cancel anytime · Payments processed securely by Stripe
+            </Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -734,5 +836,19 @@ const createStyles = (theme: any, isLandscape = false) =>
       fontSize: 11,
       fontWeight: '400',
       textAlign: 'center',
+      lineHeight: 16,
+    },
+    legalRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    legalLink: {
+      color: theme.primary,
+      fontSize: 11,
+      fontWeight: '600',
+      textDecorationLine: 'underline',
     },
   });

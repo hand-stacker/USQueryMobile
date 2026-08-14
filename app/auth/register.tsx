@@ -1,3 +1,4 @@
+import * as AppleAuthentication from "expo-apple-authentication";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -60,7 +61,9 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
 
   const handleAuthSuccess = async (authData: any, isOAuth = false) => {
     await storeUserSession(authData.email, authData.access, authData.refresh, authData.is_verified);
-    if (!authData.is_verified) {
+    // Apple/Google already vouched for the address, so there is no code to
+    // enter — only email/password signups go through the Verify screen.
+    if (!isOAuth && !authData.is_verified) {
       navigation.navigate("Verify", { email: authData.email, fromLogin: true });
       return;
     }
@@ -214,9 +217,13 @@ export default function RegisterAccount({ navigation}: RegisterProps) {
           <Text style={styles.dividerText}>or</Text>
         </View>
 
-        <GoogleSignInButton onPress={googleSignIn} loading={googleLoading} label="Sign up with Google" />
+        <AppleSignInButton
+          onPress={appleSignIn}
+          loading={appleLoading}
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
+        />
 
-        <AppleSignInButton onPress={appleSignIn} loading={appleLoading} label="Sign up with Apple" display={false} />
+        <GoogleSignInButton onPress={googleSignIn} loading={googleLoading} label="Sign up with Google" />
       </ScrollView>
     </SafeAreaView>
   );

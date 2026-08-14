@@ -11,6 +11,7 @@ import * as Notifications from "expo-notifications";
 import { useContext, useEffect } from "react";
 
 import { client } from "./api/apollo";
+import { IapProvider } from "./hooks/iapContext";
 import { navigate, navigationRef } from "./navigation/navigationRef";
 
 import BillInfo from "./bill/screens/[bill_id]";
@@ -229,7 +230,12 @@ export default function RootLayout() {
   return (
     <ApolloProvider client={client}>
       <ThemeProvider>
-        <AppNavigation />
+        {/* Above the navigator so App Store transactions that finish while the
+            app is backgrounded (or that Apple redelivers after a crash) still
+            reach the backend. No-op off iOS. */}
+        <IapProvider>
+          <AppNavigation />
+        </IapProvider>
       </ThemeProvider>
     </ApolloProvider>
   );

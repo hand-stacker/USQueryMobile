@@ -1,10 +1,12 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppleSignInButton from "../components/AppleSignInButton";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import { USE_STOREKIT } from "../../constants/iap";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
 import { authRequest } from "../hooks/authRequest";
+import { useIapContext } from "../hooks/iapContext";
 import { openStripeUrl } from "../hooks/openStripeUrl";
 import { useAppleSignIn } from "../hooks/useAppleSignIn";
 import { useGoogleSignIn } from "../hooks/useGoogleSignIn";
@@ -22,6 +24,7 @@ export default function Login({ navigation }: LoginProps) {
   const { theme } = useContext(ThemeContext);
   const { width, height } = useWindowDimensions();
   const styles = createStyles(theme, width > height);
+  const iap = useIapContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -149,6 +152,12 @@ export default function Login({ navigation }: LoginProps) {
   const [portalLoading, setPortalLoading] = useState(false);
 
   const openPortal = async () => {
+    // iOS subscriptions are App Store transactions — they can only be changed
+    // or cancelled in Apple's own settings, never in the Stripe portal.
+    if (USE_STOREKIT) {
+      await iap.openManageSubscriptions();
+      return;
+    }
     setPortalLoading(true);
     try {
       const result = await authRequest("subscription/portal/", { method: "POST" });
@@ -283,7 +292,9 @@ export default function Login({ navigation }: LoginProps) {
                     >
                       {portalLoading
                         ? <ActivityIndicator color="#fff" />
-                        : <Text style={[styles.actionBtnText, { color: theme.innerText }]}>Billing Portal</Text>}
+                        : <Text style={[styles.actionBtnText, { color: theme.innerText }]}>
+                            {USE_STOREKIT ? 'Manage in App Store' : 'Billing Portal'}
+                          </Text>}
                     </Pressable>
                   )}
                 </View>
@@ -378,9 +389,9 @@ export default function Login({ navigation }: LoginProps) {
         <Text style={styles.dividerText}>or</Text>
       </View>
 
-      <GoogleSignInButton onPress={googleSignIn} loading={googleLoading} />
+      <AppleSignInButton onPress={appleSignIn} loading={appleLoading} />
 
-      <AppleSignInButton onPress={appleSignIn} loading={appleLoading} display={Platform.OS === 'ios'} />
+      <GoogleSignInButton onPress={googleSignIn} loading={googleLoading} />
 
       <Pressable style={styles.button} onPress={() => navigation.navigate("Reset_Password")}>
         <Text style={styles.buttonText}>Reset your password</Text>

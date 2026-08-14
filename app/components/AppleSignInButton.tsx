@@ -1,81 +1,97 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useContext, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import React, { useContext, useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { ThemeContext } from '../theme/themeContext';
 
 interface Props {
   onPress: () => void;
   loading?: boolean;
-  label?: string;
-  display?: boolean;
+  /**
+   * SIGN_IN renders "Sign in with Apple", SIGN_UP renders "Sign up with Apple".
+   * Apple owns the wording — the system button localizes it for us.
+   */
+  buttonType?: AppleAuthentication.AppleAuthenticationButtonType;
 }
 
-export default function AppleSignInButton({ onPress, loading = false, label = 'Sign in with Apple', display = true }: Props) {
-  const { theme } = useContext(ThemeContext);
-  const [pressed, setPressed] = useState(false);
+// Kept in lockstep with GoogleSignInButton so the two options read as equals.
+// App Review guideline 4 requires Sign in with Apple to be presented as an
+// equivalent option (same size and shape) to every other sign-in choice.
+export const SIGN_IN_BUTTON_HEIGHT = 50;
+export const SIGN_IN_BUTTON_RADIUS = 8;
 
-  if (!display) return null;
+/**
+ * Sign in with Apple, drawn by the system so it always matches the current
+ * Human Interface Guidelines. Renders nothing off iOS or on iOS versions
+ * without Sign in with Apple support.
+ */
+export default function AppleSignInButton({
+  onPress,
+  loading = false,
+  buttonType = AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN,
+}: Props) {
+  const { theme } = useContext(ThemeContext);
+  const [available, setAvailable] = useState(Platform.OS === 'ios');
+
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    let mounted = true;
+    AppleAuthentication.isAvailableAsync()
+      .then((ok) => {
+        if (mounted) setAvailable(ok);
+      })
+      .catch(() => {
+        if (mounted) setAvailable(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (Platform.OS !== 'ios' || !available) return null;
 
   const isDark = theme.name === 'dark';
-  const bg = isDark ? '#FFFFFF' : '#000000';
-  const bgPressed = isDark ? '#e8e8e8' : '#1a1a1a';
-  const fg = isDark ? '#000000' : '#FFFFFF';
 
   return (
-    <Pressable
-      style={[
-        styles.button,
-        { backgroundColor: pressed ? bgPressed : bg },
-        isDark && styles.borderDark,
-        loading && styles.disabled,
-      ]}
-      onPress={onPress}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      disabled={loading}
-    >
-      <View style={styles.content}>
-        {loading ? (
-          <ActivityIndicator color={fg} size="small" />
-        ) : (
-          <Ionicons name="logo-apple" size={22} color={fg} />
-        )}
-        <Text style={[styles.text, { color: fg }]}>
-          {loading ? 'Signing in...' : label}
-        </Text>
-      </View>
-    </Pressable>
+    <View style={styles.wrapper}>
+      <AppleAuthentication.AppleAuthenticationButton
+        buttonType={buttonType}
+        buttonStyle={
+          isDark
+            ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+            : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+        }
+        cornerRadius={SIGN_IN_BUTTON_RADIUS}
+        style={styles.button}
+        onPress={() => {
+          if (!loading) onPress();
+        }}
+      />
+      {/* The system button has no loading state; cover it while the request is
+          in flight so it can't be tapped twice. */}
+      {loading && (
+        <View style={[styles.overlay, { backgroundColor: isDark ? '#FFFFFF' : '#000000' }]}>
+          <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} size="small" />
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
+  wrapper: {
     width: '100%',
     maxWidth: 480,
     alignSelf: 'center',
-    minHeight: 50,
     marginBottom: 10,
-    borderRadius: 8,
+  },
+  button: {
+    width: '100%',
+    height: SIGN_IN_BUTTON_HEIGHT,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: SIGN_IN_BUTTON_RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  borderDark: {
-    borderWidth: 1,
-    borderColor: '#3a3a3a',
-  },
-  disabled: {
-    opacity: 0.7,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-  },
-  text: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 10,
-    letterSpacing: 0.3,
   },
 });

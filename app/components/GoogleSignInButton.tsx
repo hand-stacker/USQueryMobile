@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { SIGN_IN_BUTTON_HEIGHT, SIGN_IN_BUTTON_RADIUS } from './AppleSignInButton';
 
 interface Props {
   onPress: () => void;
@@ -45,10 +46,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
     alignSelf: 'center',
-    minHeight: 50,
+    // Height and radius are shared with the Apple button so neither third-party
+    // sign-in option is presented more prominently than the other.
+    height: SIGN_IN_BUTTON_HEIGHT,
     marginBottom: 10,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderRadius: SIGN_IN_BUTTON_RADIUS,
     borderWidth: 1.5,
     borderColor: '#c4c7cc',
     alignItems: 'center',
