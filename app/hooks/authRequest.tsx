@@ -24,21 +24,48 @@ async function authorizedFetch(
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;
 
-export async function authRequest(
+export interface ApiResponse {
+    /** HTTP status, or 0 when the request never reached the server. */
+    status: number;
+    /** True for 2xx. */
+    ok: boolean;
+    /** Parsed JSON body, or null when the body was empty/not JSON. */
+    data: any;
+    /** False when the body could not be parsed as JSON (proxy error page, etc). */
+    parsed: boolean;
+}
+
+function readBody(response: Response): Promise<ApiResponse> {
+    return response.text().then((text) => {
+        try {
+            return { status: response.status, ok: response.ok, data: JSON.parse(text), parsed: true };
+        } catch {
+            return { status: response.status, ok: response.ok, data: null, parsed: false };
+        }
+    });
+}
+
+/**
+ * Like `authRequest`, but surfaces the HTTP status instead of collapsing every
+ * response to its JSON body. Needed wherever the status is part of the API
+ * contract rather than just a transport detail — the Apple IAP verify endpoint
+ * distinguishes retryable failures (500/503) from permanent ones (400/409) by
+ * status alone, and the Stripe endpoints signal "this subscription is
+ * App Store managed" with a 409.
+ *
+ * Only a failed token refresh throws (as "Session expired"); every other
+ * outcome, including 4xx/5xx and unparseable bodies, is returned.
+ */
+export async function authRequestWithStatus(
     endpoint: string,
     options: RequestInit = {},
     config: { baseUrl?: string } = {},
-): Promise<any> {
+): Promise<ApiResponse> {
     const baseUrl = config.baseUrl ?? API_BASE_URL;
     let response = await authorizedFetch(endpoint, options, baseUrl);
 
     if (response.status !== 401) {
-        const text = await response.text();
-        try {
-            return JSON.parse(text);
-        } catch {
-            throw new Error(`Server error (${response.status})`);
-        }
+        return readBody(response);
     }
 
     // 401 → try refresh
@@ -50,30 +77,38 @@ export async function authRequest(
             });
     }
 
+    let newAccessToken: string;
     try {
-        const newAccessToken = await refreshPromise;
-        // Retry original request with new token
-        const retryResponse = await fetch(
-            `${baseUrl}${endpoint}`,
-            {
-                ...options,
-                headers: {
-                    ...(options.headers || {}),
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${newAccessToken}`,
-                },
-            }
-        );
-
-        const retryText = await retryResponse.text();
-        try {
-            return JSON.parse(retryText);
-        } catch {
-            throw new Error(`Server error (${retryResponse.status})`);
-        }
-    } catch (error) {
+        newAccessToken = await refreshPromise!;
+    } catch {
         // Refresh failed → logout; let caller handle UI/alerts
         await removeUserSession();
         throw new Error("Session expired");
     }
+
+    // Retry original request with new token
+    const retryResponse = await fetch(
+        `${baseUrl}${endpoint}`,
+        {
+            ...options,
+            headers: {
+                ...(options.headers || {}),
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${newAccessToken}`,
+            },
+        }
+    );
+    return readBody(retryResponse);
+}
+
+export async function authRequest(
+    endpoint: string,
+    options: RequestInit = {},
+    config: { baseUrl?: string } = {},
+): Promise<any> {
+    const result = await authRequestWithStatus(endpoint, options, config);
+    if (!result.parsed) {
+        throw new Error(`Server error (${result.status})`);
+    }
+    return result.data;
 }

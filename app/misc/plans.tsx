@@ -5,9 +5,18 @@ import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { APPLE_EULA_URL, USE_STOREKIT } from '../../constants/iap';
 import { retrieveUserSession } from '../encrypted-storage/functions';
-import { authRequest } from '../hooks/authRequest';
+import { authRequest, authRequestWithStatus } from '../hooks/authRequest';
 import { useIapContext } from '../hooks/iapContext';
 import { openStripeUrl } from '../hooks/openStripeUrl';
+import {
+  EXTERNAL_BILLING_BODY,
+  EXTERNAL_BILLING_LABEL,
+  EXTERNAL_BILLING_TITLE,
+  handleAppStoreConflict,
+  isAppleManaged,
+  isStripeManaged,
+  type SubStatus,
+} from '../hooks/subscriptionBilling';
 import { ThemeContext } from '../theme/themeContext';
 
 
@@ -36,23 +45,17 @@ interface Tier {
   starred_bills_limit: number;
   predictions_per_day: number | null;
   chat_messages_per_day: number | null;
+  // App Store SKU for this tier, null for Free. The server is the source of
+  // truth for the SKU map; constants/iap.ts is only a fallback.
+  apple_product_id?: string | null;
 }
 
 interface PlansData {
+  // True when the backend has Apple IAP credentials configured.
+  iap_configured?: boolean;
   stripe_configured: boolean;
   subscriptions_enabled: boolean;
   tiers: Tier[];
-}
-
-interface SubStatus {
-  tier: number;
-  tier_name: string;
-  cancel_at_period_end: boolean;
-  // Tier the user switches to at period_end (a scheduled downgrade), 0 if a
-  // cancellation supersedes a downgrade (drops to Free), or null for none.
-  change_at_period_end: number | null;
-  change_at_period_end_name: string | null;
-  period_end: string | null;
 }
 
 export default function PlansScreen({ navigation }: PlansProps) {
@@ -93,9 +96,27 @@ export default function PlansScreen({ navigation }: PlansProps) {
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  // On iOS every purchase goes through StoreKit (App Store Review guideline
-  // 3.1.1); Stripe Checkout and the billing portal are Android/web only.
+  // On iOS every *sale* goes through StoreKit (App Store Review guideline
+  // 3.1.1); Stripe Checkout is Android/web only.
   const iap = useIapContext();
+
+  // Which processor owns this subscription. Never branch management on
+  // Platform.OS: a user who subscribed through Stripe on the web and then opens
+  // the iOS app is still a Stripe customer, and sending them to Apple's
+  // settings shows them an empty list — Apple has no record of them.
+  const appleManaged = isAppleManaged(subStatus);
+  // A live Stripe subscription. The backend refuses an App Store purchase in
+  // this state (409, "subscription billed through our website") so that nobody
+  // pays twice — meaning iOS has no in-app upgrade path for these users.
+  const stripeManaged = isStripeManaged(subStatus) && (subStatus?.tier ?? 0) > 0;
+  const storeKitPurchases = USE_STOREKIT && !stripeManaged;
+  // Stripe subscriber inside the iOS build. Guideline 3.1.1 means we may state
+  // that the subscription is billed elsewhere but may not link, name a site, or
+  // put a tappable route to it on screen — so every plan-changing affordance is
+  // withdrawn and replaced with plain text. Cancelling is still offered: it
+  // calls our own backend, points at no purchasing mechanism, and leaving a
+  // subscriber with no way out would be the worse outcome.
+  const externallyBilled = USE_STOREKIT && stripeManaged;
 
   // The backend grants the tier when it verifies an App Store transaction, so
   // pull the fresh status once that happens.
@@ -107,21 +128,32 @@ export default function PlansScreen({ navigation }: PlansProps) {
   const [portalLoading, setPortalLoading] = useState(false);
 
   const openPortal = async () => {
-    if (USE_STOREKIT) {
+    if (appleManaged) {
       await iap.openManageSubscriptions();
+      return;
+    }
+    // Unreachable from the UI on iOS — the button is not rendered — but the
+    // portal is a purchasing mechanism, so refuse rather than trust that.
+    if (USE_STOREKIT) {
+      Alert.alert(EXTERNAL_BILLING_TITLE, EXTERNAL_BILLING_BODY);
       return;
     }
     setPortalLoading(true);
     try {
-      const result = await authRequest('subscription/portal/', { method: 'POST' });
-      if (result.portal_url) {
+      const { status, data: result } = await authRequestWithStatus('subscription/portal/', {
+        method: 'POST',
+      });
+      // Backstop: the subscription became App Store managed since we loaded.
+      if (handleAppStoreConflict(status, result, loadData)) return;
+      if (result?.portal_url) {
         // Opens in an in-app browser that returns to the app via the deep link.
+        // Android/web only — openStripeUrl refuses on iOS.
         await openStripeUrl(result.portal_url);
         // The user may have updated their card or cancelled inside the portal —
         // refresh so the screen reflects any change.
         await loadData();
       } else {
-        Alert.alert('Error', result.error ?? 'Could not open billing portal.');
+        Alert.alert('Error', result?.error ?? 'Could not open billing portal.');
       }
     } catch (err: any) {
       Alert.alert('Error', err?.message ?? 'Could not open billing portal.');
@@ -142,10 +174,14 @@ export default function PlansScreen({ navigation }: PlansProps) {
   const runCheckout = async (tierId: number) => {
     setActionLoading(tierId);
     try {
-      const result = await authRequest('subscription/create-checkout/', {
+      const { status, data: result } = await authRequestWithStatus('subscription/create-checkout/', {
         method: 'POST',
         body: JSON.stringify({ tier: tierId }),
       });
+
+      // The subscription is App Store managed — Stripe has no authority over
+      // it. Shouldn't be reachable; handled rather than silently failing.
+      if (handleAppStoreConflict(status, result, loadData)) return;
 
       if (result.checkout_url) {
         // New-subscriber hosted checkout. Opens in an in-app browser that
@@ -194,18 +230,33 @@ export default function PlansScreen({ navigation }: PlansProps) {
   // sub) skip straight to hosted checkout.
   const changePlan = async (tierId: number) => {
     // StoreKit owns pricing, proration and confirmation on iOS — hand off to the
-    // App Store sheet instead of previewing a Stripe charge.
-    if (USE_STOREKIT) {
+    // App Store sheet instead of previewing a Stripe charge. There is no Apple
+    // equivalent of preview-change/; all three SKUs share one subscription
+    // group, so StoreKit computes the proration and shows its own sheet.
+    if (storeKitPurchases) {
       await iap.purchase(tierId);
+      return;
+    }
+    // Live Stripe subscription on iOS. A StoreKit purchase here would be
+    // rejected by the backend *after* Apple had already charged the user, and
+    // 3.1.1 forbids offering the Stripe route instead — so state the situation
+    // and offer nothing to tap.
+    if (USE_STOREKIT) {
+      Alert.alert(EXTERNAL_BILLING_TITLE, EXTERNAL_BILLING_BODY);
       return;
     }
     setActionLoading(tierId);
     let preview: any;
     try {
-      preview = await authRequest('subscription/preview-change/', {
+      const previewResult = await authRequestWithStatus('subscription/preview-change/', {
         method: 'POST',
         body: JSON.stringify({ tier: tierId }),
       });
+      if (handleAppStoreConflict(previewResult.status, previewResult.data, loadData)) {
+        setActionLoading(null);
+        return;
+      }
+      preview = previewResult.data;
     } catch (err: any) {
       Alert.alert('Error', err?.message ?? 'Could not load plan change details. Please try again.');
       setActionLoading(null);
@@ -255,8 +306,9 @@ export default function PlansScreen({ navigation }: PlansProps) {
 
   const handleCancel = () => {
     // An App Store subscription can only be cancelled from the App Store's own
-    // settings; our backend has no authority to end it.
-    if (USE_STOREKIT) {
+    // settings; Apple exposes no server API for it, so our backend has no
+    // authority to end it.
+    if (appleManaged) {
       Alert.alert(
         'Cancel Subscription',
         'Subscriptions bought through the App Store are cancelled in your Apple ID settings. You keep access until the end of the current billing period.',
@@ -278,7 +330,10 @@ export default function PlansScreen({ navigation }: PlansProps) {
           onPress: async () => {
             setActionLoading(-1);
             try {
-              const result = await authRequest('subscription/cancel/', { method: 'POST' });
+              const { status, data: result } = await authRequestWithStatus('subscription/cancel/', {
+                method: 'POST',
+              });
+              if (handleAppStoreConflict(status, result, loadData)) return;
               if (result.cancelled) {
                 Alert.alert('Done', result.message);
                 await loadData();
@@ -299,7 +354,10 @@ export default function PlansScreen({ navigation }: PlansProps) {
   const handleReactivate = async () => {
     setActionLoading(-2);
     try {
-      const result = await authRequest('subscription/reactivate/', { method: 'POST' });
+      const { status, data: result } = await authRequestWithStatus('subscription/reactivate/', {
+        method: 'POST',
+      });
+      if (handleAppStoreConflict(status, result, loadData)) return;
       if (result.reactivated) {
         Alert.alert('Reactivated', result.message);
         await loadData();
@@ -319,10 +377,11 @@ export default function PlansScreen({ navigation }: PlansProps) {
     const tierId = subStatus?.tier ?? 0;
     setActionLoading(-4);
     try {
-      const result = await authRequest('subscription/create-checkout/', {
+      const { status, data: result } = await authRequestWithStatus('subscription/create-checkout/', {
         method: 'POST',
         body: JSON.stringify({ tier: tierId }),
       });
+      if (handleAppStoreConflict(status, result, loadData)) return;
       if (result.change_cancelled || result.modified) {
         Alert.alert('Done', result.message ?? 'Your scheduled plan change was cancelled.');
         await loadData();
@@ -357,21 +416,29 @@ export default function PlansScreen({ navigation }: PlansProps) {
     const isCurrent = isLoggedIn && currentTier === tier.id;
     const isUpgrade = isLoggedIn && rankOf(tier.id) > rankOf(currentTier);
     const isDowngrade = isLoggedIn && rankOf(tier.id) < rankOf(currentTier);
-    // On iOS "can we sell this?" means StoreKit is connected and the product
-    // loaded; Stripe's configuration is irrelevant there.
+    // On iOS "can we sell this?" means the backend has Apple IAP configured,
+    // StoreKit is connected, and the product loaded; Stripe's configuration is
+    // irrelevant there.
     const canSubscribe =
       plansData?.subscriptions_enabled &&
-      (USE_STOREKIT ? iap.ready && !!iap.productsByTier[tier.id] : plansData?.stripe_configured);
-    // An existing subscriber must always be able to reach App Store management,
-    // even while new sales are switched off.
-    const canManage = USE_STOREKIT
+      (storeKitPurchases
+        ? iap.iapConfigured && iap.ready && !!iap.productsByTier[tier.id]
+        : // A live Stripe subscription on iOS has no in-app purchase path at
+          // all; the card falls through to an inert "billed outside the App
+          // Store" label.
+          !USE_STOREKIT && plansData?.stripe_configured);
+    // An existing subscriber must always be able to reach subscription
+    // management, even while new sales are switched off.
+    const canManage = appleManaged
       ? true
       : plansData?.subscriptions_enabled && plansData?.stripe_configured;
+    // The portal is a purchasing mechanism, so it is never surfaced on iOS.
+    const canOpenPortal = canManage && !externallyBilled;
     // StoreKit is still connecting / fetching products — not the same as the
     // product being unavailable, so don't say "Coming Soon" yet.
-    const storeLoading = USE_STOREKIT && !iap.ready;
+    const storeLoading = storeKitPurchases && !iap.ready;
     // StoreKit tracks its own in-flight tier; Stripe uses the actionLoading slot.
-    const isBusy = USE_STOREKIT ? iap.purchasingTier === tier.id : actionLoading === tier.id;
+    const isBusy = storeKitPurchases ? iap.purchasingTier === tier.id : actionLoading === tier.id;
     const cancelPending = subStatus?.cancel_at_period_end ?? false;
     // This card is the target of a pending deferred downgrade.
     const isScheduledTarget =
@@ -392,9 +459,11 @@ export default function PlansScreen({ navigation }: PlansProps) {
           </View>
           {tier.id > 0 && canManage && (
             <>
-              {/* Deferred downgrades are a Stripe construct; on iOS the pending
-                  change lives in the App Store's subscription settings. */}
-              {hasScheduledDowngrade && !USE_STOREKIT && (
+              {/* Reverting a deferred downgrade is a Stripe operation; for an
+                  App Store subscription the pending change lives in Apple's
+                  own subscription settings. Hidden on iOS for a Stripe
+                  subscriber — reinstating a plan is a purchase action. */}
+              {hasScheduledDowngrade && !appleManaged && !externallyBilled && (
                 <Pressable
                   style={[styles.btn, styles.btnPrimary, { marginTop: 10 }]}
                   onPress={handleCancelScheduledChange}
@@ -408,19 +477,23 @@ export default function PlansScreen({ navigation }: PlansProps) {
                 </Pressable>
               )}
               {cancelPending ? (
-                <Pressable
-                  style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
-                  // Re-enabling auto-renew on an App Store subscription is done
-                  // in Apple's settings, not through our backend.
-                  onPress={USE_STOREKIT ? iap.openManageSubscriptions : handleReactivate}
-                  disabled={!USE_STOREKIT && actionLoading === -2}
-                >
-                  {!USE_STOREKIT && actionLoading === -2 ? (
-                    <ActivityIndicator color={theme.primary} />
-                  ) : (
-                    <Text style={[styles.btnText, { color: theme.primary }]}>Reactivate Subscription</Text>
-                  )}
-                </Pressable>
+                // Restarting billing is a purchase action, so a Stripe
+                // subscriber on iOS is offered no way to do it here.
+                externallyBilled ? null : (
+                  <Pressable
+                    style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
+                    // Re-enabling auto-renew on an App Store subscription is done
+                    // in Apple's settings, not through our backend.
+                    onPress={appleManaged ? iap.openManageSubscriptions : handleReactivate}
+                    disabled={!appleManaged && actionLoading === -2}
+                  >
+                    {!appleManaged && actionLoading === -2 ? (
+                      <ActivityIndicator color={theme.primary} />
+                    ) : (
+                      <Text style={[styles.btnText, { color: theme.primary }]}>Reactivate Subscription</Text>
+                    )}
+                  </Pressable>
+                )
               ) : (
                 <Pressable
                   style={[styles.btn, styles.btnDanger, { marginTop: 10 }]}
@@ -434,17 +507,22 @@ export default function PlansScreen({ navigation }: PlansProps) {
                   )}
                 </Pressable>
               )}
-              <Pressable
-                style={[styles.btn, styles.btnSecondary, { marginTop: 8 }, portalLoading && { opacity: 0.75 }]}
-                onPress={openPortal}
-                disabled={portalLoading}
-              >
-                {portalLoading
-                  ? <ActivityIndicator color={theme.text} />
-                  : <Text style={[styles.btnText, { color: theme.text }]}>
-                      {USE_STOREKIT ? 'Manage in App Store' : 'Manage via Portal'}
-                    </Text>}
-              </Pressable>
+              {/* No manage button for a Stripe subscriber on iOS — the banner
+                  at the top of the screen already carries the explanation, so
+                  repeating it inside the card just reads as clutter. */}
+              {canOpenPortal && (
+                <Pressable
+                  style={[styles.btn, styles.btnSecondary, { marginTop: 8 }, portalLoading && { opacity: 0.75 }]}
+                  onPress={openPortal}
+                  disabled={portalLoading}
+                >
+                  {portalLoading
+                    ? <ActivityIndicator color={theme.text} />
+                    : <Text style={[styles.btnText, { color: theme.text }]}>
+                        {appleManaged ? 'Manage in App Store' : 'Manage via Portal'}
+                      </Text>}
+                </Pressable>
+              )}
             </>
           )}
         </View>
@@ -465,8 +543,18 @@ export default function PlansScreen({ navigation }: PlansProps) {
           </View>
         );
       }
+      // On iOS a Stripe subscriber may still cancel — that calls our own
+      // backend and points at no purchasing mechanism — but may not be offered
+      // a switch to another paid plan, which would be a purchase outside IAP.
+      if (externallyBilled && !isFree) {
+        return (
+          <View style={[styles.btn, styles.btnDisabled]}>
+            <Text style={[styles.btnText, { color: theme.subtext }]}>{EXTERNAL_BILLING_LABEL}</Text>
+          </View>
+        );
+      }
       const slot = isFree ? -1 : tier.id;
-      const downgradeBusy = isFree ? !USE_STOREKIT && actionLoading === slot : isBusy;
+      const downgradeBusy = isFree ? !appleManaged && actionLoading === slot : isBusy;
       return (
         <Pressable
           style={[styles.btn, styles.btnSecondary, downgradeBusy && { opacity: 0.75 }]}
@@ -476,7 +564,7 @@ export default function PlansScreen({ navigation }: PlansProps) {
           {downgradeBusy
             ? <ActivityIndicator color={theme.text} />
             : <Text style={[styles.btnText, { color: theme.text }]}>
-                {isFree && USE_STOREKIT ? 'Cancel in App Store' : `Switch to ${tier.name}`}
+                {isFree && appleManaged ? 'Cancel in App Store' : `Switch to ${tier.name}`}
               </Text>}
         </Pressable>
       );
@@ -492,6 +580,17 @@ export default function PlansScreen({ navigation }: PlansProps) {
     }
 
     if (isUpgrade) {
+      // Stripe subscriber opening the iOS app. StoreKit can't upgrade a
+      // subscription Apple never sold — the backend would reject the purchase
+      // after Apple had already charged for it — and 3.1.1 forbids pointing at
+      // the place that could. So the card is inert and simply says why.
+      if (externallyBilled) {
+        return (
+          <View style={[styles.btn, styles.btnDisabled]}>
+            <Text style={[styles.btnText, { color: theme.subtext }]}>{EXTERNAL_BILLING_LABEL}</Text>
+          </View>
+        );
+      }
       if (!canSubscribe) {
         return (
           <View style={[styles.btn, styles.btnDisabled]}>
@@ -544,6 +643,15 @@ export default function PlansScreen({ navigation }: PlansProps) {
           </View>
         )}
 
+        {/* A Stripe subscriber inside the iOS build. Told plainly, once, at the
+            top — no link and no site name, per guideline 3.1.1. */}
+        {externallyBilled && (
+          <View style={styles.infoBanner}>
+            <Ionicons name="information-circle-outline" size={16} color={theme.primary} style={{ marginRight: 8 }} />
+            <Text style={[styles.bannerText, { flex: 1 }]}>{EXTERNAL_BILLING_BODY}</Text>
+          </View>
+        )}
+
         {subStatus?.cancel_at_period_end && subStatus?.period_end && (
           <View style={styles.warningBanner}>
             <Ionicons name="warning-outline" size={16} color="#F59E0B" style={{ marginRight: 8 }} />
@@ -574,14 +682,14 @@ export default function PlansScreen({ navigation }: PlansProps) {
                     : ' at your next billing date'}
                   . You keep {subStatus?.tier_name} until then.
                 </Text>
-                {/* Reverting a scheduled change is a Stripe operation; on iOS
-                    it belongs to the App Store subscription settings. */}
+                {/* Reverting a scheduled change is a Stripe operation; for an
+                    App Store subscription it belongs to Apple's settings. */}
                 <Pressable
                   style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
-                  onPress={USE_STOREKIT ? iap.openManageSubscriptions : handleCancelScheduledChange}
-                  disabled={!USE_STOREKIT && actionLoading === -4}
+                  onPress={appleManaged ? iap.openManageSubscriptions : handleCancelScheduledChange}
+                  disabled={!appleManaged && actionLoading === -4}
                 >
-                  {!USE_STOREKIT && actionLoading === -4 ? (
+                  {!appleManaged && actionLoading === -4 ? (
                     <ActivityIndicator color={theme.primary} />
                   ) : (
                     <Text style={[styles.btnText, { color: theme.primary }]}>

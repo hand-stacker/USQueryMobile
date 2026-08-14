@@ -16,14 +16,22 @@ export const STRIPE_RETURN_URL = 'usqmobileapp://subscription/manage';
 // redirect URL the browser landed on (so the caller can read ?status=success /
 // cancel), or null if the user dismissed it manually or we had to fall back to
 // the system browser (which can't signal a return).
+//
 export async function openStripeUrl(url: string): Promise<string | null> {
-  // Backstop for App Store Review guideline 3.1.1: iOS sells subscriptions only
-  // through StoreKit, so no Stripe-hosted checkout or billing portal may open
-  // there. Callers already branch on USE_STOREKIT; this makes it impossible for
-  // a future one to slip a non-IAP payment page into the iOS build.
+  // Backstop for App Store Review guideline 3.1.1: an iOS app may not include
+  // buttons, external links, or any other call to action pointing at a
+  // purchasing mechanism other than in-app purchase. That covers the billing
+  // portal as well as checkout — the portal is where a subscription is bought,
+  // upgraded and re-started, so linking to it is steering even when the user
+  // only means to cancel.
+  //
+  // A Stripe subscriber on iOS is therefore told, in plain text with no link,
+  // that their subscription is billed outside the App Store. Callers already
+  // branch before getting here; this makes it impossible for a future one to
+  // slip a non-IAP payment page into the iOS build.
   if (USE_STOREKIT) {
     if (__DEV__) {
-      console.warn('openStripeUrl blocked on iOS — use the StoreKit flow in iapContext instead.');
+      console.warn('openStripeUrl blocked on iOS — guideline 3.1.1 forbids linking to it.');
     }
     return null;
   }

@@ -3,11 +3,18 @@ import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, T
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppleSignInButton from "../components/AppleSignInButton";
 import GoogleSignInButton from "../components/GoogleSignInButton";
-import { USE_STOREKIT } from "../../constants/iap";
 import { removeUserSession, retrieveUserSession, storeUserSession } from "../encrypted-storage/functions";
-import { authRequest } from "../hooks/authRequest";
-import { useIapContext } from "../hooks/iapContext";
+import { authRequest, authRequestWithStatus } from "../hooks/authRequest";
+import { resetAppAccountToken, useIapContext } from "../hooks/iapContext";
 import { openStripeUrl } from "../hooks/openStripeUrl";
+import { USE_STOREKIT } from "../../constants/iap";
+import {
+  EXTERNAL_BILLING_BODY,
+  EXTERNAL_BILLING_TITLE,
+  handleAppStoreConflict,
+  isAppleManaged,
+  isStripeManaged,
+} from "../hooks/subscriptionBilling";
 import { useAppleSignIn } from "../hooks/useAppleSignIn";
 import { useGoogleSignIn } from "../hooks/useGoogleSignIn";
 import { useLogin } from "../hooks/useLogin";
@@ -91,11 +98,17 @@ export default function Login({ navigation }: LoginProps) {
 
   const handleAuthSuccess = async (authData: any, isOAuth = false) => {
     await storeUserSession(authData.email, authData.access, authData.refresh, authData.is_verified);
+    // The Apple appAccountToken is per-account; a stale one would attribute the
+    // next purchase to whoever was signed in before.
+    resetAppAccountToken();
     if (!isOAuth && !authData.is_verified) {
       navigation.navigate("Verify", { email: authData.email, fromLogin: true });
       return;
     }
     setLoggedIn(true);
+    // A StoreKit purchase made while signed out has no account to be granted
+    // to, so it sits unfinished. Now that there is a session, replay it.
+    iap.syncPendingPurchases().catch(() => {});
     setUserSession({ email: authData.email, refreshToken: authData.refresh, accessToken: authData.access, isVerified: authData.is_verified });
     try {
       const userPrefs = await authRequest("notif/get-preferences/");
@@ -151,22 +164,38 @@ export default function Login({ navigation }: LoginProps) {
   const [detailsLoading, setDetailsLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
 
+  // Who owns this subscription. Not Platform.OS: a Stripe subscriber from the
+  // web who opens the iOS app has no App Store subscription, so sending them to
+  // Apple's settings would show them an empty list.
+  const appleManaged = isAppleManaged(userDetails);
+  // Stripe subscriber inside the iOS build: the billing portal is a purchasing
+  // mechanism, so guideline 3.1.1 rules out linking to it. State the fact and
+  // render no button.
+  const externallyBilled =
+    USE_STOREKIT && isStripeManaged(userDetails) && (userDetails?.tier ?? 0) > 0;
+
   const openPortal = async () => {
-    // iOS subscriptions are App Store transactions — they can only be changed
-    // or cancelled in Apple's own settings, never in the Stripe portal.
-    if (USE_STOREKIT) {
+    // An App Store subscription can only be changed or cancelled in Apple's own
+    // settings — there is no server API for it, ours or Stripe's.
+    if (appleManaged) {
       await iap.openManageSubscriptions();
+      return;
+    }
+    // Unreachable from the UI; kept so no future caller can open it on iOS.
+    if (USE_STOREKIT) {
+      Alert.alert(EXTERNAL_BILLING_TITLE, EXTERNAL_BILLING_BODY);
       return;
     }
     setPortalLoading(true);
     try {
-      const result = await authRequest("subscription/portal/", { method: "POST" });
-      if (result.portal_url) {
+      const { status, data: result } = await authRequestWithStatus("subscription/portal/", { method: "POST" });
+      if (handleAppStoreConflict(status, result)) return;
+      if (result?.portal_url) {
         // In-app browser that returns to the app via the deep link rather than
         // stranding the user on the logged-out web manage page.
         await openStripeUrl(result.portal_url);
       } else {
-        Alert.alert("Error", result.error ?? "Could not open billing portal.");
+        Alert.alert("Error", result?.error ?? "Could not open billing portal.");
       }
     } catch (err: any) {
       Alert.alert("Error", err?.message ?? "Could not open billing portal.");
@@ -284,7 +313,7 @@ export default function Login({ navigation }: LoginProps) {
                   <Pressable style={[styles.actionBtn, styles.actionBtnSecondary]} onPress={() => navigation.navigate("Plans")}>
                     <Text style={[styles.actionBtnText, { color: theme.innerText }]}>View All Plans</Text>
                   </Pressable>
-                  {hasPaidPlan && (
+                  {hasPaidPlan && !externallyBilled && (
                     <Pressable
                       style={[styles.actionBtn, styles.actionBtnPrimary, portalLoading && { opacity: 0.7 }]}
                       onPress={openPortal}
@@ -293,11 +322,21 @@ export default function Login({ navigation }: LoginProps) {
                       {portalLoading
                         ? <ActivityIndicator color="#fff" />
                         : <Text style={[styles.actionBtnText, { color: theme.innerText }]}>
-                            {USE_STOREKIT ? 'Manage in App Store' : 'Billing Portal'}
+                            {appleManaged ? 'Manage in App Store' : 'Billing Portal'}
                           </Text>}
                     </Pressable>
                   )}
                 </View>
+                {/* Statement of fact, no link and no site name. Guideline 3.1.1
+                    forbids a call to action pointing at any purchasing
+                    mechanism other than in-app purchase. Same box geometry as
+                    warningBox, in neutral tones — this is information, not a
+                    problem the user has to act on. */}
+                {externallyBilled && (
+                  <View style={styles.noteBox}>
+                    <Text style={styles.noteText}>{EXTERNAL_BILLING_BODY}</Text>
+                  </View>
+                )}
               </>
             )}
           </View>
@@ -311,6 +350,7 @@ export default function Login({ navigation }: LoginProps) {
                     await authRequest("auth/token/blacklist/", { method: "POST", body: JSON.stringify({ refresh: userSession.refreshToken }) });
                   }
                   await removeUserSession();
+                  resetAppAccountToken();
                   clearFavorites();
                   clearStarrMem();
                   clearStarrBills();
@@ -535,6 +575,18 @@ const createStyles = (theme: any, isLandscape = false) => StyleSheet.create({
     color: theme.subtext,
     marginTop: 4,
     fontWeight: '400',
+  },
+  noteBox: {
+    backgroundColor: theme.secondary,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 16,
+  },
+  noteText: {
+    color: theme.subtext,
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 17,
   },
   warningBox: {
     backgroundColor: 'rgba(245,158,11,0.1)',

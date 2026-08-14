@@ -3,6 +3,12 @@ import { Platform } from 'react-native';
 /**
  * App Store subscription product identifiers, one per paid tier.
  *
+ * FALLBACK ONLY. The authoritative map is `apple_product_id` on each tier of
+ * the backend's subscription/plans/ payload, which iapContext prefers so the
+ * SKUs live in one place; this constant covers the case where that call fails
+ * (offline first launch). The two must not disagree — if you change a SKU
+ * here, change it on the server, and vice versa.
+ *
  * These must match the auto-renewable subscriptions configured in App Store
  * Connect, and all three must live in the SAME subscription group so StoreKit
  * handles upgrades/downgrades (and their proration) for us — buying a different
