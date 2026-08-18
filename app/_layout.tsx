@@ -21,6 +21,7 @@ import VotePredictionsScreen from "./bill/screens/vote_predictions";
 import MemberInfo from "./member/screens/[membershipId]";
 import DisclaimerModal from './misc/DisclaimerModal';
 import PrivacyPolicyModal from './misc/PrivacyPolicyModal';
+import TermsOfUseModal from './misc/TermsOfUseModal';
 import ReviewModal from './misc/ReviewModal';
 import UpdateAvailableModal from './misc/UpdateAvailableModal';
 import UpsellModal from './misc/UpsellModal';
@@ -86,6 +87,7 @@ function SharedStack({ route } : {route:any}) {
       <Stack.Screen name="Reset_Password" component={ResetPassword} options={{ headerShown: false }}/>
       <Stack.Screen name="Notification_Settings" component={NotificationSettings} options={{ headerShown: false }}/>
       <Stack.Screen name="Privacy_Policy" component={PrivacyPolicy} options={{ headerShown: false }}/>
+      <Stack.Screen name="Terms_Of_Use" component={TermsOfUse} options={{ headerShown: false }}/>
       <Stack.Screen name="Feedback" component={FeedbackScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Plans" component={PlansScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Checkout_Success" component={CheckoutSuccess} options={{ headerShown: false }}/>
@@ -246,6 +248,7 @@ function AppNavigation() {
       <NavigationContainer ref={navigationRef} theme={navTheme}>
         <TabNavigator />
         <WelcomeFavoritesModal />
+        <TermsOfUseModal />
         <PrivacyPolicyModal />
         <DisclaimerModal />
         <ReviewModal />
@@ -261,6 +264,7 @@ function AppNavigation() {
 import { DefaultTheme, DarkTheme as NavDarkTheme } from "@react-navigation/native";
 import { Platform, useWindowDimensions } from "react-native";
 import PrivacyPolicy from "./misc/privacy_policy";
+import TermsOfUse from "./misc/terms_of_use";
 
 export const createNavTheme = (theme: any) => {
   const base = theme.name === "dark" ? NavDarkTheme : DefaultTheme;

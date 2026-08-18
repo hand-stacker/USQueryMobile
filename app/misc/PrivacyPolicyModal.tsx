@@ -29,7 +29,9 @@ export default function PrivacyPolicyModal() {
   };
 
   return (
-    <Modal visible={visible} animationType="fade" transparent>
+    // onRequestClose is required on Android; kept inert on purpose so the
+    // hardware back button cannot dismiss a consent gate without a choice.
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={() => {}}>
       <SafeAreaView style={styles.overlay} edges={["top"]}>
         <View style={styles.container}>
           <Text style={styles.title}>Privacy Policy</Text>
@@ -42,7 +44,7 @@ export default function PrivacyPolicyModal() {
             </Text>
 
             <Text style={styles.text}>
-              This privacy policy applies to the My Congress app (hereby referred to as "Application") for mobile devices that was created by USQuery (hereby referred to as "Service Provider") as a Freemium service. This service is intended for use "AS IS".
+              This privacy policy applies to the My Congress app (hereby referred to as "Application") for mobile devices that was created by USQuery LLC (hereby referred to as "Service Provider") as a Freemium service. This service is intended for use "AS IS".
             </Text>
 
             <Text style={styles.header}>Information Collection and Use</Text>
@@ -129,7 +131,7 @@ export default function PrivacyPolicyModal() {
             </Text>
 
             <Text style={styles.text}>
-              This privacy policy is effective as of 2026-02-12
+              This privacy policy is effective as of 2026-08-17
             </Text>
 
             <Text style={styles.header}>Your Consent</Text>
@@ -162,10 +164,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.overlay,
   },
   container: {
-    width: '90%',
-    height: '80%',
+    width: '88%',
+    maxWidth: 480,
+    maxHeight: '85%',
     backgroundColor: theme.background,
-    padding: 18,
+    padding: 22,
     borderRadius: 12,
     elevation: 6,
     shadowColor: theme.shadow,
@@ -174,40 +177,46 @@ const createStyles = (theme: any) => StyleSheet.create({
     shadowRadius: 6,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: theme.titleText,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   scrollView: {
-    flex: 1,
+    flexShrink: 1,
     marginBottom: 12,
   },
   header: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: theme.text,
-    marginTop: 15,
-    marginBottom: 8,
+    marginTop: 14,
+    marginBottom: 6,
   },
   text: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '400',
     color: theme.text,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   listContainer: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   listItem: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '400',
     color: theme.text,
     marginLeft: 15,
     marginBottom: 4,
   },
   acceptButton: {
+    marginTop: 8,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     backgroundColor: theme.primary,
     padding: 14,
     borderRadius: 8,

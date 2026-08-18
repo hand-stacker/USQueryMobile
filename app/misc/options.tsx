@@ -77,6 +77,9 @@ export default function OptionsPage({navigation, route }: OptionsProps) {
           <Pressable style={styles.button} onPress={async () => navigation.navigate('Privacy_Policy') }>
             <Text style={styles.buttonText}>Privacy Policy</Text>
           </Pressable>
+          <Pressable style={styles.button} onPress={async () => navigation.navigate('Terms_Of_Use') }>
+            <Text style={styles.buttonText}>Terms of Use</Text>
+          </Pressable>
         </View>
 
         <SelectFavoritesModal visible={open} onClose={handleClose} />

@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
       </Text>
 
       <Text style={styles.text}>
-        This privacy policy applies to the My Congress app (hereby referred to as "Application") for mobile devices that was created by USQuery (hereby referred to as "Service Provider") as a Freemium service. This service is intended for use "AS IS".
+        This privacy policy applies to the My Congress app (hereby referred to as "Application") for mobile devices that was created by USQuery LLC (hereby referred to as "Service Provider") as a Freemium service. This service is intended for use "AS IS".
       </Text>
 
       <Text style={styles.header}>Information Collection and Use</Text>
@@ -106,7 +106,7 @@ export default function PrivacyPolicy() {
       </Text>
 
       <Text style={styles.text}>
-        This privacy policy is effective as of 2026-02-12
+        This privacy policy is effective as of 2026-08-17
       </Text>
 
       <Text style={styles.header}>Your Consent</Text>

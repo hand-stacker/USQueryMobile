@@ -26,7 +26,9 @@ export default function DisclaimerModal() {
   };
 
   return (
-    <Modal visible={visible} animationType="fade" transparent>
+    // onRequestClose is required on Android; kept inert on purpose so the
+    // hardware back button cannot dismiss a consent gate without a choice.
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={() => {}}>
       <SafeAreaView style={styles.overlay} edges={["top"]}>
         <View style={styles.container}>
           <Text style={styles.title}>Independent App Notice</Text>

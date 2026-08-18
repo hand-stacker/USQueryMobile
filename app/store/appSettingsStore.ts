@@ -6,6 +6,8 @@ import { zustandStorage } from '../services/zustandStorage';
 interface AppSettingsState {
   privacyAccepted: boolean;
   setPrivacyAccepted: (accepted: boolean) => void;
+  termsAccepted: boolean;
+  setTermsAccepted: (accepted: boolean) => void;
   disclaimerAccepted: boolean;
   setDisclaimerAccepted: (accepted: boolean) => void;
   reviewStatus: 'pending' | 'never' | 'reviewed';
@@ -20,6 +22,8 @@ export const useAppSettingsStore = create<AppSettingsState>()(
     (set) => ({
       privacyAccepted: false,
       setPrivacyAccepted: (accepted: boolean) => set({ privacyAccepted: accepted }),
+      termsAccepted: false,
+      setTermsAccepted: (accepted: boolean) => set({ termsAccepted: accepted }),
       disclaimerAccepted: false,
       setDisclaimerAccepted: (accepted: boolean) => set({ disclaimerAccepted: accepted }),
       reviewStatus: 'pending',
@@ -55,6 +59,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
     const current = useAppSettingsStore.getState();
     useAppSettingsStore.setState({
       privacyAccepted: current.privacyAccepted || (s.privacyAccepted ?? false),
+      termsAccepted: current.termsAccepted || (s.termsAccepted ?? false),
       disclaimerAccepted: current.disclaimerAccepted || (s.disclaimerAccepted ?? false),
       reviewStatus: s.reviewStatus ?? current.reviewStatus,
       reviewCountdown: s.reviewCountdown ?? current.reviewCountdown,

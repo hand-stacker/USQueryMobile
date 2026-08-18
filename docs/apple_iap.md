@@ -59,9 +59,24 @@ a submission stay in "Waiting for Review" and the build gets rejected again.
 
 Also set, under App Information:
 
-- **License Agreement** — leave as Apple's standard EULA (the app links to it
-  from the Plans screen).
+- **License Agreement** — a **custom** EULA, not Apple's standard one. Paste
+  the text of `docs/legal/terms-of-use.txt` into App Information → License
+  Agreement → Custom License Agreement, and select all territories. The same
+  document is published at https://www.usquery.com/terms-of-service/, which is what
+  `TERMS_OF_USE_URL` in `constants/iap.ts` points the Plans screen at. Keep the
+  three copies (plain-text master, hosted page, in-app `app/misc/terms_of_use.tsx`)
+  in sync — see `docs/legal/README.md`.
 - **Privacy Policy URL** — required for subscriptions.
+  https://www.usquery.com/privacy-policy/.
+- **App Description** — must also carry a plain-text link to the Terms of Use.
+  The 1.0.5 submission was rejected under guideline 3.1.2 for omitting it:
+  "does not include a functional link to the terms of use (EULA) in the app's
+  metadata". Append to the description:
+
+  ```
+  Terms of Use (EULA): https://www.usquery.com/terms-of-service/
+  Privacy Policy: https://www.usquery.com/privacy-policy/
+  ```
 
 ## Backend contract (usquery.com, separate repo)
 

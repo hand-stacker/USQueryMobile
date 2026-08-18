@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { APPLE_EULA_URL, USE_STOREKIT } from '../../constants/iap';
+import { TERMS_OF_USE_URL, USE_STOREKIT } from '../../constants/iap';
 import { retrieveUserSession } from '../encrypted-storage/functions';
 import { authRequest, authRequestWithStatus } from '../hooks/authRequest';
 import { useIapContext } from '../hooks/iapContext';
@@ -755,31 +755,40 @@ export default function PlansScreen({ navigation }: PlansProps) {
             <Text style={{ fontWeight: '600' }}>AI Chatbot</Text>
             {' — Ask questions about bills and their potential impact, grounded in real congressional data.'}
           </Text>
+          {/* Guideline 3.1.2 disclosures for auto-renewable subscriptions. Only
+              the renewal wording is store-specific — the terms and privacy
+              links are required on every platform, so they live outside the
+              branch. */}
           {USE_STOREKIT ? (
-            <>
-              {/* Guideline 3.1.2 disclosures for auto-renewable subscriptions. */}
-              <Text style={styles.finePrint}>
-                Subscriptions renew monthly until cancelled. Payment is charged to your Apple ID at
-                confirmation of purchase. The subscription renews automatically unless auto-renew is
-                turned off at least 24 hours before the end of the current period; your account is
-                charged for renewal within 24 hours of the end of the period. You can manage or
-                cancel your subscription in your Apple ID account settings.
-              </Text>
-              <View style={styles.legalRow}>
-                <Pressable onPress={() => Linking.openURL(APPLE_EULA_URL).catch(() => {})}>
-                  <Text style={styles.legalLink}>Terms of Use (EULA)</Text>
-                </Pressable>
-                <Text style={styles.finePrint}> · </Text>
-                <Pressable onPress={() => navigation.navigate('Privacy_Policy')}>
-                  <Text style={styles.legalLink}>Privacy Policy</Text>
-                </Pressable>
-              </View>
-            </>
-          ) : (
             <Text style={styles.finePrint}>
-              Prices in USD · Billed monthly · Cancel anytime · Payments processed securely by Stripe
+              Subscriptions renew monthly until cancelled. Payment is charged to your Apple ID at
+              confirmation of purchase. The subscription renews automatically unless auto-renew is
+              turned off at least 24 hours before the end of the current period; your account is
+              charged for renewal within 24 hours of the end of the period. You can manage or
+              cancel your subscription in your Apple ID account settings.
             </Text>
+          ) : (
+            <>
+              <Text style={styles.finePrint}>
+                Subscriptions renew monthly until cancelled. Payment is charged at confirmation of
+                purchase and again at the start of each renewal period. You can cancel at any time
+                from the billing portal; cancellation takes effect at the end of the current period
+                and you keep access until then.
+              </Text>
+              <Text style={[styles.finePrint, { marginTop: 8 }]}>
+                Prices in USD · Billed monthly · Cancel anytime · Payments processed securely by Stripe
+              </Text>
+            </>
           )}
+          <View style={styles.legalRow}>
+            <Pressable onPress={() => Linking.openURL(TERMS_OF_USE_URL).catch(() => {})}>
+              <Text style={styles.legalLink}>Terms of Use (EULA)</Text>
+            </Pressable>
+            <Text style={styles.finePrint}> · </Text>
+            <Pressable onPress={() => navigation.navigate('Privacy_Policy')}>
+              <Text style={styles.legalLink}>Privacy Policy</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

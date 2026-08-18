@@ -44,8 +44,14 @@ export const USE_STOREKIT = Platform.OS === 'ios';
 export const APPLE_MANAGE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/subscriptions';
 
 /**
- * Apple's standard EULA. Guideline 3.1.2 requires a functional link to the
- * terms of use and privacy policy wherever auto-renewable subscriptions are
- * offered.
+ * Our own EULA, replacing Apple's standard one. Guideline 3.1.2 requires a
+ * functional link to the terms of use and privacy policy wherever
+ * auto-renewable subscriptions are offered — and Apple checks that the link
+ * resolves, so these must stay hosted and public. The same document is filed
+ * as the custom License Agreement in App Store Connect.
+ *
+ * Note the trailing slashes and the `www` host: usquery.com redirects to www,
+ * and the site 404s on the slashless paths.
  */
-export const APPLE_EULA_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+export const TERMS_OF_USE_URL = 'https://www.usquery.com/terms-of-service/';
+export const PRIVACY_POLICY_URL = 'https://www.usquery.com/privacy-policy/';
