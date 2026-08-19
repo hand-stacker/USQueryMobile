@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TERMS_OF_USE_URL, USE_STOREKIT } from '../../constants/iap';
+import { LOCAL_TIER_CATALOG, TERMS_OF_USE_URL, USE_STOREKIT } from '../../constants/iap';
 import { retrieveUserSession } from '../encrypted-storage/functions';
 import { authRequest, authRequestWithStatus } from '../hooks/authRequest';
 import { setSubscriptionTier, TIER_FREE, TIER_LOGGED_OUT } from '../hooks/subscriptionTier';
@@ -42,8 +42,10 @@ interface Tier {
   name: string;
   price: string;
   price_period: string;
-  starred_members_limit: number;
-  starred_bills_limit: number;
+  // Null means "no data for this limit" — the row is omitted rather than
+  // rendered with a wrong number. Only the local iOS catalog produces nulls.
+  starred_members_limit: number | null;
+  starred_bills_limit: number | null;
   predictions_per_day: number | null;
   chat_messages_per_day: number | null;
   // App Store SKU for this tier, null for Free. The server is the source of
@@ -68,19 +70,47 @@ export default function PlansScreen({ navigation }: PlansProps) {
   const [subStatus, setSubStatus] = useState<SubStatus | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  // The plans fetch failed outright — distinct from "loaded, but sales are off".
+  const [loadError, setLoadError] = useState(false);
   // null = idle, -1 = cancel in flight, -2 = reactivate in flight,
   // -4 = cancelling a scheduled downgrade in flight, N = upgrading tier N
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
+  // On iOS every *sale* goes through StoreKit (App Store Review guideline
+  // 3.1.1); Stripe Checkout is Android/web only.
+  const iap = useIapContext();
+
   const loadData = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const session = await retrieveUserSession();
       const loggedIn = !!session?.accessToken;
       setIsLoggedIn(loggedIn);
       if (!loggedIn) setSubscriptionTier(TIER_LOGGED_OUT);
-      const plans: PlansData = await authRequest('subscription/plans/');
-      setPlansData(plans);
+
+      if (USE_STOREKIT) {
+        // iOS never asks the backend for plans: prices must be StoreKit's, and
+        // the screen has to render for signed-out users. See LOCAL_TIER_CATALOG.
+        setPlansData({
+          iap_configured: iap.iapConfigured,
+          stripe_configured: false,
+          subscriptions_enabled: iap.subscriptionsEnabled,
+          tiers: LOCAL_TIER_CATALOG,
+        });
+      } else {
+        // Checked on the status rather than trusting the body, so a 401/5xx
+        // surfaces as an error state instead of rendering as a plan list.
+        const plans = await authRequestWithStatus('subscription/plans/');
+        if (plans.ok && Array.isArray(plans.data?.tiers)) {
+          setPlansData(plans.data as PlansData);
+        } else {
+          console.error('Failed to load plans:', plans.status, plans.data);
+          setPlansData(null);
+          setLoadError(true);
+        }
+      }
+
       if (loggedIn) {
         try {
           const status: SubStatus = await authRequest('subscription/status/');
@@ -91,19 +121,18 @@ export default function PlansScreen({ navigation }: PlansProps) {
         } catch {
           // Non-fatal: user may not have a subscription yet
         }
+      } else {
+        setSubStatus(null);
       }
     } catch (err) {
       console.error('Failed to load plans:', err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [iap.iapConfigured, iap.subscriptionsEnabled]);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
-
-  // On iOS every *sale* goes through StoreKit (App Store Review guideline
-  // 3.1.1); Stripe Checkout is Android/web only.
-  const iap = useIapContext();
 
   // Which processor owns this subscription. Never branch management on
   // Platform.OS: a user who subscribed through Stripe on the web and then opens
@@ -115,12 +144,12 @@ export default function PlansScreen({ navigation }: PlansProps) {
   // pays twice — meaning iOS has no in-app upgrade path for these users.
   const stripeManaged = isStripeManaged(subStatus) && (subStatus?.tier ?? 0) > 0;
   const storeKitPurchases = USE_STOREKIT && !stripeManaged;
-  // Stripe subscriber inside the iOS build. Guideline 3.1.1 means we may state
-  // that the subscription is billed elsewhere but may not link, name a site, or
-  // put a tappable route to it on screen — so every plan-changing affordance is
-  // withdrawn and replaced with plain text. Cancelling is still offered: it
-  // calls our own backend, points at no purchasing mechanism, and leaving a
-  // subscriber with no way out would be the worse outcome.
+  // A subscriber the App Store does not bill, inside the iOS build. Guideline
+  // 3.1.1 means we may state that the subscription is billed elsewhere but may
+  // not link, name a site or processor, or put a tappable route to it on
+  // screen — so EVERY control is withdrawn and replaced with plain text.
+  // Cancel included: it runs against our own backend, which is still an
+  // alternative management path for a subscription Apple cannot see.
   const externallyBilled = USE_STOREKIT && stripeManaged;
 
   // The backend grants the tier when it verifies an App Store transaction, so
@@ -400,18 +429,22 @@ export default function PlansScreen({ navigation }: PlansProps) {
     }
   };
 
+  // Null when there is no number to show, so the row is omitted rather than
+  // rendered as "null vote predictions/day".
   const predictionsLabel = (val: number | null, tierId?: number) =>
-    tierId !== undefined && (tierId == 2 || tierId == 3) ?
-      { label: 'Unlimited vote predictions', included: true }
+    tierId !== undefined && (tierId === 2 || tierId === 3)
+      ? { label: 'Unlimited vote predictions', included: true }
+      : val === null
+      ? null
       : val === 0
       ? { label: 'Vote predictions', included: false }
       : { label: `${val} vote predictions/day`, included: true };
-      
 
   const chatLabel = (val: number | null, tierId?: number) =>
-
-    tierId !== undefined && (tierId == 2 || tierId == 3) ?
-      { label: '5M tokens/month AI chats', included: true }
+    tierId !== undefined && (tierId === 2 || tierId === 3)
+      ? { label: '5M tokens/month AI chats', included: true }
+      : val === null
+      ? null
       : val === 0
       ? { label: 'AI chatbot', included: false }
       : { label: `${val} AI chats/day`, included: true };
@@ -422,16 +455,12 @@ export default function PlansScreen({ navigation }: PlansProps) {
     const isUpgrade = isLoggedIn && rankOf(tier.id) > rankOf(currentTier);
     const isDowngrade = isLoggedIn && rankOf(tier.id) < rankOf(currentTier);
     // On iOS "can we sell this?" means the backend has Apple IAP configured,
-    // StoreKit is connected, and the product loaded; Stripe's configuration is
-    // irrelevant there.
+    // StoreKit is connected, and the product loaded.
     const canSubscribe =
       plansData?.subscriptions_enabled &&
       (storeKitPurchases
         ? iap.iapConfigured && iap.ready && !!iap.productsByTier[tier.id]
-        : // A live Stripe subscription on iOS has no in-app purchase path at
-          // all; the card falls through to an inert "billed outside the App
-          // Store" label.
-          !USE_STOREKIT && plansData?.stripe_configured);
+        : !USE_STOREKIT && plansData?.stripe_configured);
     // An existing subscriber must always be able to reach subscription
     // management, even while new sales are switched off.
     const canManage = appleManaged
@@ -455,6 +484,17 @@ export default function PlansScreen({ navigation }: PlansProps) {
       (subStatus?.change_at_period_end ?? 0) > 0 &&
       rankOf(subStatus!.change_at_period_end!) < rankOf(currentTier);
 
+    // One rule, stated once so no branch below can leak a control: on iOS a
+    // subscriber the App Store doesn't bill gets no actionable card at all.
+    // The current-plan card keeps its badge, handled inside that branch.
+    if (externallyBilled && !isCurrent) {
+      return (
+        <View style={[styles.btn, styles.btnDisabled]}>
+          <Text style={[styles.btnText, { color: theme.subtext }]}>{EXTERNAL_BILLING_LABEL}</Text>
+        </View>
+      );
+    }
+
     if (isCurrent) {
       return (
         <View>
@@ -462,13 +502,14 @@ export default function PlansScreen({ navigation }: PlansProps) {
             <Ionicons name="checkmark-circle" size={16} color={theme.primary} style={{ marginRight: 6 }} />
             <Text style={styles.currentBadgeText}>Current Plan</Text>
           </View>
-          {tier.id > 0 && canManage && (
+          {tier.id > 0 && externallyBilled && (
+            <View style={[styles.btn, styles.btnDisabled, { marginTop: 10 }]}>
+              <Text style={[styles.btnText, { color: theme.subtext }]}>{EXTERNAL_BILLING_LABEL}</Text>
+            </View>
+          )}
+          {tier.id > 0 && !externallyBilled && canManage && (
             <>
-              {/* Reverting a deferred downgrade is a Stripe operation; for an
-                  App Store subscription the pending change lives in Apple's
-                  own subscription settings. Hidden on iOS for a Stripe
-                  subscriber — reinstating a plan is a purchase action. */}
-              {hasScheduledDowngrade && !appleManaged && !externallyBilled && (
+              {hasScheduledDowngrade && !appleManaged && (
                 <Pressable
                   style={[styles.btn, styles.btnPrimary, { marginTop: 10 }]}
                   onPress={handleCancelScheduledChange}
@@ -482,23 +523,19 @@ export default function PlansScreen({ navigation }: PlansProps) {
                 </Pressable>
               )}
               {cancelPending ? (
-                // Restarting billing is a purchase action, so a Stripe
-                // subscriber on iOS is offered no way to do it here.
-                externallyBilled ? null : (
-                  <Pressable
-                    style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
-                    // Re-enabling auto-renew on an App Store subscription is done
-                    // in Apple's settings, not through our backend.
-                    onPress={appleManaged ? iap.openManageSubscriptions : handleReactivate}
-                    disabled={!appleManaged && actionLoading === -2}
-                  >
-                    {!appleManaged && actionLoading === -2 ? (
-                      <ActivityIndicator color={theme.primary} />
-                    ) : (
-                      <Text style={[styles.btnText, { color: theme.primary }]}>Reactivate Subscription</Text>
-                    )}
-                  </Pressable>
-                )
+                <Pressable
+                  style={[styles.btn, styles.btnOutline, { marginTop: 10 }]}
+                  // Re-enabling auto-renew on an App Store subscription is done
+                  // in Apple's settings, not through our backend.
+                  onPress={appleManaged ? iap.openManageSubscriptions : handleReactivate}
+                  disabled={!appleManaged && actionLoading === -2}
+                >
+                  {!appleManaged && actionLoading === -2 ? (
+                    <ActivityIndicator color={theme.primary} />
+                  ) : (
+                    <Text style={[styles.btnText, { color: theme.primary }]}>Reactivate Subscription</Text>
+                  )}
+                </Pressable>
               ) : (
                 <Pressable
                   style={[styles.btn, styles.btnDanger, { marginTop: 10 }]}
@@ -512,9 +549,6 @@ export default function PlansScreen({ navigation }: PlansProps) {
                   )}
                 </Pressable>
               )}
-              {/* No manage button for a Stripe subscriber on iOS — the banner
-                  at the top of the screen already carries the explanation, so
-                  repeating it inside the card just reads as clutter. */}
               {canOpenPortal && (
                 <Pressable
                   style={[styles.btn, styles.btnSecondary, { marginTop: 8 }, portalLoading && { opacity: 0.75 }]}
@@ -545,16 +579,6 @@ export default function PlansScreen({ navigation }: PlansProps) {
         return (
           <View style={[styles.btn, styles.btnDisabled]}>
             <Text style={[styles.btnText, { color: theme.subtext }]}>Scheduled</Text>
-          </View>
-        );
-      }
-      // On iOS a Stripe subscriber may still cancel — that calls our own
-      // backend and points at no purchasing mechanism — but may not be offered
-      // a switch to another paid plan, which would be a purchase outside IAP.
-      if (externallyBilled && !isFree) {
-        return (
-          <View style={[styles.btn, styles.btnDisabled]}>
-            <Text style={[styles.btnText, { color: theme.subtext }]}>{EXTERNAL_BILLING_LABEL}</Text>
           </View>
         );
       }
@@ -639,7 +663,21 @@ export default function PlansScreen({ navigation }: PlansProps) {
         <Text style={styles.title}>Plans & Pricing</Text>
         <Text style={styles.subtitle}>Unlock predictions, starred content, and more.</Text>
 
-        {!plansData?.subscriptions_enabled && (
+        {loadError && (
+          <View style={styles.warningBanner}>
+            <Ionicons name="cloud-offline-outline" size={16} color="#F59E0B" style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.bannerText, { color: '#F59E0B' }]}>
+                Couldn&apos;t load plans. Check your connection and try again.
+              </Text>
+              <Pressable style={[styles.btn, styles.btnOutline, { marginTop: 10 }]} onPress={loadData}>
+                <Text style={[styles.btnText, { color: theme.primary }]}>Retry</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {plansData && !plansData.subscriptions_enabled && (
           <View style={styles.infoBanner}>
             <Ionicons name="construct-outline" size={16} color={theme.primary} style={{ marginRight: 8 }} />
             <Text style={[styles.bannerText, { flex: 1 }]}>
@@ -707,9 +745,11 @@ export default function PlansScreen({ navigation }: PlansProps) {
           )}
 
         {plansData?.tiers.map((tier) => {
-          // Apple requires the price shown to be the one StoreKit reports for
-          // the user's storefront, not a price we hardcode server-side.
+          // Apple requires the price and name shown to be StoreKit's, not
+          // ours. The Free tier has no product, so it keeps the catalog's.
           const storeProduct = USE_STOREKIT ? iap.productsByTier[tier.id] : undefined;
+          const predictions = predictionsLabel(tier.predictions_per_day, tier.id);
+          const chat = chatLabel(tier.chat_messages_per_day, tier.id);
           return (
           <View key={tier.id} style={[styles.card, tier.id === 1 && styles.cardHighlight]}>
             {tier.id === 1 && (
@@ -718,15 +758,19 @@ export default function PlansScreen({ navigation }: PlansProps) {
               </View>
             )}
 
-            <Text style={styles.tierName}>{tier.name}</Text>
+            <Text style={styles.tierName}>{storeProduct?.displayName || tier.name}</Text>
             <Text style={styles.tierPrice}>{storeProduct?.displayPrice ?? tier.price}</Text>
             <Text style={styles.tierPricePeriod}>{tier.price_period}</Text>
 
             <View style={styles.featureList}>
-              <FeatureRow label={`${tier.starred_members_limit} starred members`} included theme={theme} />
-              <FeatureRow label={`${tier.starred_bills_limit} starred bills`} included theme={theme} />
-              <FeatureRow {...predictionsLabel(tier.predictions_per_day, tier.id)} theme={theme} />
-              <FeatureRow {...chatLabel(tier.chat_messages_per_day, tier.id)} theme={theme} />
+              {tier.starred_members_limit !== null && (
+                <FeatureRow label={`${tier.starred_members_limit} starred members`} included theme={theme} />
+              )}
+              {tier.starred_bills_limit !== null && (
+                <FeatureRow label={`${tier.starred_bills_limit} starred bills`} included theme={theme} />
+              )}
+              {predictions && <FeatureRow {...predictions} theme={theme} />}
+              {chat && <FeatureRow {...chat} theme={theme} />}
             </View>
 
             {renderCardActions(tier)}

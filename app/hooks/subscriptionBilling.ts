@@ -52,19 +52,20 @@ export function isStripeManaged(status?: SubStatus | null): boolean {
 }
 
 /**
- * What an iOS build may say to a Stripe subscriber.
+ * What an iOS build may say to a subscriber it does not bill through Apple.
  *
- * Guideline 3.1.1 forbids buttons, external links, or any other call to action
- * that directs a customer to a purchasing mechanism other than in-app purchase.
- * So this states a fact and stops: it names no website, offers nothing tappable,
- * and does not tell the user where to go. Anything more specific is steering.
+ * Guideline 3.1.1 forbids any call to action directing a customer to a
+ * purchasing mechanism other than IAP; 3.1.3 permits merely stating that a
+ * subscription bought elsewhere works here. So this states a fact and stops:
+ * no processor named, no URL, nothing tappable. Every control on iOS is
+ * withdrawn in favour of it — Cancel included, since that routes through our
+ * own backend and is still a management path Apple cannot see.
  *
- * Keeping the copy here (rather than inline at four call sites) means the
- * wording is reviewed in one place if App Review ever pushes back on it.
+ * Kept here so the wording is reviewed in one place if App Review pushes back.
  */
 export const EXTERNAL_BILLING_TITLE = 'Billed outside the App Store';
 export const EXTERNAL_BILLING_BODY =
-  'Your My Congress subscription is billed by a third-party provider rather than Apple, so it cannot be changed from this app. It can be managed from the provider you originally subscribed with.';
+  'Your My Congress subscription was not purchased through the App Store, so it cannot be changed or cancelled from this app. You can manage it on the web, where you originally subscribed.';
 /**
  * Inert label for a plan card that cannot be actioned on iOS. Deliberately
  * short: it sits in a button-shaped slot narrow enough that the full sentence

@@ -55,3 +55,76 @@ export const APPLE_MANAGE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/su
  */
 export const TERMS_OF_USE_URL = 'https://www.usquery.com/terms-of-service/';
 export const PRIVACY_POLICY_URL = 'https://www.usquery.com/privacy-policy/';
+
+export interface LocalTier {
+  id: number;
+  name: string;
+  /** Fallback only — StoreKit's displayPrice wins when the product loaded. */
+  price: string;
+  price_period: string;
+  starred_members_limit: number | null;
+  starred_bills_limit: number | null;
+  predictions_per_day: number | null;
+  chat_messages_per_day: number | null;
+  apple_product_id: string | null;
+}
+
+/**
+ * The tier catalog the Plans screen renders on iOS, which never asks the
+ * backend for plans: prices must be StoreKit's (guideline 3.1.1) and the screen
+ * has to render for signed-out users. StoreKit supplies name, price and period;
+ * below is what it has no concept of, plus the Free tier (no App Store product).
+ *
+ * ⚠ DUPLICATES THE SERVER. subscription/plans/ returns these same limits and
+ * every other platform reads them from there. Change one there, change it here.
+ *
+ * A null limit renders no row rather than a wrong number.
+ */
+export const LOCAL_TIER_CATALOG: LocalTier[] = [
+  {
+    id: 0,
+    name: 'Free',
+    price: 'Free',
+    price_period: '',
+    starred_members_limit: 3,
+    starred_bills_limit: 10,
+    predictions_per_day: 0,
+    chat_messages_per_day: 0,
+    apple_product_id: null,
+  },
+  {
+    id: 1,
+    name: 'Plus',
+    price: '$2.99',
+    price_period: 'per month',
+    starred_members_limit: 10,
+    starred_bills_limit: 50,
+    predictions_per_day: 10,
+    chat_messages_per_day: 10,
+    apple_product_id: IOS_SKU_BY_TIER[1],
+  },
+  {
+    id: 4,
+    name: 'Plus Pro',
+    price: '$7.99',
+    price_period: 'per month',
+    starred_members_limit: 25,
+    starred_bills_limit: 100,
+    predictions_per_day: 30,
+    chat_messages_per_day: 30,
+    apple_product_id: IOS_SKU_BY_TIER[4],
+  },
+  {
+    id: 2,
+    name: 'Premium',
+    price: '$19.99',
+    price_period: 'per month',
+    starred_members_limit: 100,
+    starred_bills_limit: 1000,
+    // Premium renders as unlimited predictions / 5M chat tokens per month,
+    // special-cased by tier id in plans.tsx rather than by number.
+    predictions_per_day: null,
+    chat_messages_per_day: null,
+    apple_product_id: IOS_SKU_BY_TIER[2],
+  },
+];

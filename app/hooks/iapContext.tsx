@@ -13,7 +13,7 @@ import {
 } from '../../constants/iap';
 import { retrieveUserSession } from '../encrypted-storage/functions';
 import { authRequest, authRequestWithStatus } from './authRequest';
-import { openAppleSubscriptionSettings } from './subscriptionBilling';
+import { EXTERNAL_BILLING_TITLE, openAppleSubscriptionSettings } from './subscriptionBilling';
 import { invalidateSubscriptionTier } from './subscriptionTier';
 
 interface IapContextValue {
@@ -21,6 +21,11 @@ interface IapContextValue {
   ready: boolean;
   /** False when the backend reports it has no Apple IAP credentials configured. */
   iapConfigured: boolean;
+  /**
+   * The backend's kill switch for new sales. iOS builds its plan list from
+   * StoreKit, so this is how that switch still reaches the Plans screen there.
+   */
+  subscriptionsEnabled: boolean;
   /** StoreKit products keyed by our backend tier id. */
   productsByTier: Record<number, ProductSubscription | undefined>;
   /** Tier id currently being purchased, or null. */
@@ -49,6 +54,7 @@ interface IapContextValue {
 const NOOP_VALUE: IapContextValue = {
   ready: false,
   iapConfigured: false,
+  subscriptionsEnabled: true,
   productsByTier: {},
   purchasingTier: null,
   restoring: false,
@@ -112,10 +118,11 @@ function classifyFailure(status: number, body: any): VerifyOutcome {
     if (body?.billing_provider === 'stripe') {
       return {
         kind: 'permanent',
-        title: 'Already subscribed on the web',
+        title: EXTERNAL_BILLING_TITLE,
+        // Deliberately NOT `serverMessage`: the backend's copy names the site
+        // and the processor, which is the steering 3.1.1 forbids.
         message:
-          serverMessage ??
-          'Your subscription is billed through our website. Cancel it at usquery.com before subscribing through the App Store, so you are not charged twice.',
+          'You already have a My Congress subscription that was not purchased through the App Store, so this purchase was not applied and you have not been charged twice. Manage the existing subscription where you originally bought it, or subscribe here once it has ended.',
       };
     }
     return {
@@ -213,8 +220,7 @@ async function verifyWithBackend(purchase: Purchase): Promise<VerifyOutcome> {
   // Both `ok` and `verified` are present and true on success; every failure
   // response omits both.
   if (result.ok && (result.data?.ok || result.data?.verified)) {
-    // The user now holds a paid tier — drop any cached "free" reading so
-    // nothing keeps selling them the plan they just bought.
+    // They now hold a paid tier — drop any cached "free" reading.
     invalidateSubscriptionTier();
     return { kind: 'granted' };
   }
@@ -234,6 +240,7 @@ function IosIapProvider({ children }: { children: React.ReactNode }) {
   const [entitlementVersion, setEntitlementVersion] = useState(0);
   const [productsFetched, setProductsFetched] = useState(false);
   const [iapConfigured, setIapConfigured] = useState(true);
+  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
   // Tier → SKU. Seeded from the compiled-in constant and replaced by the
   // backend's plans payload once it loads, so the SKU map lives in one place.
   const [skuByTier, setSkuByTier] = useState<Record<number, string>>(IOS_SKU_BY_TIER);
@@ -351,16 +358,22 @@ function IosIapProvider({ children }: { children: React.ReactNode }) {
 
   finishRef.current = finishTransaction;
 
-  // The backend owns the SKU map (`apple_product_id` per tier); the constant is
-  // only a fallback for when this call fails. The two must not disagree.
+  // The backend owns the SKU map (`apple_product_id` per tier) and the
+  // subscriptions_enabled kill switch; the constants are only a fallback for
+  // when this call fails. Skipped off iOS, where none of it applies. Nothing
+  // here is used for display, so a failure is silent by design.
   useEffect(() => {
+    if (!USE_STOREKIT) return;
     let cancelled = false;
-    authRequest('subscription/plans/')
-      .then((plans) => {
-        if (cancelled || !plans) return;
-        if (typeof plans.iap_configured === 'boolean') setIapConfigured(plans.iap_configured);
+    authRequestWithStatus('subscription/plans/')
+      .then(({ ok, data }) => {
+        if (cancelled || !ok || !data) return;
+        if (typeof data.iap_configured === 'boolean') setIapConfigured(data.iap_configured);
+        if (typeof data.subscriptions_enabled === 'boolean') {
+          setSubscriptionsEnabled(data.subscriptions_enabled);
+        }
         const fromServer: Record<number, string> = {};
-        for (const tier of plans.tiers ?? []) {
+        for (const tier of data.tiers ?? []) {
           if (tier?.apple_product_id) fromServer[tier.id] = tier.apple_product_id;
         }
         if (Object.keys(fromServer).length > 0) setSkuByTier(fromServer);
@@ -521,6 +534,7 @@ function IosIapProvider({ children }: { children: React.ReactNode }) {
     () => ({
       ready: connected && productsFetched,
       iapConfigured,
+      subscriptionsEnabled,
       productsByTier,
       purchasingTier,
       restoring,
@@ -534,6 +548,7 @@ function IosIapProvider({ children }: { children: React.ReactNode }) {
       connected,
       productsFetched,
       iapConfigured,
+      subscriptionsEnabled,
       productsByTier,
       purchasingTier,
       restoring,

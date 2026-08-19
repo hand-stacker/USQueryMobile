@@ -5,20 +5,21 @@ async function authorizedFetch(
     endpoint: string,
     options: RequestInit = {},
     baseUrl: string = API_BASE_URL,
-): Promise<Response> {
+): Promise<{ response: Response; hadToken: boolean }> {
     let session = await retrieveUserSession();
+    const hadToken = !!session?.accessToken;
     let headers = {
         "Content-Type": "application/json",
         ...(options.headers || {}),
-        ...(session?.accessToken
-            ? { Authorization: `Bearer ${session.accessToken}` }
+        ...(hadToken
+            ? { Authorization: `Bearer ${session!.accessToken}` }
             : {}),
     };
     let f = await fetch(`${baseUrl}${endpoint}`, {
         ...options,
         headers,
     });
-    return f;
+    return { response: f, hadToken };
 }
 
 let isRefreshing = false;
@@ -62,9 +63,15 @@ export async function authRequestWithStatus(
     config: { baseUrl?: string } = {},
 ): Promise<ApiResponse> {
     const baseUrl = config.baseUrl ?? API_BASE_URL;
-    let response = await authorizedFetch(endpoint, options, baseUrl);
+    const { response, hadToken } = await authorizedFetch(endpoint, options, baseUrl);
 
     if (response.status !== 401) {
+        return readBody(response);
+    }
+
+    // A 401 on a request we never attached a token to just means the endpoint
+    // requires auth — there is no session to refresh and none to sign out of.
+    if (!hadToken) {
         return readBody(response);
     }
 
