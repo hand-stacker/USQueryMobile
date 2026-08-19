@@ -14,6 +14,7 @@ import {
 import { retrieveUserSession } from '../encrypted-storage/functions';
 import { authRequest, authRequestWithStatus } from './authRequest';
 import { openAppleSubscriptionSettings } from './subscriptionBilling';
+import { invalidateSubscriptionTier } from './subscriptionTier';
 
 interface IapContextValue {
   /** True once StoreKit is connected and the product fetch has been attempted. */
@@ -211,7 +212,12 @@ async function verifyWithBackend(purchase: Purchase): Promise<VerifyOutcome> {
 
   // Both `ok` and `verified` are present and true on success; every failure
   // response omits both.
-  if (result.ok && (result.data?.ok || result.data?.verified)) return { kind: 'granted' };
+  if (result.ok && (result.data?.ok || result.data?.verified)) {
+    // The user now holds a paid tier — drop any cached "free" reading so
+    // nothing keeps selling them the plan they just bought.
+    invalidateSubscriptionTier();
+    return { kind: 'granted' };
+  }
 
   // A 2xx that somehow lacks the flags, or a body we could not parse (proxy
   // error page), is treated as the 500 row: don't finish, retry.

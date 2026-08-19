@@ -81,7 +81,10 @@ export async function refreshAccessToken(): Promise<string> {
 export async function removeUserSession() {
     try {
         await EncryptedStorage.removeItem("user_session");
-    } catch (error) {
+    } catch (error: any) {
+        // errSecItemNotFound: there was no session in the keychain to begin with
+        // (fresh install, or already signed out). Nothing to report.
+        if (error?.code === "-25300") return;
         console.error("Error removing user session:", error);
     }
 }

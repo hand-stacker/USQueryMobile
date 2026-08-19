@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { TERMS_OF_USE_URL, USE_STOREKIT } from '../../constants/iap';
 import { retrieveUserSession } from '../encrypted-storage/functions';
 import { authRequest, authRequestWithStatus } from '../hooks/authRequest';
+import { setSubscriptionTier, TIER_FREE, TIER_LOGGED_OUT } from '../hooks/subscriptionTier';
 import { useIapContext } from '../hooks/iapContext';
 import { openStripeUrl } from '../hooks/openStripeUrl';
 import {
@@ -77,12 +78,16 @@ export default function PlansScreen({ navigation }: PlansProps) {
       const session = await retrieveUserSession();
       const loggedIn = !!session?.accessToken;
       setIsLoggedIn(loggedIn);
+      if (!loggedIn) setSubscriptionTier(TIER_LOGGED_OUT);
       const plans: PlansData = await authRequest('subscription/plans/');
       setPlansData(plans);
       if (loggedIn) {
         try {
           const status: SubStatus = await authRequest('subscription/status/');
           setSubStatus(status);
+          // This screen runs on every focus and after every plan change, so it
+          // is the freshest read of the tier in the app — share it.
+          setSubscriptionTier(status?.tier ?? TIER_FREE);
         } catch {
           // Non-fatal: user may not have a subscription yet
         }

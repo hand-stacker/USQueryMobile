@@ -19,9 +19,7 @@ import BillFYP from "./bill/screens/bill_fyp";
 import StarredBills from "./bill/screens/starred_bills";
 import VotePredictionsScreen from "./bill/screens/vote_predictions";
 import MemberInfo from "./member/screens/[membershipId]";
-import DisclaimerModal from './misc/DisclaimerModal';
-import PrivacyPolicyModal from './misc/PrivacyPolicyModal';
-import TermsOfUseModal from './misc/TermsOfUseModal';
+import ConsentGateModal from './misc/ConsentGateModal';
 import ReviewModal from './misc/ReviewModal';
 import UpdateAvailableModal from './misc/UpdateAvailableModal';
 import UpsellModal from './misc/UpsellModal';
@@ -247,10 +245,10 @@ function AppNavigation() {
       <SafeAreaProvider>
       <NavigationContainer ref={navigationRef} theme={navTheme}>
         <TabNavigator />
+        {/* All of these share one screen — app/misc/modalQueue.ts serialises
+            them so two are never presented at once. */}
+        <ConsentGateModal />
         <WelcomeFavoritesModal />
-        <TermsOfUseModal />
-        <PrivacyPolicyModal />
-        <DisclaimerModal />
         <ReviewModal />
         <WhatsNewModal />
         <UpdateAvailableModal />

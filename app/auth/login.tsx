@@ -7,6 +7,7 @@ import { removeUserSession, retrieveUserSession, storeUserSession } from "../enc
 import { authRequest, authRequestWithStatus } from "../hooks/authRequest";
 import { resetAppAccountToken, useIapContext } from "../hooks/iapContext";
 import { openStripeUrl } from "../hooks/openStripeUrl";
+import { invalidateSubscriptionTier } from "../hooks/subscriptionTier";
 import { USE_STOREKIT } from "../../constants/iap";
 import {
   EXTERNAL_BILLING_BODY,
@@ -99,8 +100,10 @@ export default function Login({ navigation }: LoginProps) {
   const handleAuthSuccess = async (authData: any, isOAuth = false) => {
     await storeUserSession(authData.email, authData.access, authData.refresh, authData.is_verified);
     // The Apple appAccountToken is per-account; a stale one would attribute the
-    // next purchase to whoever was signed in before.
+    // next purchase to whoever was signed in before. The cached tier is
+    // per-account for the same reason.
     resetAppAccountToken();
+    invalidateSubscriptionTier();
     if (!isOAuth && !authData.is_verified) {
       navigation.navigate("Verify", { email: authData.email, fromLogin: true });
       return;
@@ -351,6 +354,7 @@ export default function Login({ navigation }: LoginProps) {
                   }
                   await removeUserSession();
                   resetAppAccountToken();
+                  invalidateSubscriptionTier();
                   clearFavorites();
                   clearStarrMem();
                   clearStarrBills();

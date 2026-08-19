@@ -13,11 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CloseButton from '../components/CloseButton';
-import { retrieveUserSession } from '../encrypted-storage/functions';
-import { authRequest } from '../hooks/authRequest';
+import { resolveSubscriptionTier, TIER_FREE } from '../hooks/subscriptionTier';
 import { navigate, navigationRef } from '../navigation/navigationRef';
 import { useUpsellStore } from '../store/upsellStore';
 import { ThemeContext } from '../theme/themeContext';
+import { MODAL_PRIORITY, useModalSlot } from './modalQueue';
 
 // The upsell owns its own screenshots so it stays independent of the per-release
 // What's New demos in app/demos/ (which are swapped out each version).
@@ -29,36 +29,23 @@ import votePredLight from './upsell_assets/vote_predictions_li.jpg';
 // ── Trigger configuration ──────────────────────────────────────────────────────
 // Detail pages that can trigger the upsell (deepest active route name).
 const QUALIFYING_ROUTES = ['Bill_info', 'Member_info', 'Vote_info'];
-// Chance the modal shows on a qualifying navigation when all conditions are met.
-const SHOW_PROBABILITY = 0.33;
+// Detail pages the user must have opened, ever, before the upsell is eligible
+// at all. Gives a new user room to actually use the app first.
+const MIN_QUALIFYING_VIEWS = 10;
+// Chance the modal shows on a qualifying navigation once eligible. With the
+// warm-up above, a free user typically first sees it somewhere past their
+// twentieth detail page.
+const SHOW_PROBABILITY = 0.12;
 const DAY_MS = 24 * 60 * 60 * 1000;
-// After a dismiss, mute for a week; after tapping Upgrade, mute for a month
-// (they've already seen Plans; the tier check ends it entirely once they buy).
-const DISMISS_SNOOZE_MS = 7 * DAY_MS;
-const UPGRADE_SNOOZE_MS = 30 * DAY_MS;
+// After a dismiss, mute for three weeks; after tapping Upgrade, mute for a
+// quarter (they've already seen Plans; the tier check ends it entirely once
+// they buy).
+const DISMISS_SNOOZE_MS = 21 * DAY_MS;
+const UPGRADE_SNOOZE_MS = 90 * DAY_MS;
 
 // Session-scoped, in-memory only (reset on app restart — "once per app session").
 let shownThisSession = false;
 let rolling = false;
-// Cached subscription tier for the session: null = unresolved, -1 = logged out
-// or lookup failed (never show), 0 = free, 1 = Plus, 2 = Premium.
-let cachedTier: number | null = null;
-
-async function resolveTier(): Promise<number> {
-  if (cachedTier !== null) return cachedTier;
-  const session = await retrieveUserSession();
-  if (!session?.accessToken) {
-    cachedTier = -1;
-    return cachedTier;
-  }
-  try {
-    const res = await authRequest('subscription/status/');
-    cachedTier = res?.tier ?? 0;
-  } catch {
-    cachedTier = -1;
-  }
-  return cachedTier as number;
-}
 
 interface Slide {
   key: string;
@@ -84,9 +71,14 @@ const SLIDES: Slide[] = [
 
 /**
  * One-per-session subscription upsell for free-tier users. On navigation into a
- * bill/member/vote detail page, if the user is logged in on the free tier, isn't
- * snoozed, and a 33% roll passes, a swipeable carousel promotes Vote Predictions
- * and Bill Chat with a call to action to upgrade. Mirrors WhatsNewModal's layout.
+ * bill/member/vote detail page, if the user is logged in on the free tier, has
+ * opened at least MIN_QUALIFYING_VIEWS detail pages, isn't snoozed, and the roll
+ * passes, a swipeable carousel promotes Vote Predictions and Bill Chat with a
+ * call to action to upgrade. Mirrors WhatsNewModal's layout.
+ *
+ * The tier comes from app/hooks/subscriptionTier.ts, which is invalidated on
+ * sign-in, sign-out and every purchase — so a user who upgrades stops seeing
+ * this immediately rather than at the next app launch.
  */
 export default function UpsellModal() {
   const { theme } = useContext(ThemeContext);
@@ -95,7 +87,8 @@ export default function UpsellModal() {
 
   const setSnoozedUntil = useUpsellStore((s) => s.setUpsellSnoozedUntil);
 
-  const [visible, setVisible] = useState(false);
+  const [wanted, setWanted] = useState(false);
+  const visible = useModalSlot('upsell', MODAL_PRIORITY.upsell, wanted);
   const [page, setPage] = useState(0);
   const [pageWidth, setPageWidth] = useState(0);
 
@@ -103,27 +96,44 @@ export default function UpsellModal() {
   const imageAreaHeight = Math.min(320, Math.round(windowHeight * 0.38));
 
   useEffect(() => {
+    let lastRoute: string | undefined;
+
     const evaluate = () => {
-      const { _hasHydrated, upsellSnoozedUntil } = useUpsellStore.getState();
-      if (!_hasHydrated || shownThisSession || rolling) return;
-      if (Date.now() < upsellSnoozedUntil) return;
+      const store = useUpsellStore.getState();
+      if (!store._hasHydrated) return;
 
       const routeName = navigationRef.isReady()
         ? navigationRef.getCurrentRoute()?.name
         : undefined;
-      if (!routeName || !QUALIFYING_ROUTES.includes(routeName)) return;
+      // The listener fires on every state change, including ones that leave the
+      // route alone (tab bar, params, going back into the same screen), so only
+      // count a route we just arrived on.
+      const arrived = !!routeName && routeName !== lastRoute;
+      lastRoute = routeName;
+      if (!arrived || !QUALIFYING_ROUTES.includes(routeName!)) return;
+
+      // Count up to the threshold and then stop, so this isn't writing to
+      // storage on every detail page for the life of the install.
+      if (store.upsellQualifyingViews < MIN_QUALIFYING_VIEWS) {
+        store.bumpUpsellQualifyingViews();
+        return;
+      }
+
+      if (shownThisSession || rolling) return;
+      if (Date.now() < store.upsellSnoozedUntil) return;
 
       // Roll before the (async) tier lookup so most visits cost nothing.
       if (Math.random() >= SHOW_PROBABILITY) return;
 
       rolling = true;
-      resolveTier()
+      resolveSubscriptionTier()
         .then((tier) => {
-          // Only logged-in free-tier users; guard the flag in case another
+          // Only logged-in free-tier users — anyone on Plus or Premium, and
+          // anyone signed out, never sees this. Guard the flag in case another
           // navigation resolved first.
-          if (tier === 0 && !shownThisSession) {
+          if (tier === TIER_FREE && !shownThisSession) {
             shownThisSession = true;
-            setVisible(true);
+            setWanted(true);
           }
         })
         .finally(() => {
@@ -135,16 +145,14 @@ export default function UpsellModal() {
     return unsubscribe;
   }, []);
 
-  if (!visible) return null;
-
   const dismiss = () => {
     setSnoozedUntil(Date.now() + DISMISS_SNOOZE_MS);
-    setVisible(false);
+    setWanted(false);
   };
 
   const upgrade = () => {
     setSnoozedUntil(Date.now() + UPGRADE_SNOOZE_MS);
-    setVisible(false);
+    setWanted(false);
     // Switch to the Settings (options) tab, then open Plans within its stack.
     navigate('Settings', { screen: 'Plans' });
   };

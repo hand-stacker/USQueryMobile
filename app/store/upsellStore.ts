@@ -8,6 +8,11 @@ interface UpsellState {
   // snoozed. Set when the user dismisses ("Maybe Later"/close) or taps Upgrade.
   upsellSnoozedUntil: number;
   setUpsellSnoozedUntil: (ts: number) => void;
+  // Lifetime count of bill/member/vote detail pages opened. The upsell stays
+  // silent until this passes a threshold so a brand-new user gets to use the
+  // app before being sold anything.
+  upsellQualifyingViews: number;
+  bumpUpsellQualifyingViews: () => void;
   _hasHydrated: boolean;
 }
 
@@ -16,13 +21,19 @@ export const useUpsellStore = create<UpsellState>()(
     (set) => ({
       upsellSnoozedUntil: 0,
       setUpsellSnoozedUntil: (ts: number) => set({ upsellSnoozedUntil: ts }),
+      upsellQualifyingViews: 0,
+      bumpUpsellQualifyingViews: () =>
+        set((s) => ({ upsellQualifyingViews: s.upsellQualifyingViews + 1 })),
       _hasHydrated: false,
     }),
     {
       name: 'upsell-storage',
       storage: zustandStorage as any,
       partialize: (state) =>
-        ({ upsellSnoozedUntil: state.upsellSnoozedUntil } as any),
+        ({
+          upsellSnoozedUntil: state.upsellSnoozedUntil,
+          upsellQualifyingViews: state.upsellQualifyingViews,
+        } as any),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state._hasHydrated = true;
@@ -47,6 +58,8 @@ export const useUpsellStore = create<UpsellState>()(
     const current = useUpsellStore.getState();
     useUpsellStore.setState({
       upsellSnoozedUntil: current.upsellSnoozedUntil || (s.upsellSnoozedUntil ?? 0),
+      upsellQualifyingViews:
+        current.upsellQualifyingViews || (s.upsellQualifyingViews ?? 0),
       _hasHydrated: true,
     });
   } catch (error) {

@@ -3,6 +3,7 @@ import React, { useContext, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authRequest } from '../hooks/authRequest';
+import { invalidateSubscriptionTier } from '../hooks/subscriptionTier';
 import { ThemeContext } from '../theme/themeContext';
 
 interface CheckoutSuccessProps {
@@ -28,6 +29,8 @@ export default function CheckoutSuccess({ navigation, route }: CheckoutSuccessPr
     try {
       const result = await authRequest('subscription/status/');
       if (result.tier > 0) {
+        // Stripe granted the plan — drop any cached "free" reading.
+        invalidateSubscriptionTier();
         setStatusMsg(`You're now on the ${result.tier_name} plan!`);
         setConfirmed(true);
       } else {

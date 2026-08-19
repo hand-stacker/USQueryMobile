@@ -3,9 +3,10 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CloseButton from '../components/CloseButton';
-import { useAppSettingsStore } from '../store/appSettingsStore';
 import { useFavoritesStore } from '../store/favoriteSubjectsStore';
 import { ThemeContext } from '../theme/themeContext';
+import { useConsentComplete } from './ConsentGateModal';
+import { MODAL_PRIORITY, useModalSlot } from './modalQueue';
 
 export default function WelcomeFavoritesModal() {
   const { theme } = useContext(ThemeContext);
@@ -14,15 +15,16 @@ export default function WelcomeFavoritesModal() {
   const hydrated = useFavoritesStore(s => s._hasHydrated);
   const welcomeCounter = useFavoritesStore(s => s.welcomeCounter);
   const setWelcomeCounter = useFavoritesStore(s => s.setWelcomeCounter);
-  const privacyAccepted = useAppSettingsStore(s => s.privacyAccepted);
-  const [visible, setVisible] = useState(false);
+  const consentComplete = useConsentComplete();
+  const [wanted, setWanted] = useState(false);
+  const visible = useModalSlot('welcome', MODAL_PRIORITY.welcome, wanted);
   const processedOpen = useRef(false);
   const navigation: any = useNavigation();
 
   // Run on app open (when persisted state has hydrated). Only process once per app session.
-  // Gates on privacyAccepted so this modal only opens after the disclaimer and privacy policy are done.
+  // Gates on consentComplete so this only queues up after the whole consent gate is done.
   useEffect(() => {
-    if (!hydrated || !privacyAccepted || processedOpen.current) return;
+    if (!hydrated || !consentComplete || processedOpen.current) return;
     processedOpen.current = true;
 
     if (Array.isArray(favorites) && favorites.length === 0) {
@@ -31,17 +33,17 @@ export default function WelcomeFavoritesModal() {
         const next = Math.max(0, welcomeCounter - 1);
         setWelcomeCounter(next);
         if (next === 0) {
-            setVisible(true);
+            setWanted(true);
         }
       } else {
         // unset (-1) or other -> show welcome modal (first-open)
-        setVisible(true);
+        setWanted(true);
       }
     } else {
       // Favorites not empty: ensure counter is 1 so modal can open immediately if user clears favorites next time
       if (welcomeCounter !== 1) setWelcomeCounter(1);
     }
-  }, [hydrated, privacyAccepted]);
+  }, [hydrated, consentComplete]);
 
   // If favorites become non-empty during a session, ensure counter is 1 (immediate on next open)
   useEffect(() => {
@@ -51,7 +53,7 @@ export default function WelcomeFavoritesModal() {
   }, [favorites]);
 
   const handleSelect = () => {
-    setVisible(false);
+    setWanted(false);
     // navigate to the Options tab and open the select modal there
     navigation.navigate('Settings', { screen: 'Login' });
   };
@@ -59,7 +61,7 @@ export default function WelcomeFavoritesModal() {
   const handleClose = () => {
     // postpone the next prompts for a few app opens
     setWelcomeCounter(3);
-    setVisible(false);
+    setWanted(false);
   };
 
   return (

@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { STORE_URL } from '../../constants/storeLinks';
 import { useAppSettingsStore } from '../store/appSettingsStore';
 import { ThemeContext } from '../theme/themeContext';
+import { useConsentComplete } from './ConsentGateModal';
+import { MODAL_PRIORITY, useModalSlot } from './modalQueue';
 
 export default function ReviewModal() {
   const { theme } = useContext(ThemeContext);
@@ -15,37 +17,37 @@ export default function ReviewModal() {
   const setReviewCountdown = useAppSettingsStore(s => s.setReviewCountdown);
   const hydrated = useAppSettingsStore(s => s._hasHydrated);
 
-  const [visible, setVisible] = useState(false);
+  const consentComplete = useConsentComplete();
+  const [wanted, setWanted] = useState(false);
+  const visible = useModalSlot('review', MODAL_PRIORITY.review, wanted);
   const processed = useRef(false);
 
   useEffect(() => {
-    if (!hydrated || processed.current || reviewStatus !== 'pending') return;
+    if (!hydrated || !consentComplete || processed.current || reviewStatus !== 'pending') return;
     processed.current = true;
 
     if (reviewCountdown <= 1) {
       setReviewCountdown(0);
-      setVisible(true);
+      setWanted(true);
     } else {
       setReviewCountdown(reviewCountdown - 1);
     }
-  }, [hydrated]);
-
-  if (!hydrated || reviewStatus !== 'pending') return null;
+  }, [hydrated, consentComplete]);
 
   const handleReview = async () => {
     setReviewStatus('reviewed');
-    setVisible(false);
+    setWanted(false);
     await Linking.openURL(STORE_URL);
   };
 
   const handleLater = () => {
     setReviewCountdown(7);
-    setVisible(false);
+    setWanted(false);
   };
 
   const handleNever = () => {
     setReviewStatus('never');
-    setVisible(false);
+    setWanted(false);
   };
 
   return (

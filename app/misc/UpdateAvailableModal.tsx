@@ -7,6 +7,8 @@ import { getAppVersion } from '../api/appVersion';
 import { useAppVersionStore } from '../store/appVersionStore';
 import { ThemeContext } from '../theme/themeContext';
 import { compareVersions } from '../utils/compareVersions';
+import { useConsentComplete } from './ConsentGateModal';
+import { MODAL_PRIORITY, useModalSlot } from './modalQueue';
 
 /**
  * Prompts the user to update when the released version (app-version API) is
@@ -24,12 +26,14 @@ export default function UpdateAvailableModal() {
   const setDismissedUpdateVersion = useAppVersionStore((s) => s.setDismissedUpdateVersion);
   const hydrated = useAppVersionStore((s) => s._hasHydrated);
 
-  const [visible, setVisible] = useState(false);
+  const consentComplete = useConsentComplete();
+  const [wanted, setWanted] = useState(false);
+  const visible = useModalSlot('updateAvailable', MODAL_PRIORITY.updateAvailable, wanted);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const checked = useRef(false);
 
   useEffect(() => {
-    if (!hydrated || checked.current) return;
+    if (!hydrated || !consentComplete || checked.current) return;
     checked.current = true;
 
     (async () => {
@@ -45,20 +49,18 @@ export default function UpdateAvailableModal() {
       if (dismissedUpdateVersion === latest) return; // already dismissed this one
 
       setLatestVersion(latest);
-      setVisible(true);
+      setWanted(true);
     })();
-  }, [hydrated]);
-
-  if (!visible) return null;
+  }, [hydrated, consentComplete]);
 
   const handleUpdate = async () => {
-    setVisible(false);
+    setWanted(false);
     await Linking.openURL(STORE_URL);
   };
 
   const handleLater = () => {
     if (latestVersion) setDismissedUpdateVersion(latestVersion);
-    setVisible(false);
+    setWanted(false);
   };
 
   return (

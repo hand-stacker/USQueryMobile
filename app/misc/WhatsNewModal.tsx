@@ -20,6 +20,8 @@ import { useAppVersionStore } from '../store/appVersionStore';
 import { ThemeContext } from '../theme/themeContext';
 import { compareVersions } from '../utils/compareVersions';
 import { loadTextAsset } from '../utils/loadTextAsset';
+import { useConsentComplete } from './ConsentGateModal';
+import { MODAL_PRIORITY, useModalSlot } from './modalQueue';
 
 /**
  * Shown once per app update. Displays the features listed in app/demos/index.ts
@@ -37,7 +39,9 @@ export default function WhatsNewModal() {
   const setLastSeenVersion = useAppVersionStore((s) => s.setLastSeenVersion);
   const hydrated = useAppVersionStore((s) => s._hasHydrated);
 
-  const [visible, setVisible] = useState(false);
+  const consentComplete = useConsentComplete();
+  const [wanted, setWanted] = useState(false);
+  const visible = useModalSlot('whatsNew', MODAL_PRIORITY.whatsNew, wanted);
   const [version, setVersion] = useState<string | null>(null);
   const [descriptions, setDescriptions] = useState<string[]>([]);
   const [page, setPage] = useState(0);
@@ -50,7 +54,7 @@ export default function WhatsNewModal() {
   const imageAreaHeight = Math.min(320, Math.round(windowHeight * 0.38));
 
   useEffect(() => {
-    if (!hydrated || checked.current) return;
+    if (!hydrated || !consentComplete || checked.current) return;
     checked.current = true;
 
     (async () => {
@@ -68,17 +72,15 @@ export default function WhatsNewModal() {
       );
       setDescriptions(texts);
       setVersion(current);
-      setVisible(true);
+      setWanted(true);
     })();
-  }, [hydrated]);
-
-  if (!visible) return null;
+  }, [hydrated, consentComplete]);
 
   // Persist the seen version only once the user dismisses the modal, so an
   // interrupted launch (app backgrounded/killed before close) re-shows it.
   const close = () => {
     if (version) setLastSeenVersion(version);
-    setVisible(false);
+    setWanted(false);
   };
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
